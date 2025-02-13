@@ -1,0 +1,55 @@
+.find-caravans-container {
+    max-width: 1200px;
+    margin: 20px auto;
+    padding: 20px;
+  }
+   
+  .section {
+    margin-bottom: 20px;
+  }
+   
+  h3 {
+    font-size: 18px;
+    font-weight: bold;
+  }
+   
+  .links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+   
+  .links a {
+    text-decoration: none;
+    color: #007cc2;
+    font-size: 14px;
+    font-weight: 400;
+  }
+   
+  .links a::after {
+    content: "|";
+    margin-left: 10px; /* Adjust margin as needed */
+    color: lightgray;
+  }
+  
+  .links a:last-child::after {
+    content: ""; /* Remove the separator after the last link */
+  }
+  /* .separator{
+font-size: 14px;
+  } */
+
+  .links a:hover {
+    /* text-decoration: underline; */
+    color: #1c488a;
+  }
+   
+  @media (max-width: 768px) {
+    .find-caravans-container {
+      padding: 10px;
+    }
+    .links {
+      flex-direction: column;
+    }
+  }
+  
