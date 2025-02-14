@@ -1,7 +1,26 @@
 'use client'
-import React from 'react';
-    
+import React, { useEffect } from 'react';
+
 const Navbar: React.FC = () => {
+  useEffect(() => {
+    const navbar = document.querySelector('.navbar.style-4');
+
+    function handleScroll() {
+      if (window.scrollY > 0) {
+        navbar?.classList.add('scrolled');
+      } else {
+        navbar?.classList.remove('scrolled');
+      }
+    }
+
+    window.addEventListener('scroll', handleScroll);
+
+    // Cleanup the event listener on component unmount
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+    };
+  }, []);
+
   return (
     <nav className="navbar navbar-expand-lg navbar-light style-4">
       <div className="container">
@@ -131,7 +150,7 @@ const Navbar: React.FC = () => {
                   <li>
                     <a className="dropdown-item" href="/listings/full-off-road-category/">
                       Full Off Road
-                    </a>
+                    </a> 
                   </li>
                   <li>
                     <a className="dropdown-item" href="/listings/extreme-off-road-category/">

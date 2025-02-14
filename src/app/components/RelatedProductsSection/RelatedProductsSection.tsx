@@ -6,7 +6,7 @@ import 'swiper/css/grid';
 import { Navigation, Grid, Autoplay } from "swiper/modules";
 import Link from 'next/link';
 
-const RelatedProductsSection: React.FC<{ title: string; products: any[] }> = ({ title, products }) => {
+const RelatedProductsSection: React.FC<{ products: any[] }> = ({  products }) => {
   return (
     // <section className="related-products section-padding">
     //   <div className="container">
@@ -114,8 +114,8 @@ const RelatedProductsSection: React.FC<{ title: string; products: any[] }> = ({ 
               <Link href={`/product/${item.slug}`} className="mb-3">
                 <div className="product-card">
                   <div className="img">
-                    {/* <img src={item.img} alt={item.title} decoding="async" /> */}
-                    <img src='https://www.caravansforsale.com.au/wp-content/uploads/2025/01/Avan-Caravans-Review-Features-Models-and-Pricing-Guide-mob.jpg' alt={item.title} decoding="async" />
+                    <img src={item.image} alt={item.title} decoding="async" />
+                    {/* <img src='https://www.caravansforsale.com.au/wp-content/uploads/2025/01/Avan-Caravans-Review-Features-Models-and-Pricing-Guide-mob.jpg' alt={item.title} decoding="async" /> */}
 
                   </div>
                   <div className="product_de">
