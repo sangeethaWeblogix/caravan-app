@@ -732,7 +732,9 @@ body ul {
 .btn-primary:not(:disabled):not(.disabled):active:focus,
 .btn:not(:disabled):not(.disabled).active,
 .btn:not(:disabled):not(.disabled):active {
-    -webkit-appearance: none;
+    -webkit-appearance: none;    
+    appearance: none;
+
 }
 
 .btn:active,
@@ -2160,31 +2162,16 @@ body.search .mediz-not-found-wrap form.search-form {
     -moz-animation: loader 2s linear infinite;
     -o-animation: loader 2s linear infinite;
 }
-
-@-webkit-keyframes loaders {
-    0% {
-        -webkit-transform: rotate(0deg);
-        -ms-transform: rotate(0deg);
-        transform: rotate(0deg);
-    }
-
-    100% {
-        -webkit-transform: rotate(360deg);
-        -ms-transform: rotate(360deg);
-        transform: rotate(360deg);
-    }
-}
-
 @-webkit-keyframes loader {
     0% {
         -webkit-transform: rotate(0deg);
-        -ms-transform: rotate(0deg);
+        /* -ms-transform: rotate(0deg); */
         transform: rotate(0deg);
     }
 
     100% {
         -webkit-transform: rotate(360deg);
-        -ms-transform: rotate(360deg);
+        /* -ms-transform: rotate(360deg); */
         transform: rotate(360deg);
     }
 }
@@ -7349,6 +7336,8 @@ header.style-7 .info h1 .num {
 
 header.style-7 .info h1 .text-grad {
     -webkit-background-clip: text;
+    -ms-background-clip: text; /* Added for IE and Edge */
+    background-clip: text; /* Standard property */
     -webkit-text-fill-color: transparent;
     background-image: -webkit-gradient(linear, left top, right top, from(#501e9c), color-stop(30%, #8169f1), color-stop(30%, #8169f1), color-stop(73%, #a44cee), to(#ff847f));
     background-image: -o-linear-gradient(left, #501e9c 0%, #8169f1 30%, #8169f1 30%, #a44cee 73%, #ff847f 100%);
