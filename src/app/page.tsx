@@ -17,17 +17,17 @@ const CATEGORIES = [
 const HeroSection = () => {
   return (
     <section
-      className='relative text-white text-center bg-cover bg-center min-h-[600px] flex flex-col items-center justify-center px-4'
+      className='relative text-black  bg-cover bg-center min-h-[600px] flex flex-col items-center justify-center px-4'
       // style={{ backgroundImage: "url('/images/hero-bg.jpg')" }}
     >
-      <div className='z-10 max-w-4xl mx-auto'>
-        <h1 className='text-4xl md:text-5xl font-bold mb-4'>
+      <div className='z-10 max-w-4xl mx-auto '>
+        <h1 className='text-xl md:text-5xl font-bold p-4'>
           Browse New & Used Caravans For Sale – Find Exclusive Deals
         </h1>
-        <p className='text-lg md:text-xl mb-4'>
+        <p className='text-lg md:text-xl p-4'>
           CFS is dedicated to revolutionising your caravan buying experience.
         </p>
-        <p className='text-sm md:text-base mb-8 text-gray-200'>
+        <p className='text-sm md:text-base p-4 text-gray-600'>
           Choose from a wide selection of high-quality caravans at competitive prices, find exclusive deals direct from manufacturers.
         </p>
 
@@ -47,7 +47,7 @@ const HeroSection = () => {
           {CATEGORIES.map(cat => (
             <div
               key={cat.name}
-              className='bg-black/30 px-4 py-2 rounded-md flex flex-col items-center hover:scale-105 transition-transform cursor-pointer'
+              className=' px-4 py-2 rounded-md flex flex-col items-center hover:scale-105 transition-transform cursor-pointer'
             >
               <Image src={cat.img} alt={cat.name} width={70} height={70} />
               <span className='mt-2 text-white text-sm'>{cat.name}</span>
@@ -57,7 +57,7 @@ const HeroSection = () => {
         </div>
       </div>
 
-      <div className='absolute inset-0 bg-black opacity-30' />
+      <div className='absolute inset-0  opacity-30' />
       <Region />
     </section>
   )
