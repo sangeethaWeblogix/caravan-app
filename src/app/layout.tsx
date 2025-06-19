@@ -1,8 +1,11 @@
  // src/app/layout.tsx
+import 'bootstrap/dist/css/bootstrap.min.css';
 import './globals.css'
+import './home.css'
+import '@fortawesome/fontawesome-free/css/all.min.css';
 import Navbar from './navbar/Navbar'
 import Footer from './footer/Footer'
-import React from 'react'
+import React from 'react';
 
 export const metadata = {
   title: 'Caravan',
@@ -14,7 +17,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en">
       <body className="flex flex-col min-h-screen">
         <Navbar />
-        <main className="flex-grow">{children}</main>
+        <main className="product-page style-5">{children}</main>
         <Footer />
       </body>
     </html>
