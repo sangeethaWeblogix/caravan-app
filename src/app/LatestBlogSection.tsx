@@ -109,6 +109,7 @@ const LatestBlogSection = () => {
         </div>
       </div>
     </section>
+    
   )
 }
 
