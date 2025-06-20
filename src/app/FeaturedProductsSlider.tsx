@@ -116,6 +116,7 @@ const FeaturedProductsSlider = () => {
     </div>
     </div>
    </div>
+   
   )
 }
 
