@@ -1,6 +1,10 @@
  import { notFound } from 'next/navigation'
 import { Metadata } from 'next'
 import Footer from './Footer'
+import ProductList from './ProductList'
+import CaravanFilter from '../CaravanFilter'
+import './listings.css'
+
 
 interface Props {
   params: {
@@ -93,12 +97,29 @@ export default function ListingPage({ params }: Props) {
   if (!readable) return notFound()
 
   return (
-    <div>
+    <div style={{ backgroundColor: '#f7f7f7' }}>
 
     <div className="container py-10">
-      <h1 className="text-3xl font-bold mb-2">{readable}</h1>
-      <p className="text-lg">Showing caravan listings for <strong>{readable}</strong>.</p>
+      <h1 className="page-title">{readable}</h1>
+      {/* <p className="text-lg">Showing caravan listings for <strong>{readable}</strong>.</p> */}
     </div>
+    <section className="services section-padding pt-30 pb-30 style-1">
+      <div className="container">
+        <div className="content">
+          <div className="row justify-content-center">
+            <div className="col-lg-3 col-12 col-md-4">
+              <div className="filter">
+              <CaravanFilter />
+              </div>
+              </div>
+              <ProductList />
+              <div className="col-lg-3 rightbar-stick">
+                </div>
+          </div>
+        </div>
+      </div>
+    </section>
+    
     <Footer />
     </div>
   )
