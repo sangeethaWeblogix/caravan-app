@@ -1,7 +1,8 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
-};
+images: {
+    domains: ['www.dev.caravansforsale.com.au'],
+  },};
 
 export default nextConfig;
