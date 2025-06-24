@@ -35,7 +35,7 @@ const Navbar = () => {
         <div className="container">
           <div className="logo_left">
             <Link className="navbar-brand" href="/">
-              <Image src="/images/cfs-logo.svg" alt="Caravans For Sale" />
+              <Image src="/images/cfs-logo.svg" alt="Caravans For Sale" width={100} height={100} />
             </Link>
           </div>
 

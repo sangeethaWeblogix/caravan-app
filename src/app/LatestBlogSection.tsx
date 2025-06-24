@@ -91,6 +91,7 @@ const LatestBlogSection = () => {
                   <div className="product-card">
                     <div className="img">
                       <Image
+                      width={100} height={100}
                         src={post.img}
                         alt={post.title}
                         className="img-fluid"

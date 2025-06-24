@@ -6,6 +6,7 @@ import { fetchListings } from '../../api/listings/api'; // your custom API call
 import 'swiper/css/navigation';
 import Lisiting from './listing'
 import CaravanFilter from './CaravanFilter';
+import SkeletonListing from '../components/skelton'
 
 
 interface Product {
@@ -26,44 +27,53 @@ interface Pagination {
   current_page: number;
   total_pages: number;
   total_items?: number;
-}
+   per_page: number;
+  total_products: number;  
+ }
 
 
 export default function ListingsPage() {
  const [products, setProducts] = useState<Product[]>([]);
+   const [isLoading, setIsLoading] = useState(false);
   const [pagination, setPagination] = useState<Pagination>({
     current_page: 1,
     total_pages: 1,
         total_items: 0,
+        total_products: 0,
+        per_page: 12
   });
   const [loading, setLoading] = useState(true);
 
 const loadListings = async (page = 1) => {
-  setLoading(true);
-  try {
+    setIsLoading(true);
+     window.scrollTo({
+    top: 0,
+    behavior: 'smooth', // or 'auto' if you prefer instant scroll
+  });
+      try {
     const response = await fetchListings(page);
 
     if (response?.data?.products && response?.pagination) {
       setProducts(response.data.products);
-      setPagination(response.pagination); // ✅ Use actual values from backend
+      setPagination(response.pagination); 
+          setIsLoading(false);// ✅ Use actual values from backend
     } else {
       console.warn('Unexpected response shape:', response);
       setProducts([]);
-      setPagination({ current_page: 1, total_pages: 1 });
+      setPagination({ current_page: 1, total_pages: 1, per_page: 12, total_products: 0 });
     }
   } catch (error) {
     console.error('Failed to fetch listings:', error);
     setProducts([]);
-    setPagination({ current_page: 1, total_pages: 1 });
+    setPagination({ current_page: 1, total_pages: 1, per_page: 12, total_products: 0});
   } finally {
     setLoading(false);
   }
 };
 
 
-  console.log("Products:", products);
-  useEffect(() => {
-    loadListings();
+   useEffect(() => {
+    loadListings(1);
   }, []);
 
   if (loading) return <p>Loading...</p>;
@@ -98,12 +108,16 @@ const handlePrevPage = () => {
               <CaravanFilter />
               </div>
               </div>
-<Lisiting
-  products={products}
-  pagination={pagination}
-  onNext={handleNextPage}
+{isLoading ? (
+        <SkeletonListing />
+      ) : (
+        <Lisiting
+          products={products}
+          pagination={pagination}
+          onNext={handleNextPage}
   onPrev={handlePrevPage}
-/>          
+        />
+      )}         
     <div className="col-lg-3 rightbar-stick">
                 </div>
           </div>
