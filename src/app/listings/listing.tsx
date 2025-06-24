@@ -1,5 +1,4 @@
  'use client';
-
 import Image from 'next/image';
 import Link from 'next/link';
 import { Swiper, SwiperSlide } from 'swiper/react';
@@ -7,7 +6,7 @@ import { Navigation } from 'swiper/modules';
 import 'swiper/css';
 import 'swiper/css/navigation';
 
-interface product {
+interface Product {
   id: number;
   name: string;
   regular_price: string;
@@ -16,14 +15,12 @@ interface product {
   link: string;
   location?: string;
 }
-
 interface Pagination {
   current_page: number;
   total_pages: number;
 }
-
 interface Props {
-  products: product[];
+  products: Product[];
   pagination: Pagination;
   onNext: () => void;
   onPrev: () => void;
@@ -33,54 +30,34 @@ export default function ListingContent({ products, pagination, onNext, onPrev }:
   return (
     <div className="col-lg-6 col-md-8">
       <div className="top-filter mb-10">
-        <div className="row align-items-center">
-          <div className="col-lg-6">
-            <p className="show_count">
-              Showing page {pagination.current_page} of {pagination.total_pages}
-            </p>
-          </div>
-        </div>
+        <p>Showing page {pagination.current_page} of {pagination.total_pages}</p>
       </div>
 
       <div className="dealers-section product-type">
-        {products.map((product) => (
-          <article className="vehicleSearch" key={product.id}>
+        {products.map(product => (
+          <article key={product.id} className="vehicleSearch">
             <div className="vehicleSearch__column-poster">
               <Link href={product.link}>
-                <div>
-                  <Swiper navigation modules={[Navigation]} className="mySwiper">
-                    <SwiperSlide>
-                      <Image
-                        src={product.image}
-                        alt={product.name}
-                        width={600}
-                        height={400}
-                        className="attachment-woocommerce_thumbnail"
-                      />
-                    </SwiperSlide>
-                  </Swiper>
-                </div>
+                <Swiper navigation modules={[Navigation]} className="mySwiper">
+                  <SwiperSlide>
+                   <Image src="/images/img.png" alt={product.name} width={600} height={400} />
+
+                  </SwiperSlide>
+                </Swiper>
               </Link>
               <div className="vehicleThumbDetails">
-                <div className="title">
-                  <Link href={product.link}>
-                    <h3>{product.name}</h3>
-                  </Link>
-                </div>
+                <h3><Link href={product.link}>{product.name}</Link></h3>
                 <div className="price">
                   {product.sale_price ? (
                     <>
-                      <del>{product.regular_price}</del>
-                      <ins>{product.sale_price}</ins>
+                      <del>${product.regular_price}</del>
+                      <ins>${product.sale_price}</ins>
                     </>
                   ) : (
-                    <span>{product.regular_price}</span>
+                    <span>${product.regular_price}</span>
                   )}
                 </div>
-                <div className="vehicleThumbDetails__features__address">
-                  <label>Seller Location</label>
-                  <h3>{product.location || 'N/A'}</h3>
-                </div>
+                <h3>{product.location || 'N/A'}</h3>
               </div>
             </div>
           </article>
@@ -88,43 +65,12 @@ export default function ListingContent({ products, pagination, onNext, onPrev }:
       </div>
 
       <div className="pagination-wrapper mt-4">
-        <PaginationComponent
-          currentPage={pagination.current_page}
-          totalPages={pagination.total_pages}
-          onNext={onNext}
-          onPrev={onPrev}
-        />
+        <nav>
+          <button onClick={onPrev} disabled={pagination.current_page === 1}>Prev</button>
+          <span>Page {pagination.current_page}</span>
+          <button onClick={onNext} disabled={pagination.current_page === pagination.total_pages}>Next</button>
+        </nav>
       </div>
     </div>
   );
 }
-
-const PaginationComponent = ({
-  currentPage,
-  totalPages,
-  onNext,
-  onPrev,
-}: {
-  currentPage: number;
-  totalPages: number;
-  onNext: () => void;
-  onPrev: () => void;
-}) => (
-  <nav className="woocommerce-pagination custom-pagination mt-4">
-    <ul className="pagination-icons">
-      <li className={`prev-page ${currentPage === 1 ? 'disabled' : ''}`}>
-        <button onClick={onPrev} disabled={currentPage === 1}>
-          Back
-        </button>
-      </li>
-      <li className="page-count">
-        Page {currentPage} of {totalPages}
-      </li>
-      <li className={`next-page ${currentPage === totalPages ? 'disabled' : ''}`}>
-        <button onClick={onNext} disabled={currentPage === totalPages}>
-          Next
-        </button>
-      </li>
-    </ul>
-  </nav>
-);
