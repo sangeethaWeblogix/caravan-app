@@ -10,6 +10,16 @@
   font-weight: 500;
 }
 
+.header{
+    margin-bottom: 80px;
+}
+
+.title {
+      margin-top: 80px;
+      margin-bottom: 30px;
+
+}
+
 .search_quick_links ul {
   list-style: none;
   padding-left: 0;
