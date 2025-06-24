@@ -3,7 +3,7 @@ import { Metadata } from 'next'
 import Footer from './Footer'
 import ProductList from './ProductList'
 import CaravanFilter from '../CaravanFilter'
-import './listings.css'
+import '../listings.css'
 
 
 interface Props {
