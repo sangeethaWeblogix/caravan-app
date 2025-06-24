@@ -5,6 +5,7 @@ import { Navigation } from 'swiper/modules'
 import 'swiper/css'
 import 'swiper/css/navigation'
 import Link from 'next/link'
+import Image from 'next/image'
 
 const products = [
   {
@@ -83,7 +84,7 @@ const FeaturedProductsSlider = () => {
             <Link href={product.link} className="mb-3">
               <div className="product-card">
                 <div className="img">
-                  <img src={product.image} alt={product.title} />
+                  <Image src={product.image} alt={product.title}  />
                 </div>
                 <div className="product_de">
                   <div className="info">

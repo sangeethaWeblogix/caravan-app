@@ -2,8 +2,7 @@
 'use client'
 
 import Link from 'next/link'
-import { Search } from 'lucide-react' // Replace this with the correct icon or keep <i> tag if needed
-
+ 
 const BrowseByCategory = () => {
   return (
     <section className="search_quick_links section-padding alldata">
@@ -163,6 +162,7 @@ const BrowseByCategory = () => {
       </div>
     </div>
     </section>
+    
   )
 }
 
