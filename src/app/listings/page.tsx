@@ -1,4 +1,4 @@
- 'use client';
+  'use client';
 import { useEffect, useState } from 'react';
 import { fetchListings } from '../../api/listings/api'; // your custom API call
 import Image from 'next/image';
@@ -12,28 +12,32 @@ import CaravanFilter from './CaravanFilter';
 
 
 interface Product {
-  id: number;
+ id: number;
   name: string;
+  length: string;
+  kg: string;
   regular_price: string;
   sale_price?: string;
+  price_difference?: string;
   image: string;
   link: string;
   location?: string;
+  categories?: string[];
 }
 
 interface Pagination {
   current_page: number;
   total_pages: number;
+  total_items?: number;
 }
 
 
 export default function ListingsPage() {
  const [products, setProducts] = useState<Product[]>([]);
- const [totalCount, setTotalCount] = useState<number>(0);
-
   const [pagination, setPagination] = useState<Pagination>({
     current_page: 1,
     total_pages: 1,
+        total_items: 0,
   });
   const [loading, setLoading] = useState(true);
 
@@ -44,8 +48,7 @@ const loadListings = async (page = 1) => {
 
     if (response?.data?.products && response?.pagination) {
       setProducts(response.data.products);
-      setPagination(response.pagination); 
-        setTotalCount(response.data.total_products || response.data.products.length); // fallback
+      setPagination(response.pagination); // ✅ Use actual values from backend
     } else {
       console.warn('Unexpected response shape:', response);
       setProducts([]);
@@ -61,7 +64,8 @@ const loadListings = async (page = 1) => {
 };
 
 
-   useEffect(() => {
+  console.log("Products:", products);
+  useEffect(() => {
     loadListings();
   }, []);
 
@@ -82,19 +86,24 @@ const handlePrevPage = () => {
 
 
   return (
-     <section className="services section-padding pt-30 pb-30 style-1">
+     <section className="services section-padding pb-30 style-1">
       <div className="container">
         <div className="content">
-          <div className="row justify-content-center">
+ <div className="text-sm text-gray-600 header">
+            <Link href="/" className="hover:underline">Home</Link> &gt; <span className="font-medium text-black">Listings</span>
+          </div>
+            <h1 className="title text-xl font-bold  text-black">
+            {pagination.total_items ?? 6585} Caravans For Sale in Australia
+          </h1>
+                    <div className="row justify-content-center mt-8">
             <div className="col-lg-3 col-12 col-md-4">
               <div className="filter">
               <CaravanFilter />
               </div>
               </div>
-              <h1></h1>
 <Lisiting
   products={products}
-   pagination={pagination}
+  pagination={pagination}
   onNext={handleNextPage}
   onPrev={handlePrevPage}
 />          

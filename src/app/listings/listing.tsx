@@ -184,6 +184,7 @@ export default function ListingContent({
             <li className="page-count"> Page {pagination.current_page}</li>
             <li className="">
               <button
+              className="next-icon"
                 onClick={onNext}
                 disabled={pagination.current_page === pagination.total_pages}
               >
