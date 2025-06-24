@@ -29,6 +29,8 @@ interface Pagination {
 
 export default function ListingsPage() {
  const [products, setProducts] = useState<Product[]>([]);
+ const [totalCount, setTotalCount] = useState<number>(0);
+
   const [pagination, setPagination] = useState<Pagination>({
     current_page: 1,
     total_pages: 1,
@@ -42,7 +44,8 @@ const loadListings = async (page = 1) => {
 
     if (response?.data?.products && response?.pagination) {
       setProducts(response.data.products);
-      setPagination(response.pagination); // ✅ Use actual values from backend
+      setPagination(response.pagination); 
+        setTotalCount(response.data.total_products || response.data.products.length); // fallback
     } else {
       console.warn('Unexpected response shape:', response);
       setProducts([]);
@@ -58,8 +61,7 @@ const loadListings = async (page = 1) => {
 };
 
 
-  console.log("Products:", products);
-  useEffect(() => {
+   useEffect(() => {
     loadListings();
   }, []);
 
@@ -89,9 +91,10 @@ const handlePrevPage = () => {
               <CaravanFilter />
               </div>
               </div>
+              <h1></h1>
 <Lisiting
   products={products}
-  pagination={pagination}
+   pagination={pagination}
   onNext={handleNextPage}
   onPrev={handlePrevPage}
 />          
