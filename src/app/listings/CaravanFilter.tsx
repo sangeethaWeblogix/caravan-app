@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import React, { useState, Dispatch, SetStateAction } from 'react'
 import { BiChevronDown } from 'react-icons/bi'
 
 const categories = ['Off Road', 'Hybrid', 'Pop Top', 'Luxury', 'Family', 'Touring']
@@ -27,8 +27,9 @@ const CaravanFilter = () => {
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [locationInput, setLocationInput] = useState('')
 
-  const toggle = (setter) => setter(prev => !prev)
-
+const toggle = (setter: Dispatch<SetStateAction<boolean>>) => {
+  setter(prev => !prev)
+}
   const resetFilters = () => {
     setCategoryOpen(false)
     setLocationOpen(false)

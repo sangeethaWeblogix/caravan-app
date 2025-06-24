@@ -5,6 +5,7 @@ import { Navigation } from 'swiper/modules'
 import 'swiper/css'
 import 'swiper/css/navigation'
 import Link from 'next/link'
+import Image from 'next/image'
 
 const blogPosts = [
   {
@@ -89,7 +90,7 @@ const LatestBlogSection = () => {
                 <Link href={post.url}>
                   <div className="product-card">
                     <div className="img">
-                      <img
+                      <Image
                         src={post.img}
                         alt={post.title}
                         className="img-fluid"
