@@ -94,12 +94,15 @@ export default function ListingContent({
                     className="mySwiper"
                   >
                     <SwiperSlide>
+                      <div className="swiper-zoom-container">
+
                       <Image
                         src="/images/img.png"
                         alt={product.name}
-                        width={600}
-                        height={400}
+                        width={1593}
+                        height={1195}
                       />
+                      </div>
                     </SwiperSlide>
                   </Swiper>
                 </div>
