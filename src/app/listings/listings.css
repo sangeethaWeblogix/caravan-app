@@ -11,7 +11,7 @@
 }
 
 .header{
-    margin-bottom: 80px;
+    margin-bottom: 0px;
 }
 
 .title {
@@ -49,7 +49,7 @@ h1.page-title {
   font-size: 2.1rem;
   font-weight: 700;
   margin: 0 auto;
-  padding: 40px 0px 60px;
+  padding: 25px 0px 60px;
   display: block !important;
 }
 .fl-right {
@@ -176,6 +176,7 @@ h1.page-title {
 .vehicleSearch__column-poster .vehicleThumbDetails .title {
     display: flex;
     max-width: 75%;
+    margin: 0;
 }
 .vehicleSearch__column-poster a {
     display: block;
@@ -359,13 +360,19 @@ h1.page-title {
     padding-bottom: 10px;
 }
 
-.pagination-icons li.disabled {
+.pagination-icons button:disabled, .pagination-icons button:disabled:hover {
     opacity: 0.5;
     cursor: no-drop;
+    color: #212529;
+    background-color: transparent;
 }
 
 .pagination-icons .prev-page {
     position: relative;
+}
+
+.pagination-icons .prev-icon {
+  
 }
 
 .pagination-icons .prev-icon:before {
@@ -379,6 +386,8 @@ h1.page-title {
 
 .pagination-icons .prev-icon, .pagination-icons .next-icon {
     padding: 10px;
+    background: transparent;
+    border: none;
 }
 
 .pagination-icons .next-page {
@@ -395,11 +404,12 @@ h1.page-title {
 }
 
 
-.pagination-icons a {
+.pagination-icons button {
     color: #f58333;
+    font-weight: 500;
 }
 
-.pagination-icons a:hover {
+.pagination-icons button:hover {
     background: #fff9f4;
     color: #f58333;
 }
