@@ -371,10 +371,6 @@ h1.page-title {
     position: relative;
 }
 
-.pagination-icons .prev-icon {
-  
-}
-
 .pagination-icons .prev-icon:before {
     content: 'prev';
     font-family: swiper-icons;
@@ -424,6 +420,7 @@ h1.page-title {
     background-color: #ffffff;
     text-transform: capitalize;
     border: 1px solid #ddd;
+    position: relative;
 }
 .filter .filter-card .card-title {
     font-size: 15px;
@@ -541,7 +538,7 @@ h1.page-title {
     color: #fff;
     text-transform: uppercase;
     background: #000;
-    margin-top: 15px;
+    margin-top: 0px;
     font-weight: 600;
     display: inline-block;
     height: 50px;
@@ -553,6 +550,27 @@ h1.page-title {
  .cfs-btn.fullwidth_btn {
   width: 100%;
  }
+.search_float_btn {
+    background: #fff;
+    position: sticky;
+    bottom: 0;
+    padding-bottom: 10px;
+}
+.search_float_btn:before {
+    content: "";
+    border-top: 1px solid #ddd;
+    width: 305px;
+    top: 0;
+    left: -20px;
+    position: absolute;
+    right: 0;
+}
+.search_float_btn .cfs-btn.fullwidth_btn {
+    background-color: #f58333;
+    color: #000;
+    letter-spacing: 0.5px;
+    margin-top: 15px;
+}
  .cs-full_width_section {
    width: 100%;
    font-size: 16px;
