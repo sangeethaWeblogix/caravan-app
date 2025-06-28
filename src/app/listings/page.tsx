@@ -8,6 +8,7 @@ import Lisiting from './Listing';
 import CaravanFilter from './CaravanFilter';
 import SkeletonListing from '../components/skelton'
  import Footer from './Footer'
+ 
 
 
 interface Product {
@@ -32,10 +33,36 @@ interface Pagination {
   total_products: number;  
  }
 
+export interface Category {
+  name: string;
+  slug: string;
+}
+
+export interface MakeOption {
+  name: string;
+  slug: string;
+}
+export interface Filters {
+  category?: string;
+  make?: string;
+  location?: string;
+  minPrice?: string;
+  maxPrice?: string;
+  minKg?: string;
+  maxKg?: string;
+  condition?: string;
+  sleeps?: string;
+}
 
 export default function ListingsPage() {
+    const [filters, setFilters] = useState<Filters>({});
  const [products, setProducts] = useState<Product[]>([]);
+ const [pageTitle, setPageTitle] = useState('');
+const [categories, setCategories] = useState<Category[]>([]);
+const [makes, setMakes] = useState<MakeOption[]>([]);
    const [isLoading, setIsLoading] = useState(false);
+   
+   
   const [pagination, setPagination] = useState<Pagination>({
     current_page: 1,
     total_pages: 1,
@@ -45,16 +72,18 @@ export default function ListingsPage() {
   });
   const [loading, setLoading] = useState(true);
 
-const loadListings = async (page = 1) => {
-    setIsLoading(true);
+  const loadListings = async (page = 1, appliedFilters: Filters = filters) => {    setIsLoading(true);
      window.scrollTo({
     top: 0,
     behavior: 'smooth', // or 'auto' if you prefer instant scroll
   });
       try {
-    const response = await fetchListings(page);
-    if (response?.data?.products && response?.pagination) {
+      const response = await fetchListings({ ...appliedFilters, page });  
+        if (response?.data?.products && response?.pagination) {
       setProducts(response.data.products);
+      setCategories(response.data.all_categories)
+setMakes(response.data.make_options)
+        setPageTitle(response.title ?? ''); // ✅ Add this
       setPagination(response.pagination); 
           setIsLoading(false);// ✅ Use actual values from backend
     } else {
@@ -71,13 +100,13 @@ const loadListings = async (page = 1) => {
   }
 };
 
+console.log("cate", categories)
 
    useEffect(() => {
     loadListings(1);
   }, []);
 
-  if (loading) return <p>Loading...</p>;
-
+ 
 const handleNextPage = () => {
   if (pagination.current_page < pagination.total_pages) {
     loadListings(pagination.current_page + 1); // ✅ That’s it
@@ -90,7 +119,10 @@ const handlePrevPage = () => {
   }
 };
 
-
+  const handleFilterChange = (newFilters: Filters) => {
+    setFilters(newFilters);
+    loadListings(1, newFilters); // Reload with filters
+  };
 
   return (
      <section className="services section-padding pb-30 style-1">
@@ -100,13 +132,16 @@ const handlePrevPage = () => {
             <Link href="/" className="hover:underline">Home</Link> &gt; <span className="font-medium text-black">Listings</span>
           </div>
             <h1 className="page-title">
+              {pageTitle}
 
-            {pagination.total_items ?? 6585} Caravans For Sale in Australia
-          </h1>
+           </h1>
                     <div className="row justify-content-center mt-8">
             <div className="col-lg-3 col-12 col-md-4">
               <div className="filter">
-              <CaravanFilter />
+<CaravanFilter categories={categories ?? []}  makes={makes ?? []}
+  products={products}
+          onFilterChange={handleFilterChange}
+          />
               </div>
               </div>
 {isLoading ? (
