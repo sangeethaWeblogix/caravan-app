@@ -500,10 +500,9 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
           placeholder="Search by keyword"
         />
       </div>
-     <button
-  type="button"
-  className="btn cfs-btn fullwidth_btn"
-  disabled={!isAnyFilterSelected}
+      <div className="search_float_btn">
+  <button type="button" className="btn cfs-btn fullwidth_btn"
+   disabled={!isAnyFilterSelected}
   onClick={() =>
     onFilterChange({
      category: selectedCategoryName ?? undefined,
@@ -513,10 +512,9 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
     sleeps: selectedSleepName || undefined
     })
   }
->
-  Search Filter
-</button>
-
+  >Search Filter</button>
+</div>
+    
 
       {/* Reset Button */}
       <button onClick={resetFilters} className="btn cfs-btn fullwidth_btn">
