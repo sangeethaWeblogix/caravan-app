@@ -7,11 +7,13 @@ export const fetchLocations = async (keyword: string) => {
   if (!res.ok) throw new Error('Location API failed');
 
   const data = await res.json();
+  console.log('🔍 API raw response:', data);
 
-  // ✅ Check if data is wrapped like { results: [...] }
-  if (Array.isArray(data)) return data;
-  if (Array.isArray(data.results)) return data.results;
+  if (Array.isArray(data.pincode_location_region_state)) {
+    return data.pincode_location_region_state;
+  }
 
-  return []; // fallback
+  return [];
 };
+
 

@@ -4,6 +4,12 @@ import React, { useState, Dispatch, SetStateAction, useEffect } from 'react'
 import { BiChevronDown } from 'react-icons/bi'
 import { fetchLocations } from '../../api/location/api'; // Adjust path if needed
 
+type LocationSuggestion = {
+  key: string;
+  uri: string;
+  address: string;
+  short_address: string;
+};
 
 
 const categories = ['Off Road', 'Hybrid', 'Pop Top', 'Luxury', 'Family', 'Touring']
@@ -30,8 +36,7 @@ const CaravanFilter = () => {
   const [isModalOpen, setIsModalOpen] = useState(false)
  const [locationInput, setLocationInput] = useState('')
 const [selectedLocation, setSelectedLocation] = useState('') // ✅ Add this
-const [locationSuggestions, setLocationSuggestions] = useState<string[]>([]) // ✅ Suggestions array
-
+const [locationSuggestions, setLocationSuggestions] = useState<LocationSuggestion[]>([]) // ✅ CORRECT
 
 const toggle = (setter: Dispatch<SetStateAction<boolean>>) => {
   setter(prev => !prev)
@@ -45,18 +50,13 @@ const toggle = (setter: Dispatch<SetStateAction<boolean>>) => {
     setSleepsOpen(false)
     setLocationInput('')
   }
-
 useEffect(() => {
   const delayDebounce = setTimeout(() => {
     if (locationInput.length >= 2) {
       fetchLocations(locationInput)
         .then((data) => {
-          console.log('API Response:', data) // ✅ Check structure
-          if (Array.isArray(data)) {
-            setLocationSuggestions(data.map((loc: any) => loc.name))
-          } else {
-            setLocationSuggestions([]) // fallback
-          }
+          console.log('✅ API Result:', data) // should show array of objects
+          setLocationSuggestions(data) // ← keep full object
         })
         .catch(console.error)
     } else {
@@ -66,6 +66,7 @@ useEffect(() => {
 
   return () => clearTimeout(delayDebounce)
 }, [locationInput])
+
 
 
 console.log("location", fetchLocations)
@@ -315,22 +316,19 @@ console.log("location", fetchLocations)
             value={locationInput}
             onChange={(e) => setLocationInput(e.target.value)}
           />
-          {locationSuggestions.length > 0 && (
-            <ul className="location-dropdown">
-              {locationSuggestions.map((loc, index) => (
-                <li
-                  key={index}
-                  onClick={() => {
-                    setSelectedLocation(loc)
-                    setLocationInput(loc)
-                    setLocationSuggestions([])
-                  }}
-                >
-                  {loc}
-                </li>
-              ))}
-            </ul>
-          )}
+        {locationSuggestions.map((loc, index) => (
+  <li
+    key={index}
+    onClick={() => {
+      setSelectedLocation(loc.short_address)
+      setLocationInput(loc.short_address)
+      setLocationSuggestions([])
+    }}
+  >
+    {loc.short_address} {/* ✅ this is a string */}
+  </li>
+))}
+
         </div>
       </div>
 
