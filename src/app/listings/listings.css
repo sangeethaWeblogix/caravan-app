@@ -1,4 +1,4 @@
-.list-container {
+ .list-container {
   padding: 15px 0px;
 }
 .search_quick_links .title {
@@ -369,6 +369,10 @@ h1.page-title {
 
 .pagination-icons .prev-page {
     position: relative;
+}
+
+.pagination-icons .prev-icon {
+  
 }
 
 .pagination-icons .prev-icon:before {
