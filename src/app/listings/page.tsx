@@ -4,9 +4,10 @@ import { fetchListings } from '../../api/listings/api'; // your custom API call
  import Link from 'next/link';
  import 'swiper/css';
 import 'swiper/css/navigation';
-import Lisiting from './listing'
+import Lisiting from './Listing';
 import CaravanFilter from './CaravanFilter';
 import SkeletonListing from '../components/skelton'
+ import Footer from './Footer'
 
 
 interface Product {
@@ -52,7 +53,6 @@ const loadListings = async (page = 1) => {
   });
       try {
     const response = await fetchListings(page);
-
     if (response?.data?.products && response?.pagination) {
       setProducts(response.data.products);
       setPagination(response.pagination); 
@@ -118,7 +118,8 @@ const handlePrevPage = () => {
           onNext={handleNextPage}
   onPrev={handlePrevPage}
         />
-      )}         
+      )}  
+       <Footer />
     <div className="col-lg-3 rightbar-stick">
                 </div>
           </div>

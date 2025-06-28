@@ -6,7 +6,7 @@ import { Navigation } from "swiper/modules";
 import "swiper/css";
 import "swiper/css/navigation";
 import "./listings.css";
-
+ 
 interface Product {
   id: number;
   name: string;

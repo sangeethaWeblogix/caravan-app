@@ -1,7 +1,10 @@
 'use client'
 
-import React, { useState, Dispatch, SetStateAction } from 'react'
+import React, { useState, Dispatch, SetStateAction, useEffect } from 'react'
 import { BiChevronDown } from 'react-icons/bi'
+import { fetchLocations } from '../../api/location/api'; // Adjust path if needed
+
+
 
 const categories = ['Off Road', 'Hybrid', 'Pop Top', 'Luxury', 'Family', 'Touring']
 const locations = [
@@ -25,7 +28,10 @@ const CaravanFilter = () => {
   const [conditionOpen, setConditionOpen] = useState(false)
   const [sleepsOpen, setSleepsOpen] = useState(false)
   const [isModalOpen, setIsModalOpen] = useState(false)
-  const [locationInput, setLocationInput] = useState('')
+ const [locationInput, setLocationInput] = useState('')
+const [selectedLocation, setSelectedLocation] = useState('') // ✅ Add this
+const [locationSuggestions, setLocationSuggestions] = useState<string[]>([]) // ✅ Suggestions array
+
 
 const toggle = (setter: Dispatch<SetStateAction<boolean>>) => {
   setter(prev => !prev)
@@ -39,6 +45,30 @@ const toggle = (setter: Dispatch<SetStateAction<boolean>>) => {
     setSleepsOpen(false)
     setLocationInput('')
   }
+
+useEffect(() => {
+  const delayDebounce = setTimeout(() => {
+    if (locationInput.length >= 2) {
+      fetchLocations(locationInput)
+        .then((data) => {
+          console.log('API Response:', data) // ✅ Check structure
+          if (Array.isArray(data)) {
+            setLocationSuggestions(data.map((loc: any) => loc.name))
+          } else {
+            setLocationSuggestions([]) // fallback
+          }
+        })
+        .catch(console.error)
+    } else {
+      setLocationSuggestions([])
+    }
+  }, 300)
+
+  return () => clearTimeout(delayDebounce)
+}, [locationInput])
+
+
+console.log("location", fetchLocations)
 
   return (
     <div className="filter-card mobile-search">
@@ -267,33 +297,59 @@ const toggle = (setter: Dispatch<SetStateAction<boolean>>) => {
       </button>
 
       {/* Modal */}
-      {isModalOpen && (
-        <div  className="cfs-modal">
-          <div className="cfs-modal-content">
-            <div className="cfs-modal-header">
-              <span onClick={() => setIsModalOpen(false)} className="cfs-close">×</span>
-            </div>
-            <div className="cfs-modal-body">
-              <div className="cfs-modal-search-section">
-                <h5 className="cfs-filter-label">Select Location</h5>
-                <input
-                  type="text"
-                  placeholder="Suburb, Postcode..."
-                  className="filter-dropdown cfs-select-input"
-                  autoComplete="off"
-                  value={locationInput}
-                  onChange={(e) => setLocationInput(e.target.value)}
-                />
-              </div>
-            </div>
-            <div className="cfs-modal-footer">
-              <button type="button" className="cfs-btn btn" onClick={() => setIsModalOpen(false)}>
-                Search
-              </button>
-            </div>
-          </div>
+     {isModalOpen && (
+  <div className="cfs-modal">
+    <div className="cfs-modal-content">
+      <div className="cfs-modal-header">
+        <span onClick={() => setIsModalOpen(false)} className="cfs-close">×</span>
+      </div>
+
+      <div className="cfs-modal-body">
+        <div className="cfs-modal-search-section">
+          <h5 className="cfs-filter-label">Select Location</h5>
+          <input
+            type="text"
+            placeholder="Suburb, Postcode..."
+            className="filter-dropdown cfs-select-input"
+            autoComplete="off"
+            value={locationInput}
+            onChange={(e) => setLocationInput(e.target.value)}
+          />
+          {locationSuggestions.length > 0 && (
+            <ul className="location-dropdown">
+              {locationSuggestions.map((loc, index) => (
+                <li
+                  key={index}
+                  onClick={() => {
+                    setSelectedLocation(loc)
+                    setLocationInput(loc)
+                    setLocationSuggestions([])
+                  }}
+                >
+                  {loc}
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
-      )}
+      </div>
+
+      <div className="cfs-modal-footer">
+        <button
+          type="button"
+          className="cfs-btn btn"
+          onClick={() => {
+            console.log('Selected Location:', selectedLocation)
+            setIsModalOpen(false)
+          }}
+        >
+          Search
+        </button>
+      </div>
+    </div>
+  </div>
+)}
+
     </div>
   )
 }
