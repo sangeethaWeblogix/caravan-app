@@ -3,6 +3,8 @@
 import { fetchLocations } from "@/api/location/api";
 import React, { useState, Dispatch, SetStateAction, useEffect } from "react";
 import { BiChevronDown } from "react-icons/bi";
+import { useRouter } from "next/navigation";
+
 
 type LocationSuggestion = {
   key: string;
@@ -62,6 +64,8 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
   onFilterChange,
   products,
 }) => {
+  const router = useRouter();
+
   const [categoryOpen, setCategoryOpen] = useState(false);
   const [locationOpen, setLocationOpen] = useState(false);
   const [makeOpen, setMakeOpen] = useState(false);
@@ -503,15 +507,30 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
       <div className="search_float_btn">
   <button type="button" className="btn cfs-btn fullwidth_btn"
    disabled={!isAnyFilterSelected}
-  onClick={() =>
-    onFilterChange({
-     category: selectedCategoryName ?? undefined,
+  onClick={() => {
+  const filters: Filters = {
+    category: selectedCategoryName ?? undefined,
     make: selectedMakeName ?? undefined,
     location: selectedLocation || undefined,
     condition: selectedConditionName ?? undefined,
-    sleeps: selectedSleepName || undefined
-    })
-  }
+    sleeps: selectedSleepName || undefined,
+  };
+
+  onFilterChange(filters);
+
+  const slug = selectedCategory ? selectedCategory : "all";
+  const queryParams = new URLSearchParams();
+
+  if (selectedMake) queryParams.append("make", selectedMake);
+  if (selectedLocation) queryParams.append("location", selectedLocation);
+  if (selectedConditionName) queryParams.append("condition", selectedConditionName);
+  if (selectedSleepName) queryParams.append("sleeps", selectedSleepName);
+
+  const finalUrl = `/listings/${slug}?${queryParams.toString()}`;
+
+  router.push(finalUrl);
+}}
+
   >Search Filter</button>
 </div>
     
