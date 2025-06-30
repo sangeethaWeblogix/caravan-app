@@ -85,6 +85,7 @@ const FeaturedProductsSlider = () => {
               <div className="product-card">
                 <div className="img">
                   <Image src={product.image} alt={product.title} width={100} height={100}  />
+                  <Image src={product.image} alt={product.title} height={100} width={100} />
                 </div>
                 <div className="product_de">
                   <div className="info">
