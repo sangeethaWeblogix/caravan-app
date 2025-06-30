@@ -94,7 +94,7 @@ export default function ListingContent({
                     className="mySwiper"
                   >
                     <SwiperSlide>
-                      <div className="swiper-zoom-container">
+                      
                       <div className="swiper-zoom-container">
 
                       <Image

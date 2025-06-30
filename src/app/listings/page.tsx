@@ -99,7 +99,7 @@ const handlePrevPage = () => {
  <div className="text-sm text-gray-600 header">
             <Link href="/" className="hover:underline">Home</Link> &gt; <span className="font-medium text-black">Listings</span>
           </div>
-            <h1 className="page-title">
+            
             <h1 className="page-title">
 
             {pagination.total_items ?? 6585} Caravans For Sale in Australia
