@@ -4,8 +4,8 @@ const nextConfig: NextConfig = {
   images: {
     domains: [
       'www.dev.caravansforsale.com.au',
-      'www.caravansforsale.com.au'
-    ],
+       'www.caravansforsale.com.au', // ✅ add this line
+     ],
   },
 };
 

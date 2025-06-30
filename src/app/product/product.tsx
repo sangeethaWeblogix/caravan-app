@@ -8,7 +8,7 @@ import Link from 'next/link';
 export default function CaravanDetail() {
   const [activeTab, setActiveTab] = useState('specifications');
 
-  const handleBackClick = (e) => {
+  const handleBackClick = (e:any) => {
     e.preventDefault();
     window.history.back();
   };
