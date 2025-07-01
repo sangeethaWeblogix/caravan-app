@@ -5,7 +5,7 @@ import { Swiper, SwiperSlide } from "swiper/react";
 import { Navigation } from "swiper/modules";
 import "swiper/css";
 import "swiper/css/navigation";
-import "./listings.css";
+import "../listings/listings.css";
  
 interface Product {
   id: number;
@@ -80,7 +80,7 @@ export default function ListingContent({
         </div>
       </div>
       <div className="dealers-section product-type">
-        {products.map((product) => (
+        {products?.map((product) => (
           <article
             className="vehicleSearch html general null pro"
             key={product.id}

@@ -39,7 +39,7 @@ export const fetchListings = async (filters: Filters = {}) => {
   if (maxKg) params.append('max_kg', maxKg);
   if (condition) params.append('condition', condition);
   if (sleeps) params.append('sleeps', sleeps);
-
+  console.log("🔁 Fetching page", page, "with filters", filters); 
   const res = await fetch(`${API_BASE}/list?${params.toString()}`);
 
   if (!res.ok) throw new Error('API failed');
@@ -48,3 +48,5 @@ export const fetchListings = async (filters: Filters = {}) => {
   console.log('data', data);
   return data;
 };
+
+

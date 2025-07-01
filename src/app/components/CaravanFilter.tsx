@@ -1,10 +1,10 @@
-"use client";
+ "use client";
 
 import { fetchLocations } from "@/api/location/api";
 import React, { useState, Dispatch, SetStateAction, useEffect } from "react";
 import { BiChevronDown } from "react-icons/bi";
-import { useRouter } from "next/navigation";
-
+import { usePathname, useRouter } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 
 type LocationSuggestion = {
   key: string;
@@ -18,6 +18,10 @@ interface Category {
   slug: string;
 }
 
+interface State {
+   value: string;
+  name: string;
+}
 interface Make {
   name: string;
   slug: string;
@@ -32,45 +36,45 @@ export interface Filters {
   maxKg?: string;
   condition?: string;
   sleeps?: string;
+  states?: string;
 }
 
 
 interface CaravanFilterProps {
   categories: Category[];
   makes: Make[];
-  products: Product[];
-    onFilterChange: (filters: Filters) => void;
+  year: string[] | number[];
+price: string | string[] | number[];
+  length: string[] | number[];
+  sleep: string[] | number[];
+  atm: string | string[] | number[];
+  states: State[]
+  onFilterChange: (filters: Filters) => void;
 }
 
-interface Product {
-  id: number;
-  name: string;
-  length: string;
-  kg: string;
-  regular_price: string;
-  sale_price?: string;
-  price_difference?: string;
-  image: string;
-  link: string;
-  location?: string;
-  categories?: string[];
-  condition?: string;
-  people?: string;
-}
+
+
+
 
 const CaravanFilter: React.FC<CaravanFilterProps> = ({
   categories,
   makes,
   onFilterChange,
-  products,
+   atm,
+  length,
+  price,
+  year,
+  sleep,
+  states 
 }) => {
   const router = useRouter();
-
+  const pathname = usePathname();
+ const searchParams = useSearchParams();
   const [categoryOpen, setCategoryOpen] = useState(false);
   const [locationOpen, setLocationOpen] = useState(false);
   const [makeOpen, setMakeOpen] = useState(false);
-  const [moreMakeShown, setMoreMakeShown] = useState(false);
-  const [conditionOpen, setConditionOpen] = useState(false);
+
+   const [conditionOpen, setConditionOpen] = useState(false);
   const [sleepsOpen, setSleepsOpen] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [locationInput, setLocationInput] = useState("");
@@ -85,7 +89,23 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
   const [selectedConditionName, setSelectedConditionName] = useState<
     string | null
   >(null);
- 
+   const [selectedLocationName, setSelectedLocationName] = useState<string | null>(null);
+ const [stateOpen, setStateOpen] = useState(false);
+const [selectedState, setSelectedState] = useState<string | null>(null);
+const [selectedStateName, setSelectedStateName] = useState<string | null>(null);
+
+const atmValues = Array.isArray(atm)
+  ? atm.map(Number)
+  : typeof atm === 'string'
+  ? atm.split(',').map(Number)
+  : [];
+const priceOptions = Array.isArray(price)
+  ? price.map((p) => String(p))
+  : typeof price === "string"
+  ? price.split(",").map((p) => p.trim())
+  : [];
+const conditionDatas = ['Near New', 'New', 'Used']
+
   const [locationSuggestions, setLocationSuggestions] = useState<
     LocationSuggestion[]
   >([]);
@@ -99,23 +119,76 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
   selectedMake ||
   selectedLocation ||
   selectedConditionName ||
-  selectedSleepName
+  selectedSleepName ||
+  selectedState
 );
 
+ useEffect(() => {
+    const pathParts = pathname.split("/").filter(Boolean);
+    const rawCategory = pathParts[1];
+    
+    const categorySlug = rawCategory?.replace(/-category$/, ""); // ✅ becomes "family"
+ const categoryMatch = categories.find(cat => cat.slug === categorySlug);
+     if (categoryMatch) {
+       setSelectedCategory(categoryMatch.slug);
+       setSelectedCategoryName(categoryMatch.name);
+     }
+    const rawState = pathParts[2];
 
- const handleSearch = () => {
-  if (!isAnyFilterSelected) return;
 
-  const filters = {
-    category: selectedCategoryName,
-    make: selectedMakeName,
-    location: selectedLocation,
-    condition: selectedConditionName,
-    sleeps: selectedSleepName
+    const stateMatch = states.find(
+      (s) => rawState === `${s.name.toLowerCase().replace(/\s+/g, "-")}-state`
+    );
+    if (stateMatch) {
+      setSelectedState(stateMatch.value);
+      setSelectedStateName(stateMatch.name);
+    }
+
+    const make = searchParams.get("make");
+    if (make) {
+      setSelectedMake(make);
+      const makeMatch = makes.find((m) => m.slug === make);
+      if (makeMatch) setSelectedMakeName(makeMatch.name);
+    }
+
+    const condition = searchParams.get("condition");
+    if (condition) setSelectedConditionName(condition);
+
+    const sleeps = searchParams.get("sleeps");
+    if (sleeps) setSelectedSleepName(sleeps);
+  }, [pathname, categories, makes, states, searchParams]);
+
+ 
+
+const handleSearch = () => {
+  const filters: Filters = {
+    category: selectedCategory ?? undefined,
+    make: selectedMake ?? undefined,
+    location: selectedLocation || undefined,
+    condition: selectedConditionName ?? undefined,
+    sleeps: selectedSleepName || undefined,
+    states: selectedState ?? undefined,
   };
 
-  console.log('🔍 Applied Filters:', filters);
+  onFilterChange(filters); // 🟡 Trigger listing update first
+
+  const categorySlugForURL = selectedCategory
+    ? `${selectedCategory}-category`
+    : "all";
+
+  const stateSlug = selectedStateName
+    ? selectedStateName.toLowerCase().replace(/\s+/g, "-") + "-state"
+    : "";
+
+  const finalUrl = `/listings/${categorySlugForURL}/${stateSlug}`;
+
+  // ✅ Slight delay to let filter update trigger before navigation
+  setTimeout(() => {
+    router.push(finalUrl);
+  }, 50);
 };
+
+ 
 
 
   const resetFilters = () => {
@@ -193,44 +266,42 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
 
       {/* Location Accordion */}
 
-      <div className="cs-full_width_section">
-        <div
-          className="filter-accordion"
-          onClick={() => toggle(setLocationOpen)}
-        >
-          <h5 className="cfs-filter-label">
-            {" "}
-            Location
-            {selectedLocation && (
-              <span className="filter-accordion-items">
-                : {selectedLocation}
-              </span>
-            )}
-          </h5>
-          <BiChevronDown />
-        </div>
+      {/* State Filter Accordion */}
+<div className="cs-full_width_section">
+  <div className="filter-accordion" onClick={() => toggle(setStateOpen)}>
+    <h5 className="cfs-filter-label">
+      Location
+      {selectedStateName && (
+        <span className="filter-accordion-items">: {selectedStateName}</span>
+      )}
+    </h5>
+    <BiChevronDown />
+  </div>
 
-        {locationOpen && (
-          <div className="filter-accordion-items">
-            {products.map((product) => (
-              <div
-                key={product.id}
-                className={`filter-accordion-item ${
-                  selectedLocation === product.location ? "selected" : ""
-                }`}
-                onClick={() => {
-                  if (product.location) {
-                    setSelectedLocation(product.location);
-                    setLocationOpen(false);
-                  }
-                }}
-              >
-                {product.location}
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
+  {stateOpen && (
+    <div className="filter-accordion-items">
+      {Array.isArray(states) &&
+  states.map((state) => (
+    <div
+      key={state.value}
+      className={`filter-accordion-item ${
+        selectedState === state.value ? "selected" : ""
+      }`}
+      onClick={() => {
+        setSelectedState(state.value);
+        setSelectedStateName(state.name);
+        setStateOpen(false);
+      }}
+    >
+      {state.name}
+    </div>
+))}
+
+    </div>
+  )}
+</div>
+
+
       {/* Suburb / Postcode */}
       <div className="cs-full_width_section">
         <h5 className="cfs-filter-label">Suburb / Postcode</h5>
@@ -290,26 +361,18 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
             <h6 className="cfs-filter-label-sub">From</h6>
             <select className="cfs-select-input">
               <option value="">Min</option>
-              {products
-                .filter((product) => product.kg?.trim() !== "")
-                .map((product) => (
-                  <option key={product.id} value={product.kg}>
-                    {product.kg}
-                  </option>
-                ))}
+              {atmValues.map((val) => (
+          <option key={val} value={val}>{val}</option>
+        ))}
             </select>
           </div>
           <div className="col-6">
             <h6 className="cfs-filter-label-sub">To</h6>
             <select className="cfs-select-input">
               <option value="">Min</option>
-              {products
-                .filter((product) => product.kg?.trim() !== "")
-                .map((product) => (
-                  <option key={product.id} value={product.kg}>
-                    {product.kg}
-                  </option>
-                ))}
+             {atmValues.map((val) => (
+          <option key={val} value={val}>{val}</option>
+        ))}
             </select>
           </div>
         </div>
@@ -323,31 +386,24 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
             <h6 className="cfs-filter-label-sub">From</h6>
             <select className="cfs-select-input">
               <option value="">Min</option>
-              {products
-                .filter((product) => product.regular_price?.trim() !== "")
-                .map((product) => (
-                  <option key={product.id} value={product.regular_price}>
-                    {product.regular_price}
-                  </option>
-                ))}
+              {priceOptions.map((value, idx) => (
+          <option key={idx} value={value}>{value}</option>
+        ))}
             </select>
           </div>
           <div className="col-6">
             <h6 className="cfs-filter-label-sub">To</h6>
             <select className="cfs-select-input">
               <option value="">Max</option>
-              {products
-                .filter((product) => product.regular_price?.trim() !== "")
-                .map((product) => (
-                  <option key={product.id} value={product.regular_price}>
-                    {product.regular_price}
-                  </option>
-                ))}
+              {priceOptions.map((value, idx) => (
+          <option key={idx} value={value}>{value}</option>
+        ))}
             </select>
           </div>
         </div>
       </div>
-
+{/* 8883944599
+9524163042 */}
       {/* Condition Accordion */}
       <div className="cs-full_width_section">
         <div
@@ -368,24 +424,21 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
 
         {conditionOpen && (
           <div className="filter-accordion-items">
-            {products
-              .map((p) => p.condition)
-              .filter((c): c is string => !!c)
-              .filter((value, index, self) => self.indexOf(value) === index)
-              .map((condition, index) => (
-                <div
-                  key={index}
-                  className={`filter-accordion-item ${
-                    selectedConditionName === condition ? "selected" : ""
-                  }`}
-                  onClick={() => {
-                    setSelectedConditionName(condition);
-                    setConditionOpen(false);
-                  }}
-                >
-                  {condition}
-                </div>
-              ))}
+           {conditionDatas.map((condition, index) => (
+  <div
+    key={index}
+    className={`filter-accordion-item ${
+      selectedConditionName === condition ? "selected" : ""
+    }`}
+    onClick={() => {
+      setSelectedConditionName(condition);
+      setConditionOpen(false);
+    }}
+  >
+    {condition}
+  </div>
+))}
+
           </div>
         )}
       </div>
@@ -406,61 +459,48 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
 
         {sleepsOpen && (
           <div className="filter-accordion-items">
-            {products
-              .map((p) => p.people)
-              .filter((c): c is string => !!c)
-              .filter((value, index, self) => self.indexOf(value) === index)
-              .map((sleep, index) => (
-                <div
-                  key={index}
-                  className={`filter-accordion-item ${
-                    selectedSleepName === sleep ? "selected" : ""
-                  }`}
-                  onClick={() => {
-                    setSelectedSleepName(sleep);
-                    setSleepsOpen(false);
-                  }}
-                >
-                  {sleep}
-                </div>
-              ))}
+            {sleep.map((sleep, index) => (
+  <div
+    key={index}
+    className={`filter-accordion-item ${
+      selectedConditionName === sleep ? "selected" : ""
+    }`}
+    onClick={() => {
+  setSelectedSleepName(String(sleep));   
+     setConditionOpen(false);
+    }}
+  >
+    {sleep}
+  </div>
+))}
           </div>
         )}
       </div>
 
       {/* Year Range */}
-      {/* <div className="cs-full_width_section">
-  <h5 className="cfs-filter-label">Length</h5>
-  <div className="row">
-    <div className="col-6">
-      <h6 className="cfs-filter-label-sub">From</h6>
-     <select className="cfs-select-input">
-  <option value="">Min</option>
-  {products
-    .filter(product => product.length?.trim() !== '')  
-    .map(product => (
-      <option key={product.id} value={product.length}>
-        {product.length}
-      </option>
-  ))}
-</select>
-
-    </div>
-    <div className="col-6">
-      <h6 className="cfs-filter-label-sub">To</h6>
-     <select className="cfs-select-input">
-  <option value="">Min</option>
-  {products
-    .filter(product => product.length?.trim() !== '')  
-    .map(product => (
-      <option key={product.id} value={product.length}>
-        {product.length}
-      </option>
-  ))}
-</select>
-    </div>
-  </div>
-</div> */}
+    <div className="cs-full_width_section">
+        <h5 className="cfs-filter-label">Price</h5>
+        <div className="row">
+          <div className="col-6">
+            <h6 className="cfs-filter-label-sub">From</h6>
+            <select className="cfs-select-input">
+              <option value="">Min</option>
+              {year.map((value, idx) => (
+          <option key={idx} value={value}>{value}</option>
+        ))}
+            </select>
+          </div>
+          <div className="col-6">
+            <h6 className="cfs-filter-label-sub">To</h6>
+            <select className="cfs-select-input">
+              <option value="">Max</option>
+              {year.map((value, idx) => (
+          <option key={idx} value={value}>{value}</option>
+        ))}
+            </select>
+          </div>
+        </div>
+      </div>
 
       {/* Length Range */}
       <div className="cs-full_width_section">
@@ -470,26 +510,18 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
             <h6 className="cfs-filter-label-sub">From</h6>
             <select className="cfs-select-input">
               <option value="">Min</option>
-              {products
-                .filter((product) => product.length?.trim() !== "")
-                .map((product) => (
-                  <option key={product.id} value={product.length}>
-                    {product.length}
-                  </option>
-                ))}
+              {length.map((value, idx) => (
+          <option key={idx} value={value}>{value} ft</option>
+        ))}
             </select>
           </div>
           <div className="col-6">
             <h6 className="cfs-filter-label-sub">To</h6>
             <select className="cfs-select-input">
               <option value="">Min</option>
-              {products
-                .filter((product) => product.length?.trim() !== "")
-                .map((product) => (
-                  <option key={product.id} value={product.length}>
-                    {product.length}
-                  </option>
-                ))}
+               {length.map((value, idx) => (
+          <option key={idx} value={value}>{value} ft</option>
+        ))}
             </select>
           </div>
         </div>
@@ -505,33 +537,15 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
         />
       </div>
       <div className="search_float_btn">
-  <button type="button" className="btn cfs-btn fullwidth_btn"
-   disabled={!isAnyFilterSelected}
-  onClick={() => {
-  const filters: Filters = {
-    category: selectedCategoryName ?? undefined,
-    make: selectedMakeName ?? undefined,
-    location: selectedLocation || undefined,
-    condition: selectedConditionName ?? undefined,
-    sleeps: selectedSleepName || undefined,
-  };
+   <button
+          type="button"
+          className="btn cfs-btn fullwidth_btn"
+          disabled={!isAnyFilterSelected}
+          onClick={handleSearch}
+        >
+          Search Filter
+        </button>
 
-  onFilterChange(filters);
-
-  const slug = selectedCategory ? selectedCategory : "all";
-  const queryParams = new URLSearchParams();
-
-  if (selectedMake) queryParams.append("make", selectedMake);
-  if (selectedLocation) queryParams.append("location", selectedLocation);
-  if (selectedConditionName) queryParams.append("condition", selectedConditionName);
-  if (selectedSleepName) queryParams.append("sleeps", selectedSleepName);
-
-  const finalUrl = `/listings/${slug}?${queryParams.toString()}`;
-
-  router.push(finalUrl);
-}}
-
-  >Search Filter</button>
 </div>
     
 
@@ -598,3 +612,4 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
 };
 
 export default CaravanFilter;
+ 
