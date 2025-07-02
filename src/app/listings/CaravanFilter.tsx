@@ -260,7 +260,9 @@ const toggle = (setter: Dispatch<SetStateAction<boolean>>) => {
     placeholder="Search by keyword"
   />
 </div>
-
+<div className="search_float_btn">
+  <button type="button" className="btn cfs-btn fullwidth_btn">Search</button>
+</div>
       {/* Reset Button */}
       <button onClick={resetFilters} className="btn cfs-btn fullwidth_btn">
         Reset Filters
