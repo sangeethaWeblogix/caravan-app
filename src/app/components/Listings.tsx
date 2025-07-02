@@ -1,6 +1,6 @@
  "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { Suspense, useEffect, useRef, useState } from "react";
 import { fetchListings } from "../../api/listings/api";
 import Listing from "../../app/components/LisitingContent";
 import CaravanFilter from "../../app/components/CaravanFilter";
@@ -110,13 +110,15 @@ const [filters, setFilters] = useState<Filters>(initialFilters);
     setHasSearched(true);
     loadListings(1, defaultFilters);
   }
+      
+// eslint-disable-next-line react-hooks/exhaustive-deps
 }, [category, location]);
 
 
   // First fetch on load
   useEffect(() => {
     setHasSearched(true);
-   }, []);
+   }, [hasSearched]);
 
   // Keep filtersRef up to date
   useEffect(() => {
@@ -128,43 +130,51 @@ const [filters, setFilters] = useState<Filters>(initialFilters);
     if (hasSearched) {
       loadListings(pagination.current_page, filtersRef.current);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pagination.current_page]);
 
 
 
-  const loadListings = async (page = 1, appliedFilters: Filters = filters) => {
-    setIsLoading(true);
-    window.scrollTo({ top: 0, behavior: "smooth" });
-    try {
-      const response = await fetchListings({ ...appliedFilters, page });
-      if (response?.data?.products && response?.pagination) {
-        setProducts(response.data.products);
-        setCategories(response.data.all_categories);
-        setMakes(response.data.make_options);
-        setAtmOptions(response.data.atm ?? []);
-        setPriceOptions(response.data.price ?? []);
-        setYearOptions(response.data.years ?? []);
-        setLengthOptions(response.data.length ?? []);
-        setSleepOptions(response.data.sleep ?? []);
-        setStateOptions(response.data.states ?? []);
-        setPageTitle(response.title ?? "");
-        setPagination(response.pagination);
-      } else {
-        setProducts([]);
-        setPagination({
-          current_page: 1,
-          total_pages: 1,
-          per_page: 12,
-          total_products: 0,
-        });
-      }
-    } catch (error) {
-      console.error("Failed to fetch listings:", error);
+ const loadListings = async (page = 1, appliedFilters: Filters = filters) => {
+  setIsLoading(true);
+  window.scrollTo({ top: 0, behavior: "smooth" });
+
+  try {
+    const response = await fetchListings({
+      ...appliedFilters,
+      page,
+      state: appliedFilters.location,  
+      location: undefined,            
+    });
+    if (response?.data?.products && response?.pagination) {
+      setProducts(response.data.products);
+      setCategories(response.data.all_categories);
+      setMakes(response.data.make_options);
+      setAtmOptions(response.data.atm ?? []);
+      setPriceOptions(response.data.price ?? []);
+      setYearOptions(response.data.years ?? []);
+      setLengthOptions(response.data.length ?? []);
+      setSleepOptions(response.data.sleep ?? []);
+      setStateOptions(response.data.states ?? []);
+      setPageTitle(response.title ?? "");
+      setPagination(response.pagination);
+    } else {
       setProducts([]);
-    } finally {
-      setIsLoading(false);
+      setPagination({
+        current_page: 1,
+        total_pages: 1,
+        per_page: 12,
+        total_products: 0,
+      });
     }
-  };
+  } catch (error) {
+    console.error("❌ Failed to fetch listings:", error);
+    setProducts([]);
+  } finally {
+    setIsLoading(false);
+  }
+};
+
 
   const handleNextPage = () => {
     if (pagination.current_page < pagination.total_pages) {
@@ -210,6 +220,7 @@ const [filters, setFilters] = useState<Filters>(initialFilters);
           <div className="row justify-content-center mt-8">
             <div className="col-lg-3 col-12 col-md-4">
               <div className="filter">
+                    <Suspense fallback={<div>Loading filters...</div>}>
                 <CaravanFilter
                   categories={categories}
                   makes={makes}
@@ -221,6 +232,7 @@ const [filters, setFilters] = useState<Filters>(initialFilters);
                   states={stateOptions}
                   onFilterChange={handleFilterChange}
                 />
+                    </Suspense>
               </div>
             </div>
 
@@ -234,7 +246,6 @@ const [filters, setFilters] = useState<Filters>(initialFilters);
                 onPrev={handlePrevPage}
               />
             )}
-
             <Footer />
             <div className="col-lg-3 rightbar-stick"></div>
           </div>

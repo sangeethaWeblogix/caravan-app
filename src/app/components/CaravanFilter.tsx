@@ -68,8 +68,7 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
   const pathname = usePathname();
  const searchParams = useSearchParams();
   const [categoryOpen, setCategoryOpen] = useState(false);
-  const [locationOpen, setLocationOpen] = useState(false);
-  const [makeOpen, setMakeOpen] = useState(false);
+   const [makeOpen, setMakeOpen] = useState(false);
   const [filters, setFilters] = useState<Filters>({});
    const [conditionOpen, setConditionOpen] = useState(false);
   const [sleepsOpen, setSleepsOpen] = useState(false);
@@ -86,8 +85,7 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
   const [selectedConditionName, setSelectedConditionName] = useState<
     string | null
   >(null);
-   const [selectedLocationName, setSelectedLocationName] = useState<string | null>(null);
- const [stateOpen, setStateOpen] = useState(false);
+  const [stateOpen, setStateOpen] = useState(false);
 const [selectedState, setSelectedState] = useState<string | null>(null);
 const [selectedStateName, setSelectedStateName] = useState<string | null>(null);
 
@@ -103,6 +101,7 @@ const priceOptions = Array.isArray(price)
   : [];
 const conditionDatas = ['Near New', 'New', 'Used']
 
+console.log("filters", filters)
   const [locationSuggestions, setLocationSuggestions] = useState<
     LocationSuggestion[]
   >([]);
@@ -161,47 +160,7 @@ const conditionDatas = ['Near New', 'New', 'Used']
 
  
 
-// const handleSearch = () => {
-//   const filters: Filters = {
-//     category: selectedCategory ?? undefined,
-//     make: selectedMake ?? undefined,
-//     location: selectedLocation || undefined,
-//     condition: selectedConditionName ?? undefined,
-//     sleeps: selectedSleepName || undefined,
-//     states: selectedState ?? undefined,
-//   };
 
-//   onFilterChange(filters); // ✅ Apply filters immediately without fetch
-
-//   // Update URL for SEO but don't refetch
-//   const query = new URLSearchParams();
-//   if (filters.make) query.append("make", filters.make);
-//   if (filters.condition) query.append("condition", filters.condition);
-//   if (filters.sleeps) query.append("sleeps", filters.sleeps);
-//   if (filters.location) query.append("location", filters.location);
-
-//   const categorySlug = selectedCategory ? `${selectedCategory}-category` : '';
-//   const stateSlug = selectedStateName
-//     ? selectedStateName.toLowerCase().replace(/\s+/g, "-") + "-state"
-//     : '';
-
-//   const slugPath = [categorySlug, stateSlug].filter(Boolean).join("/");
-
-//   const finalUrl = `/listings/${slugPath}?${query.toString()}`;
-
-//   // ✅ Update URL only, don’t reload or fetch
-//   router.replace(finalUrl); // << NOTE: replace instead of push
-// };
-
-const buildFilters = (): Filters => {
-  return {
-    category: selectedCategory || undefined,
-    make: selectedMake || undefined,
-    location: selectedState || undefined,
-    condition: selectedConditionName || undefined,
-    sleeps: selectedSleepName || undefined,
-  };
-};
 
 
 const handleSearch = () => {
@@ -213,8 +172,7 @@ const handleSearch = () => {
     sleeps: selectedSleepName || undefined,
   };
 
-  console.log("🔍 Sending filters to ListingsPage:", newFilters);
-
+ 
   // ✅ Send to ListingsPage
   onFilterChange(newFilters);
 
@@ -250,8 +208,7 @@ const handleSearch = () => {
       if (locationInput.length >= 2) {
         fetchLocations(locationInput)
           .then((data) => {
-            console.log("✅ API Result:", data); // should show array of objects
-            setLocationSuggestions(data); // ← keep full object
+             setLocationSuggestions(data); // ← keep full object
           })
           .catch(console.error);
       } else {

@@ -1,12 +1,11 @@
  'use client';
 
-import { usePathname, useSearchParams } from 'next/navigation';
+import { usePathname } from 'next/navigation';
 import ListingsPage from '@/app/components/Listings';
 
 const Listings = () => {
   const pathname = usePathname();
-  const searchParams = useSearchParams();
-
+ 
   // Parse slug from pathname: /listings/[category-slug]/[state-slug]
   const pathParts = pathname?.split('/').filter(Boolean);
   const categorySlug = pathParts?.[1];

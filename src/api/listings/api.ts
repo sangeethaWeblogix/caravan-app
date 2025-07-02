@@ -11,6 +11,7 @@ interface Filters {
   maxKg?: string;
   condition?: string;
   sleeps?: string;
+  state?: string;
 }
 
 export const fetchListings = async (filters: Filters = {}) => {
@@ -24,7 +25,8 @@ export const fetchListings = async (filters: Filters = {}) => {
     minKg,
     maxKg,
     condition,
-    sleeps
+    sleeps,
+    state
   } = filters;
 
   const params = new URLSearchParams();
@@ -32,6 +34,7 @@ export const fetchListings = async (filters: Filters = {}) => {
 
   if (category) params.append('category', category);
   if (make) params.append('make', make);
+    if (state) params.append("state", state);
   if (location) params.append('location', location);
   if (minPrice) params.append('min_price', minPrice);
   if (maxPrice) params.append('max_price', maxPrice);
@@ -39,14 +42,12 @@ export const fetchListings = async (filters: Filters = {}) => {
   if (maxKg) params.append('max_kg', maxKg);
   if (condition) params.append('condition', condition);
   if (sleeps) params.append('sleeps', sleeps);
-   console.log("🔁 Fetching page", page, "with filters", filters); 
-  const res = await fetch(`${API_BASE}/list?${params.toString()}`);
+   const res = await fetch(`${API_BASE}/list?${params.toString()}`);
 
   if (!res.ok) throw new Error('API failed');
 
   const data = await res.json();
-  console.log('data', data);
-  return data;
+   return data;
 };
 
 
