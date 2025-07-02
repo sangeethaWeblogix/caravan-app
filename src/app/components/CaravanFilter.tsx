@@ -53,9 +53,6 @@ price: string | string[] | number[];
 }
 
 
-
-
-
 const CaravanFilter: React.FC<CaravanFilterProps> = ({
   categories,
   makes,
@@ -73,7 +70,7 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
   const [categoryOpen, setCategoryOpen] = useState(false);
   const [locationOpen, setLocationOpen] = useState(false);
   const [makeOpen, setMakeOpen] = useState(false);
-
+  const [filters, setFilters] = useState<Filters>({});
    const [conditionOpen, setConditionOpen] = useState(false);
   const [sleepsOpen, setSleepsOpen] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -114,6 +111,12 @@ const conditionDatas = ['Near New', 'New', 'Used']
     setter((prev) => !prev);
   };
 
+  useEffect(() => {
+  if (selectedCategory) {
+    setFilters((prev) => ({ ...prev, category: selectedCategory }));
+  }
+}, [selectedCategory]);
+
   const isAnyFilterSelected = Boolean(
   selectedCategory ||
   selectedMake ||
@@ -134,8 +137,6 @@ const conditionDatas = ['Near New', 'New', 'Used']
        setSelectedCategoryName(categoryMatch.name);
      }
     const rawState = pathParts[2];
-
-
     const stateMatch = states.find(
       (s) => rawState === `${s.name.toLowerCase().replace(/\s+/g, "-")}-state`
     );
@@ -160,35 +161,76 @@ const conditionDatas = ['Near New', 'New', 'Used']
 
  
 
-const handleSearch = () => {
-  const filters: Filters = {
-    category: selectedCategory ?? undefined,
-    make: selectedMake ?? undefined,
-    location: selectedLocation || undefined,
-    condition: selectedConditionName ?? undefined,
+// const handleSearch = () => {
+//   const filters: Filters = {
+//     category: selectedCategory ?? undefined,
+//     make: selectedMake ?? undefined,
+//     location: selectedLocation || undefined,
+//     condition: selectedConditionName ?? undefined,
+//     sleeps: selectedSleepName || undefined,
+//     states: selectedState ?? undefined,
+//   };
+
+//   onFilterChange(filters); // ✅ Apply filters immediately without fetch
+
+//   // Update URL for SEO but don't refetch
+//   const query = new URLSearchParams();
+//   if (filters.make) query.append("make", filters.make);
+//   if (filters.condition) query.append("condition", filters.condition);
+//   if (filters.sleeps) query.append("sleeps", filters.sleeps);
+//   if (filters.location) query.append("location", filters.location);
+
+//   const categorySlug = selectedCategory ? `${selectedCategory}-category` : '';
+//   const stateSlug = selectedStateName
+//     ? selectedStateName.toLowerCase().replace(/\s+/g, "-") + "-state"
+//     : '';
+
+//   const slugPath = [categorySlug, stateSlug].filter(Boolean).join("/");
+
+//   const finalUrl = `/listings/${slugPath}?${query.toString()}`;
+
+//   // ✅ Update URL only, don’t reload or fetch
+//   router.replace(finalUrl); // << NOTE: replace instead of push
+// };
+
+const buildFilters = (): Filters => {
+  return {
+    category: selectedCategory || undefined,
+    make: selectedMake || undefined,
+    location: selectedState || undefined,
+    condition: selectedConditionName || undefined,
     sleeps: selectedSleepName || undefined,
-    states: selectedState ?? undefined,
   };
-
-  onFilterChange(filters); // 🟡 Trigger listing update first
-
-  const categorySlugForURL = selectedCategory
-    ? `${selectedCategory}-category`
-    : "all";
-
-  const stateSlug = selectedStateName
-    ? selectedStateName.toLowerCase().replace(/\s+/g, "-") + "-state"
-    : "";
-
-  const finalUrl = `/listings/${categorySlugForURL}/${stateSlug}`;
-
-  // ✅ Slight delay to let filter update trigger before navigation
-  setTimeout(() => {
-    router.push(finalUrl);
-  }, 50);
 };
 
- 
+
+const handleSearch = () => {
+  const newFilters: Filters = {
+    category: selectedCategory || undefined,
+    make: selectedMake || undefined,
+    location: selectedState || undefined,
+    condition: selectedConditionName || undefined,
+    sleeps: selectedSleepName || undefined,
+  };
+
+  console.log("🔍 Sending filters to ListingsPage:", newFilters);
+
+  // ✅ Send to ListingsPage
+  onFilterChange(newFilters);
+
+  // ✅ Build URL
+  const slugParts: string[] = [];
+  if (newFilters.category) slugParts.push(`${newFilters.category}-category`);
+  if (newFilters.location) {
+    const stateSlug = newFilters.location.toLowerCase().replace(/\s+/g, '-') + '-state';
+    slugParts.push(stateSlug);
+  }
+
+  const url = `/listings/${slugParts.join('/')}`;
+  router.push(url);
+};
+
+
 
 
   const resetFilters = () => {
@@ -202,6 +244,7 @@ const handleSearch = () => {
   setLocationInput('')
   setLocationSuggestions([])
   };
+
   useEffect(() => {
     const delayDebounce = setTimeout(() => {
       if (locationInput.length >= 2) {
@@ -218,6 +261,7 @@ const handleSearch = () => {
 
     return () => clearTimeout(delayDebounce);
   }, [locationInput]);
+
   return (
     <div className="filter-card mobile-search">
       <div className="card-title align-items-center d-flex justify-content-between hidden-xs">
@@ -225,44 +269,39 @@ const handleSearch = () => {
       </div>
 
       {/* Category Accordion */}
-      <div className="cs-full_width_section">
-        <div
-          className="filter-accordion"
-          onClick={() => toggle(setCategoryOpen)}
-        >
-          <h5 className="cfs-filter-label">
-            {" "}
-            Categorie
-            {selectedCategoryName && (
-              <span className="filter-accordion-items">
-                : {selectedCategoryName}
-              </span>
-            )}
-          </h5>
-          <BiChevronDown />
-        </div>
+     <div className="cs-full_width_section">
+  <div className="filter-accordion" onClick={() => toggle(setCategoryOpen)}>
+    <h5 className="cfs-filter-label">
+      Categorie
+      {selectedCategoryName && (
+        <span className="filter-accordion-items">: {selectedCategoryName}</span>
+      )}
+    </h5>
+    <BiChevronDown />
+  </div>
 
-        {categoryOpen && (
-          <div className="filter-accordion-items">
-            {Array.isArray(categories) &&
-              categories.map((cat) => (
-                <div
-                  key={cat.slug}
-                  className={`filter-accordion-item ${
-                    selectedCategory === cat.slug ? "selected" : ""
-                  }`}
-                  onClick={() => {
-                    setSelectedCategory(cat.slug);
-                    setSelectedCategoryName(cat.name); // Show name near label
-                    setCategoryOpen(false); // Close dropdown
-                  }}
-                >
-                  {cat.name}
-                </div>
-              ))}
+  {categoryOpen && (
+    <div className="filter-accordion-items">
+      {Array.isArray(categories) &&
+        categories.map((cat) => (
+          <div
+            key={cat.slug}
+            className={`filter-accordion-item ${
+              selectedCategory === cat.slug ? 'selected' : ''
+            }`}
+            onClick={() => {
+              setSelectedCategory(cat.slug);
+              setSelectedCategoryName(cat.name);
+              setCategoryOpen(false);
+            }}
+          >
+            {cat.name}
           </div>
-        )}
-      </div>
+        ))}
+    </div>
+  )}
+</div>
+
 
       {/* Location Accordion */}
 
