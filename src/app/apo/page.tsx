@@ -31,7 +31,7 @@ export default function ListingsPage() {
 const loadListings = async (page = 1) => {
   setLoading(true);
   try {
-    const response = await fetchListings(page);
+    const response = await fetchListings({page});
 
     // ✅ Updated to match actual API structure
     if (response?.data?.products && response?.pagination) {
@@ -54,6 +54,7 @@ const loadListings = async (page = 1) => {
 
   useEffect(() => {
     loadListings(1);
+     
   }, []);
 
   const handleNextPage = () => {
