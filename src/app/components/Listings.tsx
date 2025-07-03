@@ -62,9 +62,10 @@ export interface Filters {
 interface Props {
   category?: string;
   location?: string;
+  page?: number; 
 }
 
-export default function ListingsPage({ category, location }: Props) {
+export default function ListingsPage({ category, location,   page = 1 }: Props) {
   const parsedCategory = category?.replace("-category", "") || undefined;
   const parsedLocation = location?.replace("-state", "")?.replace(/-/g, " ") || undefined;
 
@@ -215,6 +216,10 @@ useEffect(() => {
       updateURLWithFilters(prevPage);
     }
   };
+
+  useEffect(() => {
+    loadListings();
+  }, [category, location, page]);
 
   const handleFilterChange = (newFilters: Filters) => {
     setHasSearched(true);

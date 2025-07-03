@@ -19,11 +19,13 @@ const Listings = () => {
   const make = searchParams.get("make") || undefined;
   const condition = searchParams.get("condition") || undefined;
   const sleeps = searchParams.get("sleeps") || undefined;
+    const page = Number(searchParams.get("page") || "1"); // ✅ Add this
 
   return (
     <ListingsPage
       category={category}
       location={location}
+            page={page} // ✅ Pass to ListingsPage
       
     />
   );
