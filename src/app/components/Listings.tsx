@@ -7,6 +7,7 @@ import CaravanFilter from "../../app/components/CaravanFilter";
 import SkeletonListing from "../../app/components/skelton";
 import Footer from "../../app/components/Footer";
 import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
 
 interface Product {
   id: number;
@@ -72,30 +73,28 @@ export default function ListingsPage({ category, location }: Props) {
     ...(parsedLocation && { location: parsedLocation }),
   };
 
-const [filters, setFilters] = useState<Filters>(initialFilters);
+  const [filters, setFilters] = useState<Filters>(initialFilters);
   const filtersRef = useRef<Filters>(initialFilters);
   const [products, setProducts] = useState<Product[]>([]);
   const [pageTitle, setPageTitle] = useState("");
   const [categories, setCategories] = useState<Category[]>([]);
   const [makes, setMakes] = useState<MakeOption[]>([]);
-  const [atmOptions, setAtmOptions] = useState<number[]>([]);
-  const [priceOptions, setPriceOptions] = useState<number[]>([]);
-  const [yearOptions, setYearOptions] = useState<number[]>([]);
-  const [lengthOptions, setLengthOptions] = useState<number[]>([]);
-  const [sleepOptions, setSleepOptions] = useState<number[]>([]);
   const [stateOptions, setStateOptions] = useState<StateOption[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const initialPage = parseInt(searchParams.get("page") || "1", 12); // ✅ define early
 
   const [pagination, setPagination] = useState<Pagination>({
-    current_page: 1,
+    current_page: initialPage,
     total_pages: 1,
     total_items: 0,
-    total_products: 0,
     per_page: 12,
+    total_products: 0,
   });
 
-  useEffect(() => {
+useEffect(() => {
   if (!hasSearched) {
     const parsedCategory = category?.replace("-category", "") || undefined;
     const parsedLocation = location?.replace("-state", "")?.replace(/-/g, " ") || undefined;
@@ -108,89 +107,112 @@ const [filters, setFilters] = useState<Filters>(initialFilters);
     setFilters(defaultFilters);
     filtersRef.current = defaultFilters;
     setHasSearched(true);
-    loadListings(1, defaultFilters);
+
+    // ✅ Read from URL page (initialPage)
+    loadListings(initialPage, defaultFilters);
   }
-      
-// eslint-disable-next-line react-hooks/exhaustive-deps
 }, [category, location]);
 
+useEffect(() => {
+  const page = parseInt(searchParams.get("page") || "1");
+  setPagination((prev) => {
+    if (prev.current_page !== page) {
+      return {
+        ...prev,
+        current_page: page,
+      };
+    }
+    return prev;
+  });
+}, [searchParams]);
 
-  // First fetch on load
+
   useEffect(() => {
     setHasSearched(true);
-   }, [hasSearched]);
+  }, [hasSearched]);
 
-  // Keep filtersRef up to date
   useEffect(() => {
     filtersRef.current = filters;
   }, [filters]);
 
-  // Load on pagination change
   useEffect(() => {
     if (hasSearched) {
       loadListings(pagination.current_page, filtersRef.current);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pagination.current_page]);
 
-
-
- const loadListings = async (page = 1, appliedFilters: Filters = filters) => {
-  setIsLoading(true);
-  window.scrollTo({ top: 0, behavior: "smooth" });
-
-  try {
-    const response = await fetchListings({
-      ...appliedFilters,
-      page,
-      state: appliedFilters.location,  
-      location: undefined,            
-    });
-    if (response?.data?.products && response?.pagination) {
-      setProducts(response.data.products);
-      setCategories(response.data.all_categories);
-      setMakes(response.data.make_options);
-      setAtmOptions(response.data.atm ?? []);
-      setPriceOptions(response.data.price ?? []);
-      setYearOptions(response.data.years ?? []);
-      setLengthOptions(response.data.length ?? []);
-      setSleepOptions(response.data.sleep ?? []);
-      setStateOptions(response.data.states ?? []);
-      setPageTitle(response.title ?? "");
-      setPagination(response.pagination);
-    } else {
-      setProducts([]);
-      setPagination({
-        current_page: 1,
-        total_pages: 1,
-        per_page: 12,
-        total_products: 0,
+  const loadListings = async (page = 1, appliedFilters: Filters = filters) => {
+    setIsLoading(true);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+    try {
+      const response = await fetchListings({
+        ...appliedFilters,
+        page,
+        state: appliedFilters.location,
+        location: undefined, // avoid duplication
       });
+      if (response?.data?.products && response?.pagination) {
+        setProducts(response.data.products);
+        setCategories(response.data.all_categories);
+        setMakes(response.data.make_options);
+        setStateOptions(response.data.states ?? []);
+        setPageTitle(response.title ?? "");
+        setPagination(response.pagination);
+      } else {
+        setProducts([]);
+        setPagination({
+          current_page: 1,
+          total_pages: 1,
+          per_page: 12,
+          total_products: 0,
+        });
+      }
+    } catch (error) {
+      console.error("❌ Failed to fetch listings:", error);
+      setProducts([]);
+    } finally {
+      setIsLoading(false);
     }
-  } catch (error) {
-    console.error("❌ Failed to fetch listings:", error);
-    setProducts([]);
-  } finally {
-    setIsLoading(false);
-  }
+  };
+
+  const buildSlugPath = () => {
+    const slugParts: string[] = [];
+    if (filters.category) slugParts.push(`${filters.category}-category`);
+    if (filters.location) slugParts.push(`${filters.location.replace(/\s+/g, "-")}-state`);
+    return `/listings/${slugParts.join("/")}`;
+  };
+
+ const updateURLWithFilters = (page: number) => {
+  const current = new URLSearchParams(searchParams.toString());
+  current.set("page", page.toString());
+
+  // Only add filters not already present in the path
+  Object.entries(filters).forEach(([key, value]) => {
+    if (value && key !== "category" && key !== "location") {
+      current.set(key, value);
+    } else {
+      current.delete(key); // Clean up old values
+    }
+  });
+
+  router.push(`${buildSlugPath()}?${current.toString()}`);
 };
 
 
   const handleNextPage = () => {
     if (pagination.current_page < pagination.total_pages) {
-      setPagination((prev) => ({
-        ...prev,
-        current_page: prev.current_page + 1,
-      }));
+      const nextPage = pagination.current_page + 1;
+      window.scrollTo({ top: 0, behavior: "instant" });
+      setPagination((prev) => ({ ...prev, current_page: nextPage }));
+      updateURLWithFilters(nextPage);
     }
   };
 
   const handlePrevPage = () => {
     if (pagination.current_page > 1) {
-      setPagination((prev) => ({
-        ...prev,
-        current_page: prev.current_page - 1,
-      }));
+      const prevPage = pagination.current_page - 1;
+      setPagination((prev) => ({ ...prev, current_page: prevPage }));
+      updateURLWithFilters(prevPage);
     }
   };
 
@@ -220,19 +242,14 @@ const [filters, setFilters] = useState<Filters>(initialFilters);
           <div className="row justify-content-center mt-8">
             <div className="col-lg-3 col-12 col-md-4">
               <div className="filter">
-                    <Suspense fallback={<div>Loading filters...</div>}>
-                <CaravanFilter
-                  categories={categories}
-                  makes={makes}
-                  year={yearOptions}
-                  price={priceOptions}
-                  length={lengthOptions}
-                  atm={atmOptions}
-                  sleep={sleepOptions}
-                  states={stateOptions}
-                  onFilterChange={handleFilterChange}
-                />
-                    </Suspense>
+                <Suspense fallback={<div>Loading filters...</div>}>
+                  <CaravanFilter
+                    categories={categories}
+                    makes={makes}
+                    states={stateOptions}
+                    onFilterChange={handleFilterChange}
+                  />
+                </Suspense>
               </div>
             </div>
 
@@ -246,6 +263,7 @@ const [filters, setFilters] = useState<Filters>(initialFilters);
                 onPrev={handlePrevPage}
               />
             )}
+
             <Footer />
             <div className="col-lg-3 rightbar-stick"></div>
           </div>
