@@ -42,7 +42,7 @@ export const fetchListings = async (filters: Filters = {}) => {
   if (maxKg) params.append('max_kg', maxKg);
   if (condition) params.append('condition', condition);
   if (sleeps) params.append('sleeps', sleeps);
-   const res = await fetch(`${API_BASE}/new-list?${params.toString()}`);
+   const res = await fetch(`${API_BASE}/list?${params.toString()}`);
 
   if (!res.ok) throw new Error('API failed');
 

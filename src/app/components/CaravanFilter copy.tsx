@@ -5,7 +5,6 @@ import React, { useState, Dispatch, SetStateAction, useEffect } from "react";
 import { BiChevronDown } from "react-icons/bi";
 import { usePathname, useRouter } from "next/navigation";
 import { useSearchParams } from "next/navigation";
-import { fetchProductList } from "@/api/productList/api";
 
 type LocationSuggestion = {
   key: string;
@@ -19,7 +18,7 @@ interface Category {
   slug: string;
 }
 
-interface StateOption {
+interface State {
   value: string;
   name: string;
   regions?: {
@@ -49,28 +48,35 @@ export interface Filters {
   states?: string;
 }
 
- 
+
 interface CaravanFilterProps {
   categories: Category[];
   makes: Make[];
-  states: StateOption[]
+  year: string[] | number[];
+price: string | string[] | number[];
+  length: string[] | number[];
+  sleep: string[] | number[];
+  atm: string | string[] | number[];
+  states: State[]
   onFilterChange: (filters: Filters) => void;
 }
 
-interface Option {
-  name: string;
-  slug: string;
-}
+
 const CaravanFilter: React.FC<CaravanFilterProps> = ({
+  categories,
+  makes,
   onFilterChange,
- }) => {
+   atm,
+  length,
+  price,
+  year,
+  sleep,
+  states 
+}) => {
   const router = useRouter();
   const pathname = usePathname();
  const searchParams = useSearchParams();
   const [categoryOpen, setCategoryOpen] = useState(false);
-  const [categories, setCategories] = useState<Option[]>([]);
-  const [makes, setMakes] = useState<Option[]>([]);
-    const [states, setStates] = useState<StateOption[]>([]);
    const [makeOpen, setMakeOpen] = useState(false);
   const [filters, setFilters] = useState<Filters>({});
    const [conditionOpen, setConditionOpen] = useState(false);
@@ -91,38 +97,18 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
   const [stateOpen, setStateOpen] = useState(false);
 const [selectedState, setSelectedState] = useState<string | null>(null);
 const [selectedStateName, setSelectedStateName] = useState<string | null>(null);
- const conditionDatas = ['Near New', 'New', 'Used']
 
-
-  const atm = [600, 800, 1000, 1250, 1500, 1750, 2000, 2250, 2500, 2750];
-
-const price = [
-  10000, 20000, 30000, 40000, 50000,
-  60000, 70000, 80000, 90000, 100000,
-  125000, 150000, 175000, 200000, 225000,
-  250000, 275000, 300000
-];
-
-
-const years = Array.from({ length: new Date().getFullYear() - 1914 + 1 }, (_, i) => 1914 + i);
-
-const length = [12, 13, 14, 15, 16, 17, 18, 19, 20, 21];
-
-const sleep = [1, 2, 3, 4, 5, 6, 7];
-
-  
- useEffect(() => {
-  const loadFilters = async () => {
-    const res = await fetchProductList();
-    if (res?.data) {
-      setCategories(res.data.all_categories || []);
-      console.log("categories", categories)
-      setMakes(res.data.make_options || []);
-      setStates(res.data.states || []);
-    }
-  };
-  loadFilters();
-}, []);
+const atmValues = Array.isArray(atm)
+  ? atm.map(Number)
+  : typeof atm === 'string'
+  ? atm.split(',').map(Number)
+  : [];
+const priceOptions = Array.isArray(price)
+  ? price.map((p) => String(p))
+  : typeof price === "string"
+  ? price.split(",").map((p) => p.trim())
+  : [];
+const conditionDatas = ['Near New', 'New', 'Used']
 
 console.log("filters", filters)
   const [locationSuggestions, setLocationSuggestions] = useState<
@@ -148,114 +134,78 @@ console.log("filters", filters)
   selectedState
 );
 
- useEffect(() => {
-  const pathParts = pathname.split("/").filter(Boolean); // ex: ["listings", "queensland-state"]
-  const slug1 = pathParts[1]; // could be category or state
-  const slug2 = pathParts[2]; // could be undefined or state
+   useEffect(() => {
+    const pathParts = pathname.split("/").filter(Boolean);
+    const rawCategory = pathParts[1];
 
-  let categoryMatch: Option | undefined;
-  let stateMatch: StateOption | undefined;
+    const categorySlug = rawCategory?.replace(/-category$/, ""); // ✅ becomes "family"
+    const categoryMatch = categories.find((cat) => cat.slug === categorySlug);
+    if (categoryMatch) {
+      setSelectedCategory(categoryMatch.slug);
+      setSelectedCategoryName(categoryMatch.name);
+    }
+    const rawState = pathParts[2];
+    const stateMatch = states.find(
+      (s) =>
+        rawState === `${s.name.toLowerCase().replace(/\s+/g, "-")}-state`
+    );
+    if (stateMatch) {
+      setSelectedState(stateMatch.value);
+      setSelectedStateName(stateMatch.name);
+    }
 
-  // Check if slug1 is category
-  if (slug1?.endsWith("-category")) {
-    const categorySlug = slug1.replace(/-category$/, "");
-    categoryMatch = categories.find((cat) => cat.slug === categorySlug);
-  }
+    const make = searchParams.get("make");
+    if (make) {
+      setSelectedMake(make);
+      const makeMatch = makes.find((m) => m.slug === make);
+      if (makeMatch) setSelectedMakeName(makeMatch.name);
+    }
 
-  // Now check state (either in slug2 if category exists, or slug1 if only state)
-  const rawStateSlug = slug2 ?? (slug1?.endsWith("-state") ? slug1 : undefined);
-  stateMatch = states.find((s) => rawStateSlug === `${s.name.toLowerCase().replace(/\s+/g, "-")}-state`);
+    const condition = searchParams.get("condition");
+    if (condition) setSelectedConditionName(condition);
 
-  // Update filters
-  if (categoryMatch) {
-    setSelectedCategory(categoryMatch.slug);
-    setSelectedCategoryName(categoryMatch.name);
-  }
-
-  if (stateMatch) {
-    setSelectedState(stateMatch.value);
-    setSelectedStateName(stateMatch.name);
-  }
-
-  // Search Params: make, condition, sleeps
-  const make = searchParams.get("make");
-  if (make) {
-    setSelectedMake(make);
-    const makeMatch = makes.find((m) => m.slug === make);
-    if (makeMatch) setSelectedMakeName(makeMatch.name);
-  }
-
-  const condition = searchParams.get("condition");
-  if (condition) setSelectedConditionName(condition);
-
-  const sleeps = searchParams.get("sleeps");
-  if (sleeps) setSelectedSleepName(sleeps);
-
-  // ✅ Trigger filter after all values are set
-  setTimeout(() => {
-    onFilterChange({
-      category: categoryMatch?.slug,
-      location: stateMatch?.value,
-      make: make || undefined,
-      condition: condition || undefined,
-      sleeps: sleeps || undefined
-    });
-  }, 0);
-}, [pathname, categories, makes, states, searchParams]);
-
-
-
+    const sleeps = searchParams.get("sleeps");
+    if (sleeps) setSelectedSleepName(sleeps);
+  }, [pathname, categories, makes, states, searchParams]);
 
 
  
-   const handleSuburbSelection = (selected: string) => {
-  setLocationInput(selected);
-  setLocationSuggestions([]);
+    const handleSuburbSelection = (selected: string) => {
+    setLocationInput(selected);
+    setLocationSuggestions([]);
 
-  const [suburbSlug, postcode] = selected.split("/");
+    const [suburbSlug, postcode] = selected.split("/"); // e.g. ['penrith-suburb', '2750']
 
-  // ✅ Match suburbSlug to state's suburb values
-  const matchedState = states.find((state) =>
-    state.regions?.some((region) =>
-      region.suburbs?.some((sub) => sub.value === suburbSlug)
-    )
-  );
+    console.log("Selected Location:", selected);
 
-  if (matchedState) {
-    setSelectedState(matchedState.value); // e.g., "new-south-wales"
-    setSelectedStateName(matchedState.name);
-  }
+    // 🔍 Find which state this suburb belongs to
+    const matchedState = states.find((state) =>
+      state.regions?.some((region) =>
+        region.suburbs?.some((sub) => sub.value === selected)
+      )
+    );
 
-  // ✅ Build URL
-  const slugParts = [];
-  if (suburbSlug) slugParts.push(suburbSlug);
-  if (matchedState?.value) slugParts.push(`${matchedState.value}-state`);
-  if (postcode) slugParts.push(postcode);
+    if (matchedState) {
+      setSelectedState(matchedState.value); // e.g., "new-south-wales"
+      setSelectedStateName(matchedState.name); // e.g., "New South Wales"
+    }
 
-  const finalUrl = `/listings/${slugParts.join("/")}`;
-  router.push(finalUrl);
+    // 🌐 Build URL like /listings/penrith-suburb/new-south-wales-state/2750
+    const slugParts = [];
+    if (suburbSlug) slugParts.push(suburbSlug);
+    if (matchedState?.value) slugParts.push(`${matchedState.value}-state`);
+    if (postcode) slugParts.push(postcode);
 
-  // ✅ Trigger filter change
-  onFilterChange({
-    category: selectedCategory || undefined,
-    make: selectedMake || undefined,
-    location: matchedState?.value, // This gets passed to backend
-    condition: selectedConditionName || undefined,
-    sleeps: selectedSleepName || undefined,
-  });
+    const finalUrl = `/listings/${slugParts.join("/")}`;
+    router.push(finalUrl);
 
-  setIsModalOpen(false);
-};
+    // 📨 Trigger filter to ListingsPage if needed
+    onFilterChange({
+      location: matchedState?.value, // Setting location as the selected state's value
+    });
 
-useEffect(() => {
-  console.log("Triggered Filters:", {
-    category: selectedCategory,
-    location: selectedState,
-    make: selectedMake,
-    condition: selectedConditionName,
-    sleeps: selectedSleepName
-  });
-}, [selectedCategory, selectedState, selectedMake, selectedConditionName, selectedSleepName]);
+    setIsModalOpen(false); // Close modal
+  };
 
 
 
@@ -317,7 +267,6 @@ const handleSearch = () => {
     return () => clearTimeout(delayDebounce);
   }, [locationInput]);
 
-  
   return (
     <div className="filter-card mobile-search">
       <div className="card-title align-items-center d-flex justify-content-between hidden-xs">
@@ -456,8 +405,8 @@ const handleSearch = () => {
             <h6 className="cfs-filter-label-sub">From</h6>
             <select className="cfs-select-input">
               <option value="">Min</option>
-              {atm.map((val) => (
-          <option key={val} value={val}>{val} kg</option>
+              {atmValues.map((val) => (
+          <option key={val} value={val}>{val}</option>
         ))}
             </select>
           </div>
@@ -465,12 +414,11 @@ const handleSearch = () => {
             <h6 className="cfs-filter-label-sub">To</h6>
             <select className="cfs-select-input">
               <option value="">Min</option>
-             {atm.map((val) => (
-          <option key={val} value={val}>{val} kg</option>
+             {atmValues.map((val) => (
+          <option key={val} value={val}>{val}</option>
         ))}
             </select>
           </div>
-
         </div>
       </div>
 
@@ -482,8 +430,8 @@ const handleSearch = () => {
             <h6 className="cfs-filter-label-sub">From</h6>
             <select className="cfs-select-input">
               <option value="">Min</option>
-              {price.map((value, idx) => (
-          <option key={idx} value={value}>$ {value}</option>
+              {priceOptions.map((value, idx) => (
+          <option key={idx} value={value}>{value}</option>
         ))}
             </select>
           </div>
@@ -491,8 +439,8 @@ const handleSearch = () => {
             <h6 className="cfs-filter-label-sub">To</h6>
             <select className="cfs-select-input">
               <option value="">Max</option>
-              {price.map((value, idx) => (
-          <option key={idx} value={value}>$ {value}</option>
+              {priceOptions.map((value, idx) => (
+          <option key={idx} value={value}>{value}</option>
         ))}
             </select>
           </div>
@@ -540,37 +488,38 @@ const handleSearch = () => {
       </div>
       {/* Sleeps Accordion */}
       <div className="cs-full_width_section">
-  <div className="filter-accordion" onClick={() => toggle(setSleepsOpen)}>
-    <h5 className="cfs-filter-label">
-      Sleep
-      {selectedConditionName && (
-        <span className="filter-accordion-items">
-          : {selectedSleepName}
-        </span>
-      )}
-    </h5>
-    <BiChevronDown />
-  </div>
-
-  {sleepsOpen && (
-    <div className="filter-accordion-items">
-      {sleep.map((sleepValue, index) => (
-        <div
-          key={index}
-          className={`filter-accordion-item ${
-            String(sleepValue) === selectedConditionName ? "selected" : ""
-          }`}
-          onClick={() => {
-            setSelectedSleepName(String(sleepValue));
-            setConditionOpen(false);
-          }}
-        >
-          {sleepValue} People
+        <div className="filter-accordion" onClick={() => toggle(setSleepsOpen)}>
+          <h5 className="cfs-filter-label">
+            {" "}
+            Sleep
+            {selectedConditionName && (
+              <span className="filter-accordion-items">
+                : {selectedSleepName}
+              </span>
+            )}
+          </h5>
+          <BiChevronDown />
         </div>
-      ))}
-    </div>
-  )}
-</div>
+
+        {sleepsOpen && (
+          <div className="filter-accordion-items">
+            {sleep.map((sleep, index) => (
+  <div
+    key={index}
+    className={`filter-accordion-item ${
+      selectedConditionName === sleep ? "selected" : ""
+    }`}
+    onClick={() => {
+  setSelectedSleepName(String(sleep));   
+     setConditionOpen(false);
+    }}
+  >
+    {sleep}
+  </div>
+))}
+          </div>
+        )}
+      </div>
 
       {/* Year Range */}
     <div className="cs-full_width_section">
@@ -580,7 +529,7 @@ const handleSearch = () => {
             <h6 className="cfs-filter-label-sub">From</h6>
             <select className="cfs-select-input">
               <option value="">Min</option>
-              {years.map((value, idx) => (
+              {year.map((value, idx) => (
           <option key={idx} value={value}>{value}</option>
         ))}
             </select>
@@ -589,7 +538,7 @@ const handleSearch = () => {
             <h6 className="cfs-filter-label-sub">To</h6>
             <select className="cfs-select-input">
               <option value="">Max</option>
-              {years.map((value, idx) => (
+              {year.map((value, idx) => (
           <option key={idx} value={value}>{value}</option>
         ))}
             </select>
