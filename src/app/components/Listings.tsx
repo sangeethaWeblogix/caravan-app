@@ -8,7 +8,7 @@ import SkeletonListing from "../../app/components/skelton";
 import Footer from "../../app/components/Footer";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-
+import { useCallback } from "react";
 interface Product {
   id: number;
   name: string;
@@ -95,24 +95,8 @@ export default function ListingsPage({ category, location,   page = 1 }: Props) 
     total_products: 0,
   });
 
-useEffect(() => {
-  if (!hasSearched) {
-    const parsedCategory = category?.replace("-category", "") || undefined;
-    const parsedLocation = location?.replace("-state", "")?.replace(/-/g, " ") || undefined;
 
-    const defaultFilters: Filters = {
-      ...(parsedCategory && { category: parsedCategory }),
-      ...(parsedLocation && { location: parsedLocation }),
-    };
 
-    setFilters(defaultFilters);
-    filtersRef.current = defaultFilters;
-    setHasSearched(true);
-
-    // ✅ Read from URL page (initialPage)
-    loadListings(initialPage, defaultFilters);
-  }
-}, [category, location]);
 
 useEffect(() => {
   const page = parseInt(searchParams.get("page") || "1");
@@ -136,45 +120,66 @@ useEffect(() => {
     filtersRef.current = filters;
   }, [filters]);
 
-  useEffect(() => {
+ 
+ 
+// Wrap loadListings
+const loadListings = useCallback(async (page = 1, appliedFilters: Filters = filters) => {
+  setIsLoading(true);
+  window.scrollTo({ top: 0, behavior: "smooth" });
+  try {
+    const response = await fetchListings({
+      ...appliedFilters,
+      page,
+      state: appliedFilters.location,
+      location: undefined,
+    });
+
+    if (response?.data?.products && response?.pagination) {
+      setProducts(response.data.products);
+      setCategories(response.data.all_categories);
+      setMakes(response.data.make_options);
+      setStateOptions(response.data.states ?? []);
+      setPageTitle(response.title ?? "");
+      setPagination(response.pagination);
+    } else {
+      setProducts([]);
+      setPagination({
+        current_page: 1,
+        total_pages: 1,
+        per_page: 12,
+        total_products: 0,
+      });
+    }
+  } catch (error) {
+    console.error("❌ Failed to fetch listings:", error);
+    setProducts([]);
+  } finally {
+    setIsLoading(false);
+  }
+}, [filters]); // 👈 Add filters in dependencies
+
+ useEffect(() => {
     if (hasSearched) {
       loadListings(pagination.current_page, filtersRef.current);
     }
-  }, [pagination.current_page]);
+}, [pagination.current_page, hasSearched, loadListings]);
+useEffect(() => {
+  if (!hasSearched) {
+    const parsedCategory = category?.replace("-category", "") || undefined;
+    const parsedLocation = location?.replace("-state", "")?.replace(/-/g, " ") || undefined;
 
-  const loadListings = async (page = 1, appliedFilters: Filters = filters) => {
-    setIsLoading(true);
-    window.scrollTo({ top: 0, behavior: "smooth" });
-    try {
-      const response = await fetchListings({
-        ...appliedFilters,
-        page,
-        state: appliedFilters.location,
-        location: undefined, // avoid duplication
-      });
-      if (response?.data?.products && response?.pagination) {
-        setProducts(response.data.products);
-        setCategories(response.data.all_categories);
-        setMakes(response.data.make_options);
-        setStateOptions(response.data.states ?? []);
-        setPageTitle(response.title ?? "");
-        setPagination(response.pagination);
-      } else {
-        setProducts([]);
-        setPagination({
-          current_page: 1,
-          total_pages: 1,
-          per_page: 12,
-          total_products: 0,
-        });
-      }
-    } catch (error) {
-      console.error("❌ Failed to fetch listings:", error);
-      setProducts([]);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+    const defaultFilters: Filters = {
+      ...(parsedCategory && { category: parsedCategory }),
+      ...(parsedLocation && { location: parsedLocation }),
+    };
+
+    setFilters(defaultFilters);
+    filtersRef.current = defaultFilters;
+    setHasSearched(true);
+
+    loadListings(initialPage, defaultFilters);
+  }
+}, [category, location, hasSearched, initialPage, loadListings]); // ✅ Add deps
 
   const buildSlugPath = () => {
     const slugParts: string[] = [];
@@ -217,9 +222,10 @@ useEffect(() => {
     }
   };
 
-  useEffect(() => {
-    loadListings();
-  }, [category, location, page]);
+useEffect(() => {
+  loadListings();
+}, [category, location, page, loadListings]);
+
 
   const handleFilterChange = (newFilters: Filters) => {
     setHasSearched(true);
@@ -261,12 +267,16 @@ useEffect(() => {
             {isLoading ? (
               <SkeletonListing />
             ) : (
+                              <Suspense fallback={<div>Loading filters...</div>}>
+
               <Listing
                 products={products}
                 pagination={pagination}
                 onNext={handleNextPage}
                 onPrev={handlePrevPage}
               />
+                              </Suspense>
+
             )}
 
             <Footer />

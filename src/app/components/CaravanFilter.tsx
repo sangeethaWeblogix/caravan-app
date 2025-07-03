@@ -93,7 +93,7 @@ const [selectedState, setSelectedState] = useState<string | null>(null);
 const [selectedStateName, setSelectedStateName] = useState<string | null>(null);
  const conditionDatas = ['Near New', 'New', 'Used']
 
-
+ 
   const atm = [600, 800, 1000, 1250, 1500, 1750, 2000, 2250, 2500, 2750];
 
 const price = [
@@ -116,12 +116,12 @@ const sleep = [1, 2, 3, 4, 5, 6, 7];
     const res = await fetchProductList();
     if (res?.data) {
       setCategories(res.data.all_categories || []);
-      console.log("categories", categories)
-      setMakes(res.data.make_options || []);
+       setMakes(res.data.make_options || []);
       setStates(res.data.states || []);
     }
   };
   loadFilters();
+   
 }, []);
 
 console.log("filters", filters)
@@ -148,25 +148,18 @@ console.log("filters", filters)
   selectedState
 );
 
- useEffect(() => {
-  const pathParts = pathname.split("/").filter(Boolean); // ex: ["listings", "queensland-state"]
-  const slug1 = pathParts[1]; // could be category or state
-  const slug2 = pathParts[2]; // could be undefined or state
+useEffect(() => {
+  const pathParts = pathname.split("/").filter(Boolean);
+  const slug1 = pathParts[1]; // category or state
+  const slug2 = pathParts[2]; // state
 
-  let categoryMatch: Option | undefined;
-  let stateMatch: StateOption | undefined;
+  // Move variables inside the effect
+  const categorySlug = slug1?.endsWith("-category") ? slug1.replace(/-category$/, "") : undefined;
+  const categoryMatch = categories.find((cat) => cat.slug === categorySlug);
 
-  // Check if slug1 is category
-  if (slug1?.endsWith("-category")) {
-    const categorySlug = slug1.replace(/-category$/, "");
-    categoryMatch = categories.find((cat) => cat.slug === categorySlug);
-  }
-
-  // Now check state (either in slug2 if category exists, or slug1 if only state)
   const rawStateSlug = slug2 ?? (slug1?.endsWith("-state") ? slug1 : undefined);
-  stateMatch = states.find((s) => rawStateSlug === `${s.name.toLowerCase().replace(/\s+/g, "-")}-state`);
+  const stateMatch = states.find((s) => rawStateSlug === `${s.name.toLowerCase().replace(/\s+/g, "-")}-state`);
 
-  // Update filters
   if (categoryMatch) {
     setSelectedCategory(categoryMatch.slug);
     setSelectedCategoryName(categoryMatch.name);
@@ -177,7 +170,7 @@ console.log("filters", filters)
     setSelectedStateName(stateMatch.name);
   }
 
-  // Search Params: make, condition, sleeps
+  // Search params
   const make = searchParams.get("make");
   if (make) {
     setSelectedMake(make);
@@ -191,7 +184,7 @@ console.log("filters", filters)
   const sleeps = searchParams.get("sleeps");
   if (sleeps) setSelectedSleepName(sleeps);
 
-  // ✅ Trigger filter after all values are set
+  // Trigger filters
   setTimeout(() => {
     onFilterChange({
       category: categoryMatch?.slug,
@@ -201,7 +194,8 @@ console.log("filters", filters)
       sleeps: sleeps || undefined
     });
   }, 0);
-}, [pathname, categories, makes, states, searchParams]);
+}, [pathname, categories, states, makes, searchParams, onFilterChange]);
+
 
 
 
@@ -255,6 +249,7 @@ useEffect(() => {
     condition: selectedConditionName,
     sleeps: selectedSleepName
   });
+   
 }, [selectedCategory, selectedState, selectedMake, selectedConditionName, selectedSleepName]);
 
 

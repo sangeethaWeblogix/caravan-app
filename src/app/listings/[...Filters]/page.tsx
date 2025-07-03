@@ -2,6 +2,7 @@
 "use client";
 import { usePathname, useSearchParams } from "next/navigation";
 import ListingsPage from "@/app/components/Listings";
+import { Suspense } from "react";
 
 const Listings = () => {
   const pathname = usePathname();
@@ -16,18 +17,19 @@ const Listings = () => {
     ?.replace("-state", "")
     ?.replace(/-/g, " ");
 
-  const make = searchParams.get("make") || undefined;
-  const condition = searchParams.get("condition") || undefined;
-  const sleeps = searchParams.get("sleeps") || undefined;
+  
     const page = Number(searchParams.get("page") || "1"); // ✅ Add this
 
   return (
+                                  <Suspense fallback={<div>Loading filters...</div>}>
+    
     <ListingsPage
       category={category}
       location={location}
             page={page} // ✅ Pass to ListingsPage
       
     />
+    </Suspense>
   );
 };
 
