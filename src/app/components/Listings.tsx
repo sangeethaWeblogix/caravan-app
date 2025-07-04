@@ -62,10 +62,9 @@ export interface Filters {
 interface Props {
   category?: string;
   location?: string;
-  page?: number;
 }
 
-export default function ListingsPage({ category, location, page = 1 }: Props) {
+export default function ListingsPage({ category, location }: Props) {
   const parsedCategory = category?.replace("-category", "") || undefined;
   const parsedLocation =
     location?.replace("-state", "")?.replace(/-/g, " ") || undefined;
@@ -102,6 +101,7 @@ export default function ListingsPage({ category, location, page = 1 }: Props) {
     if (pagination.current_page !== page) {
       setPagination((prev) => ({ ...prev, current_page: page }));
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams]); // Effect triggered whenever searchParams changes
 
   // Effect that handles fetching listings on page change
@@ -109,7 +109,8 @@ export default function ListingsPage({ category, location, page = 1 }: Props) {
     if (hasSearched) {
       loadListings(pagination.current_page, filtersRef.current);
     }
-  }, [pagination.current_page]); // Trigger only when page changes
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pagination.current_page]);
 
   const loadListings = async (page = 1, appliedFilters: Filters = filters) => {
     setIsLoading(true);
@@ -165,7 +166,8 @@ export default function ListingsPage({ category, location, page = 1 }: Props) {
       // ✅ Read from URL page (initialPage)
       loadListings(initialPage, defaultFilters);
     }
-  }, [category, location, categories]); // Only trigger when category or location change
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [category, location, categories]);
 
   const buildSlugPath = () => {
     const slugParts: string[] = [];
@@ -219,6 +221,7 @@ export default function ListingsPage({ category, location, page = 1 }: Props) {
       total_products: 0,
     });
     loadListings(1, newFilters);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (
