@@ -97,7 +97,7 @@ export default function ListingContent({
                       <div className="swiper-zoom-container">
 
                       <Image
-                        src="/images/img.png"
+                        src={product.image} //"/images/img.png"
                         alt={product.name}
                         width={1593}
                         height={1195}
