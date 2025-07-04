@@ -1,6 +1,6 @@
  "use client";
 
-import { Suspense, useEffect, useRef, useState } from "react";
+import { Suspense, useCallback, useEffect, useRef, useState } from "react";
 import { fetchListings } from "../../api/listings/api";
 import Listing from "../../app/components/LisitingContent";
 import CaravanFilter from "../../app/components/CaravanFilter";
@@ -8,7 +8,7 @@ import SkeletonListing from "../../app/components/skelton";
 import Footer from "../../app/components/Footer";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useCallback } from "react";
+
 interface Product {
   id: number;
   name: string;
@@ -62,12 +62,12 @@ export interface Filters {
 interface Props {
   category?: string;
   location?: string;
-  page?: number; 
 }
 
-export default function ListingsPage({ category, location,   page = 1 }: Props) {
+export default function ListingsPage({ category, location }: Props) {
   const parsedCategory = category?.replace("-category", "") || undefined;
-  const parsedLocation = location?.replace("-state", "")?.replace(/-/g, " ") || undefined;
+  const parsedLocation =
+    location?.replace("-state", "")?.replace(/-/g, " ") || undefined;
 
   const initialFilters: Filters = {
     ...(parsedCategory && { category: parsedCategory }),
@@ -85,7 +85,7 @@ export default function ListingsPage({ category, location,   page = 1 }: Props) 
   const [hasSearched, setHasSearched] = useState(false);
   const router = useRouter();
   const searchParams = useSearchParams();
-  const initialPage = parseInt(searchParams.get("page") || "1", 12); // ✅ define early
+  const initialPage = parseInt(searchParams.get("paged") || "1", 10); // Use 'paged' instead of 'page'
 
   const [pagination, setPagination] = useState<Pagination>({
     current_page: initialPage,
@@ -95,115 +95,103 @@ export default function ListingsPage({ category, location,   page = 1 }: Props) 
     total_products: 0,
   });
 
-
-
-
-useEffect(() => {
-  const page = parseInt(searchParams.get("page") || "1");
-  setPagination((prev) => {
-    if (prev.current_page !== page) {
-      return {
-        ...prev,
-        current_page: page,
-      };
-    }
-    return prev;
-  });
-}, [searchParams]);
-
-
+  // Update pagination when page URL param changes
   useEffect(() => {
-    setHasSearched(true);
-  }, [hasSearched]);
-
-  useEffect(() => {
-    filtersRef.current = filters;
-  }, [filters]);
-
- 
- 
-// Wrap loadListings
-const loadListings = useCallback(async (page = 1, appliedFilters: Filters = filters) => {
-  setIsLoading(true);
-  window.scrollTo({ top: 0, behavior: "smooth" });
-  try {
-    const response = await fetchListings({
-      ...appliedFilters,
-      page,
-      state: appliedFilters.location,
-      location: undefined,
-    });
-
-    if (response?.data?.products && response?.pagination) {
-      setProducts(response.data.products);
-      setCategories(response.data.all_categories);
-      setMakes(response.data.make_options);
-      setStateOptions(response.data.states ?? []);
-      setPageTitle(response.title ?? "");
-      setPagination(response.pagination);
-    } else {
-      setProducts([]);
-      setPagination({
-        current_page: 1,
-        total_pages: 1,
-        per_page: 12,
-        total_products: 0,
-      });
+    const page = parseInt(searchParams.get("paged") || "1", 10); // Fetch the correct page from URL
+    if (pagination.current_page !== page) {
+      setPagination((prev) => ({ ...prev, current_page: page }));
     }
-  } catch (error) {
-    console.error("❌ Failed to fetch listings:", error);
-    setProducts([]);
-  } finally {
-    setIsLoading(false);
-  }
-}, [filters]); // 👈 Add filters in dependencies
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]); // Effect triggered whenever searchParams changes
 
- useEffect(() => {
+  // Effect that handles fetching listings on page change
+  useEffect(() => {
     if (hasSearched) {
       loadListings(pagination.current_page, filtersRef.current);
     }
-}, [pagination.current_page, hasSearched, loadListings]);
-useEffect(() => {
-  if (!hasSearched) {
-    const parsedCategory = category?.replace("-category", "") || undefined;
-    const parsedLocation = location?.replace("-state", "")?.replace(/-/g, " ") || undefined;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pagination.current_page]);
 
-    const defaultFilters: Filters = {
-      ...(parsedCategory && { category: parsedCategory }),
-      ...(parsedLocation && { location: parsedLocation }),
-    };
+  const loadListings = async (page = 1, appliedFilters: Filters = filters) => {
+    setIsLoading(true);
+    window.scrollTo({ top: 0, behavior: "smooth" });
 
-    setFilters(defaultFilters);
-    filtersRef.current = defaultFilters;
-    setHasSearched(true);
+    try {
+      const response = await fetchListings({
+        ...appliedFilters,
+        page,
+        state: appliedFilters.location,
+        location: undefined, // avoid duplication
+      });
 
-    loadListings(initialPage, defaultFilters);
-  }
-}, [category, location, hasSearched, initialPage, loadListings]); // ✅ Add deps
+      if (response?.data?.products && response?.pagination) {
+        setProducts(response.data.products);
+        setCategories(response.data.all_categories);
+        setMakes(response.data.make_options);
+        setStateOptions(response.data.states ?? []);
+        setPageTitle(response.title ?? "");
+        setPagination(response.pagination);
+      } else {
+        setProducts([]);
+        setPagination({
+          current_page: 1,
+          total_pages: 1,
+          per_page: 12,
+          total_products: 0,
+        });
+      }
+    } catch (error) {
+      console.error("❌ Failed to fetch listings:", error);
+      setProducts([]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (!hasSearched) {
+      const parsedCategory = category?.replace("-category", "") || undefined;
+      const parsedLocation =
+        location?.replace("-state", "")?.replace(/-/g, " ") || undefined;
+
+      const defaultFilters: Filters = {
+        ...(parsedCategory && { category: parsedCategory }),
+        ...(parsedLocation && { location: parsedLocation }),
+      };
+
+      setFilters(defaultFilters);
+      filtersRef.current = defaultFilters;
+      setHasSearched(true);
+
+      // ✅ Read from URL page (initialPage)
+      loadListings(initialPage, defaultFilters);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [category, location, categories]);
 
   const buildSlugPath = () => {
     const slugParts: string[] = [];
     if (filters.category) slugParts.push(`${filters.category}-category`);
-    if (filters.location) slugParts.push(`${filters.location.replace(/\s+/g, "-")}-state`);
+    if (filters.location)
+      slugParts.push(`${filters.location.replace(/\s+/g, "-")}-state`);
     return `/listings/${slugParts.join("/")}`;
   };
 
- const updateURLWithFilters = (page: number) => {
-  const current = new URLSearchParams(searchParams.toString());
-  current.set("page", page.toString());
+  const updateURLWithFilters = (page: number) => {
+    const current = new URLSearchParams(searchParams.toString());
+    current.set("paged", page.toString()); // Use 'paged' for the query parameter
 
-  // Only add filters not already present in the path
-  Object.entries(filters).forEach(([key, value]) => {
-    if (value && key !== "category" && key !== "location") {
-      current.set(key, value);
-    } else {
-      current.delete(key); // Clean up old values
-    }
-  });
+    // Only add filters not already present in the path
+    Object.entries(filters).forEach(([key, value]) => {
+      if (value && key !== "category" && key !== "location") {
+        current.set(key, value);
+      } else {
+        current.delete(key); // Clean up old values
+      }
+    });
 
-  router.push(`${buildSlugPath()}?${current.toString()}`);
-};
-
+    router.push(`${buildSlugPath()}?${current.toString()}`);
+  };
 
   const handleNextPage = () => {
     if (pagination.current_page < pagination.total_pages) {
@@ -222,12 +210,7 @@ useEffect(() => {
     }
   };
 
-useEffect(() => {
-  loadListings();
-}, [category, location, page, loadListings]);
-
-
-  const handleFilterChange = (newFilters: Filters) => {
+  const handleFilterChange = useCallback((newFilters: Filters) => {
     setHasSearched(true);
     setFilters(newFilters);
     setPagination({
@@ -238,14 +221,18 @@ useEffect(() => {
       total_products: 0,
     });
     loadListings(1, newFilters);
-  };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return (
     <section className="services section-padding pb-30 style-1">
       <div className="container">
         <div className="content">
           <div className="text-sm text-gray-600 header">
-            <Link href="/" className="hover:underline">Home</Link> &gt;
+            <Link href="/" className="hover:underline">
+              Home
+            </Link>{" "}
+            &gt;
             <span className="font-medium text-black"> Listings</span>
           </div>
           <h1 className="page-title">{pageTitle}</h1>
@@ -267,16 +254,12 @@ useEffect(() => {
             {isLoading ? (
               <SkeletonListing />
             ) : (
-                              <Suspense fallback={<div>Loading filters...</div>}>
-
               <Listing
                 products={products}
                 pagination={pagination}
                 onNext={handleNextPage}
                 onPrev={handlePrevPage}
               />
-                              </Suspense>
-
             )}
 
             <Footer />

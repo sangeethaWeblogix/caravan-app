@@ -49,11 +49,10 @@ export interface Filters {
   states?: string;
 }
 
- 
 interface CaravanFilterProps {
   categories: Category[];
   makes: Make[];
-  states: StateOption[]
+  states: StateOption[];
   onFilterChange: (filters: Filters) => void;
 }
 
@@ -61,19 +60,17 @@ interface Option {
   name: string;
   slug: string;
 }
-const CaravanFilter: React.FC<CaravanFilterProps> = ({
-  onFilterChange,
- }) => {
+const CaravanFilter: React.FC<CaravanFilterProps> = ({ onFilterChange }) => {
   const router = useRouter();
   const pathname = usePathname();
- const searchParams = useSearchParams();
+  const searchParams = useSearchParams();
   const [categoryOpen, setCategoryOpen] = useState(false);
   const [categories, setCategories] = useState<Option[]>([]);
   const [makes, setMakes] = useState<Option[]>([]);
-    const [states, setStates] = useState<StateOption[]>([]);
-   const [makeOpen, setMakeOpen] = useState(false);
+  const [states, setStates] = useState<StateOption[]>([]);
+  const [makeOpen, setMakeOpen] = useState(false);
   const [filters, setFilters] = useState<Filters>({});
-   const [conditionOpen, setConditionOpen] = useState(false);
+  const [conditionOpen, setConditionOpen] = useState(false);
   const [sleepsOpen, setSleepsOpen] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [locationInput, setLocationInput] = useState("");
@@ -89,42 +86,41 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
     string | null
   >(null);
   const [stateOpen, setStateOpen] = useState(false);
-const [selectedState, setSelectedState] = useState<string | null>(null);
-const [selectedStateName, setSelectedStateName] = useState<string | null>(null);
- const conditionDatas = ['Near New', 'New', 'Used']
+  const [selectedState, setSelectedState] = useState<string | null>(null);
+  const [selectedStateName, setSelectedStateName] = useState<string | null>(
+    null
+  );
+  const conditionDatas = ["Near New", "New", "Used"];
 
- 
   const atm = [600, 800, 1000, 1250, 1500, 1750, 2000, 2250, 2500, 2750];
 
-const price = [
-  10000, 20000, 30000, 40000, 50000,
-  60000, 70000, 80000, 90000, 100000,
-  125000, 150000, 175000, 200000, 225000,
-  250000, 275000, 300000
-];
+  const price = [
+    10000, 20000, 30000, 40000, 50000, 60000, 70000, 80000, 90000, 100000,
+    125000, 150000, 175000, 200000, 225000, 250000, 275000, 300000,
+  ];
 
+  const years = Array.from(
+    { length: new Date().getFullYear() - 1914 + 1 },
+    (_, i) => 1914 + i
+  );
 
-const years = Array.from({ length: new Date().getFullYear() - 1914 + 1 }, (_, i) => 1914 + i);
+  const length = [12, 13, 14, 15, 16, 17, 18, 19, 20, 21];
 
-const length = [12, 13, 14, 15, 16, 17, 18, 19, 20, 21];
+  const sleep = [1, 2, 3, 4, 5, 6, 7];
 
-const sleep = [1, 2, 3, 4, 5, 6, 7];
+  useEffect(() => {
+    const loadFilters = async () => {
+      const res = await fetchProductList();
+      if (res?.data) {
+        setCategories(res.data.all_categories || []);
+        setMakes(res.data.make_options || []);
+        setStates(res.data.states || []);
+      }
+    };
+    loadFilters();
+  }, []);
 
-  
- useEffect(() => {
-  const loadFilters = async () => {
-    const res = await fetchProductList();
-    if (res?.data) {
-      setCategories(res.data.all_categories || []);
-       setMakes(res.data.make_options || []);
-      setStates(res.data.states || []);
-    }
-  };
-  loadFilters();
-   
-}, []);
-
-console.log("filters", filters)
+  console.log("filters", filters);
   const [locationSuggestions, setLocationSuggestions] = useState<
     LocationSuggestion[]
   >([]);
@@ -134,166 +130,171 @@ console.log("filters", filters)
   };
 
   useEffect(() => {
-  if (selectedCategory) {
-    setFilters((prev) => ({ ...prev, category: selectedCategory }));
-  }
-}, [selectedCategory]);
+    if (selectedCategory) {
+      setFilters((prev) => ({ ...prev, category: selectedCategory }));
+    }
+  }, [selectedCategory]);
 
   const isAnyFilterSelected = Boolean(
-  selectedCategory ||
-  selectedMake ||
-  selectedLocation ||
-  selectedConditionName ||
-  selectedSleepName ||
-  selectedState
-);
-
-useEffect(() => {
-  const pathParts = pathname.split("/").filter(Boolean);
-  const slug1 = pathParts[1]; // category or state
-  const slug2 = pathParts[2]; // state
-
-  // Move variables inside the effect
-  const categorySlug = slug1?.endsWith("-category") ? slug1.replace(/-category$/, "") : undefined;
-  const categoryMatch = categories.find((cat) => cat.slug === categorySlug);
-
-  const rawStateSlug = slug2 ?? (slug1?.endsWith("-state") ? slug1 : undefined);
-  const stateMatch = states.find((s) => rawStateSlug === `${s.name.toLowerCase().replace(/\s+/g, "-")}-state`);
-
-  if (categoryMatch) {
-    setSelectedCategory(categoryMatch.slug);
-    setSelectedCategoryName(categoryMatch.name);
-  }
-
-  if (stateMatch) {
-    setSelectedState(stateMatch.value);
-    setSelectedStateName(stateMatch.name);
-  }
-
-  // Search params
-  const make = searchParams.get("make");
-  if (make) {
-    setSelectedMake(make);
-    const makeMatch = makes.find((m) => m.slug === make);
-    if (makeMatch) setSelectedMakeName(makeMatch.name);
-  }
-
-  const condition = searchParams.get("condition");
-  if (condition) setSelectedConditionName(condition);
-
-  const sleeps = searchParams.get("sleeps");
-  if (sleeps) setSelectedSleepName(sleeps);
-
-  // Trigger filters
-  setTimeout(() => {
-    onFilterChange({
-      category: categoryMatch?.slug,
-      location: stateMatch?.value,
-      make: make || undefined,
-      condition: condition || undefined,
-      sleeps: sleeps || undefined
-    });
-  }, 0);
-}, [pathname, categories, states, makes, searchParams, onFilterChange]);
-
-
-
-
-
-
- 
-   const handleSuburbSelection = (selected: string) => {
-  setLocationInput(selected);
-  setLocationSuggestions([]);
-
-  const [suburbSlug, postcode] = selected.split("/");
-
-  // ✅ Match suburbSlug to state's suburb values
-  const matchedState = states.find((state) =>
-    state.regions?.some((region) =>
-      region.suburbs?.some((sub) => sub.value === suburbSlug)
-    )
+    selectedCategory ||
+      selectedMake ||
+      selectedLocation ||
+      selectedConditionName ||
+      selectedSleepName ||
+      selectedState
   );
 
-  if (matchedState) {
-    setSelectedState(matchedState.value); // e.g., "new-south-wales"
-    setSelectedStateName(matchedState.name);
-  }
+  useEffect(() => {
+    const pathParts = pathname.split("/").filter(Boolean); // ex: ["listings", "queensland-state"]
+    const slug1 = pathParts[1]; // could be category or state
+    const slug2 = pathParts[2]; // could be undefined or state
 
-  // ✅ Build URL
-  const slugParts = [];
-  if (suburbSlug) slugParts.push(suburbSlug);
-  if (matchedState?.value) slugParts.push(`${matchedState.value}-state`);
-  if (postcode) slugParts.push(postcode);
+    let categoryMatch: Option | undefined;
+    let stateMatch: StateOption | undefined;
 
-  const finalUrl = `/listings/${slugParts.join("/")}`;
-  router.push(finalUrl);
+    // Check if slug1 is category
+    if (slug1?.endsWith("-category")) {
+      const categorySlug = slug1.replace(/-category$/, "");
+      categoryMatch = categories.find((cat) => cat.slug === categorySlug);
+    }
 
-  // ✅ Trigger filter change
-  onFilterChange({
-    category: selectedCategory || undefined,
-    make: selectedMake || undefined,
-    location: matchedState?.value, // This gets passed to backend
-    condition: selectedConditionName || undefined,
-    sleeps: selectedSleepName || undefined,
-  });
+    // Now check state (either in slug2 if category exists, or slug1 if only state)
+    const rawStateSlug =
+      slug2 ?? (slug1?.endsWith("-state") ? slug1 : undefined);
+    const matchedState = states.find(
+      (s) =>
+        rawStateSlug === `${s.name.toLowerCase().replace(/\s+/g, "-")}-state`
+    );
+    if (matchedState) {
+      stateMatch = matchedState;
+    }
+    // Update filters
+    if (categoryMatch) {
+      setSelectedCategory(categoryMatch.slug);
+      setSelectedCategoryName(categoryMatch.name);
+    }
 
-  setIsModalOpen(false);
-};
+    if (stateMatch) {
+      setSelectedState(stateMatch.value);
+      setSelectedStateName(stateMatch.name);
+    }
 
-useEffect(() => {
-  console.log("Triggered Filters:", {
-    category: selectedCategory,
-    location: selectedState,
-    make: selectedMake,
-    condition: selectedConditionName,
-    sleeps: selectedSleepName
-  });
-   
-}, [selectedCategory, selectedState, selectedMake, selectedConditionName, selectedSleepName]);
+    // Search Params: make, condition, sleeps
+    const make = searchParams.get("make");
+    if (make) {
+      setSelectedMake(make);
+      const makeMatch = makes.find((m) => m.slug === make);
+      if (makeMatch) setSelectedMakeName(makeMatch.name);
+    }
 
+    const condition = searchParams.get("condition");
+    if (condition) setSelectedConditionName(condition);
 
+    const sleeps = searchParams.get("sleeps");
+    if (sleeps) setSelectedSleepName(sleeps);
 
+    // ✅ Trigger filter after all values are set
+    setTimeout(() => {
+      onFilterChange({
+        category: categoryMatch?.slug,
+        location: stateMatch?.value,
+        make: make || undefined,
+        condition: condition || undefined,
+        sleeps: sleeps || undefined,
+      });
+    }, 0);
+  }, [pathname, categories, makes, states, searchParams, onFilterChange]);
 
+  const handleSuburbSelection = (selected: string) => {
+    setLocationInput(selected);
+    setLocationSuggestions([]);
 
-const handleSearch = () => {
-  const newFilters: Filters = {
-    category: selectedCategory || undefined,
-    make: selectedMake || undefined,
-    location: selectedState || undefined,
-    condition: selectedConditionName || undefined,
-    sleeps: selectedSleepName || undefined,
+    const [suburbSlug, postcode] = selected.split("/");
+
+    // ✅ Match suburbSlug to state's suburb values
+    const matchedState = states.find((state) =>
+      state.regions?.some((region) =>
+        region.suburbs?.some((sub) => sub.value === suburbSlug)
+      )
+    );
+
+    if (matchedState) {
+      setSelectedState(matchedState.value); // e.g., "new-south-wales"
+      setSelectedStateName(matchedState.name);
+    }
+
+    // ✅ Build URL
+    const slugParts = [];
+    if (suburbSlug) slugParts.push(suburbSlug);
+    if (matchedState?.value) slugParts.push(`${matchedState.value}-state`);
+    if (postcode) slugParts.push(postcode);
+
+    const finalUrl = `/listings/${slugParts.join("/")}`;
+    router.push(finalUrl);
+
+    // ✅ Trigger filter change
+    onFilterChange({
+      category: selectedCategory || undefined,
+      make: selectedMake || undefined,
+      location: matchedState?.value, // This gets passed to backend
+      condition: selectedConditionName || undefined,
+      sleeps: selectedSleepName || undefined,
+    });
+
+    setIsModalOpen(false);
   };
 
- 
-  // ✅ Send to ListingsPage
-  onFilterChange(newFilters);
+  useEffect(() => {
+    console.log("Triggered Filters:", {
+      category: selectedCategory,
+      location: selectedState,
+      make: selectedMake,
+      condition: selectedConditionName,
+      sleeps: selectedSleepName,
+    });
+  }, [
+    selectedCategory,
+    selectedState,
+    selectedMake,
+    selectedConditionName,
+    selectedSleepName,
+  ]);
 
-  // ✅ Build URL
-  const slugParts: string[] = [];
-  if (newFilters.category) slugParts.push(`${newFilters.category}-category`);
-  if (newFilters.location) {
-    const stateSlug = newFilters.location.toLowerCase().replace(/\s+/g, '-') + '-state';
-    slugParts.push(stateSlug);
-  }
+  const handleSearch = () => {
+    const newFilters: Filters = {
+      category: selectedCategory || undefined,
+      make: selectedMake || undefined,
+      location: selectedState || undefined,
+      condition: selectedConditionName || undefined,
+      sleeps: selectedSleepName || undefined,
+    };
 
-  const url = `/listings/${slugParts.join('/')}`;
-  router.push(url);
-};
+    // ✅ Send to ListingsPage
+    onFilterChange(newFilters);
 
+    // ✅ Build URL
+    const slugParts: string[] = [];
+    if (newFilters.category) slugParts.push(`${newFilters.category}-category`);
+    if (newFilters.location) {
+      const stateSlug =
+        newFilters.location.toLowerCase().replace(/\s+/g, "-") + "-state";
+      slugParts.push(stateSlug);
+    }
 
-
+    const url = `/listings/${slugParts.join("/")}`;
+    router.push(url);
+  };
 
   const resetFilters = () => {
-   setSelectedCategory(null)
-  setSelectedCategoryName(null)
-  setSelectedMake(null)
-  setSelectedMakeName(null)
-  setSelectedLocation('')
-  setSelectedConditionName(null)
-  setSelectedSleepName('')
-  setLocationInput('')
-  setLocationSuggestions([])
+    setSelectedCategory(null);
+    setSelectedCategoryName(null);
+    setSelectedMake(null);
+    setSelectedMakeName(null);
+    setSelectedLocation("");
+    setSelectedConditionName(null);
+    setSelectedSleepName("");
+    setLocationInput("");
+    setLocationSuggestions([]);
   };
 
   useEffect(() => {
@@ -301,7 +302,7 @@ const handleSearch = () => {
       if (locationInput.length >= 2) {
         fetchLocations(locationInput)
           .then((data) => {
-             setLocationSuggestions(data); // ← keep full object
+            setLocationSuggestions(data); // ← keep full object
           })
           .catch(console.error);
       } else {
@@ -312,7 +313,6 @@ const handleSearch = () => {
     return () => clearTimeout(delayDebounce);
   }, [locationInput]);
 
-  
   return (
     <div className="filter-card mobile-search">
       <div className="card-title align-items-center d-flex justify-content-between hidden-xs">
@@ -320,77 +320,81 @@ const handleSearch = () => {
       </div>
 
       {/* Category Accordion */}
-     <div className="cs-full_width_section">
-  <div className="filter-accordion" onClick={() => toggle(setCategoryOpen)}>
-    <h5 className="cfs-filter-label">
-      Categorie
-      {selectedCategoryName && (
-        <span className="filter-accordion-items">: {selectedCategoryName}</span>
-      )}
-    </h5>
-    <BiChevronDown />
-  </div>
+      <div className="cs-full_width_section">
+        <div
+          className="filter-accordion"
+          onClick={() => toggle(setCategoryOpen)}
+        >
+          <h5 className="cfs-filter-label">
+            Categorie
+            {selectedCategoryName && (
+              <span className="filter-accordion-items">
+                : {selectedCategoryName}
+              </span>
+            )}
+          </h5>
+          <BiChevronDown />
+        </div>
 
-  {categoryOpen && (
-    <div className="filter-accordion-items">
-      {Array.isArray(categories) &&
-        categories.map((cat) => (
-          <div
-            key={cat.slug}
-            className={`filter-accordion-item ${
-              selectedCategory === cat.slug ? 'selected' : ''
-            }`}
-            onClick={() => {
-              setSelectedCategory(cat.slug);
-              setSelectedCategoryName(cat.name);
-              setCategoryOpen(false);
-            }}
-          >
-            {cat.name}
+        {categoryOpen && (
+          <div className="filter-accordion-items">
+            {Array.isArray(categories) &&
+              categories.map((cat) => (
+                <div
+                  key={cat.slug}
+                  className={`filter-accordion-item ${
+                    selectedCategory === cat.slug ? "selected" : ""
+                  }`}
+                  onClick={() => {
+                    setSelectedCategory(cat.slug);
+                    setSelectedCategoryName(cat.name);
+                    setCategoryOpen(false);
+                  }}
+                >
+                  {cat.name}
+                </div>
+              ))}
           </div>
-        ))}
-    </div>
-  )}
-</div>
-
+        )}
+      </div>
 
       {/* Location Accordion */}
 
       {/* State Filter Accordion */}
-<div className="cs-full_width_section">
-  <div className="filter-accordion" onClick={() => toggle(setStateOpen)}>
-    <h5 className="cfs-filter-label">
-      Location
-      {selectedStateName && (
-        <span className="filter-accordion-items">: {selectedStateName}</span>
-      )}
-    </h5>
-    <BiChevronDown />
-  </div>
+      <div className="cs-full_width_section">
+        <div className="filter-accordion" onClick={() => toggle(setStateOpen)}>
+          <h5 className="cfs-filter-label">
+            Location
+            {selectedStateName && (
+              <span className="filter-accordion-items">
+                : {selectedStateName}
+              </span>
+            )}
+          </h5>
+          <BiChevronDown />
+        </div>
 
-  {stateOpen && (
-    <div className="filter-accordion-items">
-      {Array.isArray(states) &&
-  states.map((state) => (
-    <div
-      key={state.value}
-      className={`filter-accordion-item ${
-        selectedState === state.value ? "selected" : ""
-      }`}
-      onClick={() => {
-        setSelectedState(state.value);
-        setSelectedStateName(state.name);
-        setStateOpen(false);
-      }}
-    >
-      {state.name}
-    </div>
-))}
-
-    </div>
-  )}
-</div>
-
+        {stateOpen && (
+          <div className="filter-accordion-items">
+            {Array.isArray(states) &&
+              states.map((state) => (
+                <div
+                  key={state.value}
+                  className={`filter-accordion-item ${
+                    selectedState === state.value ? "selected" : ""
+                  }`}
+                  onClick={() => {
+                    setSelectedState(state.value);
+                    setSelectedStateName(state.name);
+                    setStateOpen(false);
+                  }}
+                >
+                  {state.name}
+                </div>
+              ))}
+          </div>
+        )}
+      </div>
 
       {/* Suburb / Postcode */}
       <div className="cs-full_width_section">
@@ -452,20 +456,23 @@ const handleSearch = () => {
             <select className="cfs-select-input">
               <option value="">Min</option>
               {atm.map((val) => (
-          <option key={val} value={val}>{val} kg</option>
-        ))}
+                <option key={val} value={val}>
+                  {val} kg
+                </option>
+              ))}
             </select>
           </div>
           <div className="col-6">
             <h6 className="cfs-filter-label-sub">To</h6>
             <select className="cfs-select-input">
               <option value="">Min</option>
-             {atm.map((val) => (
-          <option key={val} value={val}>{val} kg</option>
-        ))}
+              {atm.map((val) => (
+                <option key={val} value={val}>
+                  {val} kg
+                </option>
+              ))}
             </select>
           </div>
-
         </div>
       </div>
 
@@ -478,8 +485,10 @@ const handleSearch = () => {
             <select className="cfs-select-input">
               <option value="">Min</option>
               {price.map((value, idx) => (
-          <option key={idx} value={value}>$ {value}</option>
-        ))}
+                <option key={idx} value={value}>
+                  $ {value}
+                </option>
+              ))}
             </select>
           </div>
           <div className="col-6">
@@ -487,13 +496,15 @@ const handleSearch = () => {
             <select className="cfs-select-input">
               <option value="">Max</option>
               {price.map((value, idx) => (
-          <option key={idx} value={value}>$ {value}</option>
-        ))}
+                <option key={idx} value={value}>
+                  $ {value}
+                </option>
+              ))}
             </select>
           </div>
         </div>
       </div>
-{/* 8883944599
+      {/* 8883944599
 9524163042 */}
       {/* Condition Accordion */}
       <div className="cs-full_width_section">
@@ -515,60 +526,59 @@ const handleSearch = () => {
 
         {conditionOpen && (
           <div className="filter-accordion-items">
-           {conditionDatas.map((condition, index) => (
-  <div
-    key={index}
-    className={`filter-accordion-item ${
-      selectedConditionName === condition ? "selected" : ""
-    }`}
-    onClick={() => {
-      setSelectedConditionName(condition);
-      setConditionOpen(false);
-    }}
-  >
-    {condition}
-  </div>
-))}
-
+            {conditionDatas.map((condition, index) => (
+              <div
+                key={index}
+                className={`filter-accordion-item ${
+                  selectedConditionName === condition ? "selected" : ""
+                }`}
+                onClick={() => {
+                  setSelectedConditionName(condition);
+                  setConditionOpen(false);
+                }}
+              >
+                {condition}
+              </div>
+            ))}
           </div>
         )}
       </div>
       {/* Sleeps Accordion */}
       <div className="cs-full_width_section">
-  <div className="filter-accordion" onClick={() => toggle(setSleepsOpen)}>
-    <h5 className="cfs-filter-label">
-      Sleep
-      {selectedConditionName && (
-        <span className="filter-accordion-items">
-          : {selectedSleepName}
-        </span>
-      )}
-    </h5>
-    <BiChevronDown />
-  </div>
-
-  {sleepsOpen && (
-    <div className="filter-accordion-items">
-      {sleep.map((sleepValue, index) => (
-        <div
-          key={index}
-          className={`filter-accordion-item ${
-            String(sleepValue) === selectedConditionName ? "selected" : ""
-          }`}
-          onClick={() => {
-            setSelectedSleepName(String(sleepValue));
-            setConditionOpen(false);
-          }}
-        >
-          {sleepValue} People
+        <div className="filter-accordion" onClick={() => toggle(setSleepsOpen)}>
+          <h5 className="cfs-filter-label">
+            Sleep
+            {selectedConditionName && (
+              <span className="filter-accordion-items">
+                : {selectedSleepName}
+              </span>
+            )}
+          </h5>
+          <BiChevronDown />
         </div>
-      ))}
-    </div>
-  )}
-</div>
+
+        {sleepsOpen && (
+          <div className="filter-accordion-items">
+            {sleep.map((sleepValue, index) => (
+              <div
+                key={index}
+                className={`filter-accordion-item ${
+                  String(sleepValue) === selectedConditionName ? "selected" : ""
+                }`}
+                onClick={() => {
+                  setSelectedSleepName(String(sleepValue));
+                  setConditionOpen(false);
+                }}
+              >
+                {sleepValue} People
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
 
       {/* Year Range */}
-    <div className="cs-full_width_section">
+      <div className="cs-full_width_section">
         <h5 className="cfs-filter-label">Price</h5>
         <div className="row">
           <div className="col-6">
@@ -576,8 +586,10 @@ const handleSearch = () => {
             <select className="cfs-select-input">
               <option value="">Min</option>
               {years.map((value, idx) => (
-          <option key={idx} value={value}>{value}</option>
-        ))}
+                <option key={idx} value={value}>
+                  {value}
+                </option>
+              ))}
             </select>
           </div>
           <div className="col-6">
@@ -585,8 +597,10 @@ const handleSearch = () => {
             <select className="cfs-select-input">
               <option value="">Max</option>
               {years.map((value, idx) => (
-          <option key={idx} value={value}>{value}</option>
-        ))}
+                <option key={idx} value={value}>
+                  {value}
+                </option>
+              ))}
             </select>
           </div>
         </div>
@@ -601,17 +615,21 @@ const handleSearch = () => {
             <select className="cfs-select-input">
               <option value="">Min</option>
               {length.map((value, idx) => (
-          <option key={idx} value={value}>{value} ft</option>
-        ))}
+                <option key={idx} value={value}>
+                  {value} ft
+                </option>
+              ))}
             </select>
           </div>
           <div className="col-6">
             <h6 className="cfs-filter-label-sub">To</h6>
             <select className="cfs-select-input">
               <option value="">Min</option>
-               {length.map((value, idx) => (
-          <option key={idx} value={value}>{value} ft</option>
-        ))}
+              {length.map((value, idx) => (
+                <option key={idx} value={value}>
+                  {value} ft
+                </option>
+              ))}
             </select>
           </div>
         </div>
@@ -627,7 +645,7 @@ const handleSearch = () => {
         />
       </div>
       <div className="search_float_btn">
-   <button
+        <button
           type="button"
           className="btn cfs-btn fullwidth_btn"
           disabled={!isAnyFilterSelected}
@@ -635,9 +653,7 @@ const handleSearch = () => {
         >
           Search Filter
         </button>
-
-</div>
-    
+      </div>
 
       {/* Reset Button */}
       <button onClick={resetFilters} className="btn cfs-btn fullwidth_btn">
@@ -666,24 +682,21 @@ const handleSearch = () => {
                   onChange={(e) => setLocationInput(e.target.value)}
                 />
                 {locationSuggestions.map((loc, index) => (
-  <li
+                  <li
                     key={index}
                     onClick={() => handleSuburbSelection(loc.short_address)}
                   >
                     {loc.short_address}
                   </li>
-
-))}
-
+                ))}
               </div>
             </div>
 
-       <div className="cfs-modal-footer">
+            <div className="cfs-modal-footer">
               <button
                 type="button"
                 className="cfs-btn btn"
                 onClick={() => {
-
                   console.log("Selected Location:", selectedLocation);
                   setIsModalOpen(false);
                 }}
@@ -691,8 +704,6 @@ const handleSearch = () => {
                 Search
               </button>
             </div>
-
-
           </div>
         </div>
       )}
@@ -701,4 +712,3 @@ const handleSearch = () => {
 };
 
 export default CaravanFilter;
- 
