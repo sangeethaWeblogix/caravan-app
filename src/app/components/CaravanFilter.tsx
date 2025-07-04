@@ -1,4 +1,4 @@
-"use client";
+ "use client";
 
 import { fetchLocations } from "@/api/location/api";
 import React, { useState, Dispatch, SetStateAction, useEffect } from "react";
