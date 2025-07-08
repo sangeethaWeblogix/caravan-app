@@ -1,4 +1,4 @@
- "use client";
+"use client";
 
 import { fetchLocations } from "@/api/location/api";
 import React, { useState, Dispatch, SetStateAction, useEffect } from "react";
@@ -42,11 +42,11 @@ export interface Filters {
   location?: string;
   minPrice?: string;
   maxPrice?: string;
-  minKg?: string;
-  maxKg?: string;
   condition?: string;
   sleeps?: string;
   states?: string;
+  minKg?: string | number;
+  maxKg?: string | number;
 }
 
 interface CaravanFilterProps {
@@ -90,7 +90,18 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({ onFilterChange }) => {
   const [selectedStateName, setSelectedStateName] = useState<string | null>(
     null
   );
+  const [selectedRegionName, setSelectedRegionName] = useState<string | null>(
+    null
+  );
+  const [selectedSuburbName, setSelectedSuburbName] = useState<string | null>(
+    null
+  );
+  const [atmFrom, setAtmFrom] = useState<number | null>(null);
+  const [atmTo, setAtmTo] = useState<number | null>(null);
+
   const conditionDatas = ["Near New", "New", "Used"];
+  const [pendingLocation, setPendingLocation] = useState<string>("");
+  const [pendingState, setPendingState] = useState<StateOption | null>(null);
 
   const atm = [600, 800, 1000, 1250, 1500, 1750, 2000, 2250, 2500, 2750];
 
@@ -141,8 +152,76 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({ onFilterChange }) => {
       selectedLocation ||
       selectedConditionName ||
       selectedSleepName ||
-      selectedState
+      selectedState ||
+      atmFrom ||
+      atmTo
   );
+  useEffect(() => {
+    const slug = pathname.split("/listings/")[1];
+
+    if (slug?.includes("over") && slug?.includes("kg-atm")) {
+      const value = parseInt(slug.split("-")[1]);
+      setAtmFrom(value);
+      setAtmTo(null);
+      setFilters((prev) => ({ ...prev, minKg: value, maxKg: undefined }));
+    } else if (slug?.includes("under") && slug?.includes("kg-atm")) {
+      const value = parseInt(slug.split("-")[1]);
+      setAtmFrom(null);
+      setAtmTo(value);
+      setFilters((prev) => ({ ...prev, minKg: undefined, maxKg: value }));
+    } else if (slug?.includes("between") && slug?.includes("kg-atm")) {
+      const [from, to] = slug
+        .replace("between-", "")
+        .replace("-kg-atm", "")
+        .split("-")
+        .map(Number);
+      setAtmFrom(from);
+      setAtmTo(to);
+      setFilters((prev) => ({ ...prev, minKg: from, maxKg: to }));
+    }
+  }, [pathname]);
+
+  useEffect(() => {
+    const pathParts = pathname.split("/").filter(Boolean);
+    const suburbSlug = pathParts[1]?.replace("-suburb", "") || "";
+    const stateSlug = pathParts[2]?.replace("-state", "") || "";
+    const postcode = pathParts[3] || "";
+
+    if (!suburbSlug || !stateSlug || !postcode) return;
+
+    let matchedState: StateOption | null = null;
+    let matchedRegionName: string | null = null;
+    let matchedSuburbName: string | null = null;
+
+    for (const state of states) {
+      if (state.name.toLowerCase().replace(/\s+/g, "-") === stateSlug) {
+        matchedState = state;
+        for (const region of state.regions || []) {
+          for (const suburb of region.suburbs || []) {
+            if (suburb.name.toLowerCase().replace(/\s+/g, "-") === suburbSlug) {
+              matchedRegionName = region.name;
+              matchedSuburbName = suburb.name;
+              break;
+            }
+          }
+          if (matchedSuburbName) break;
+        }
+        break;
+      }
+    }
+
+    if (matchedState && matchedSuburbName) {
+      setSelectedState(matchedState.value);
+      setSelectedStateName(matchedState.name);
+      setSelectedRegionName(matchedRegionName);
+      setSelectedSuburbName(matchedSuburbName);
+      setLocationInput(`${matchedSuburbName} ACT ${postcode}`);
+      setFilters((prev) => ({
+        ...prev,
+        location: matchedState.value,
+      }));
+    }
+  }, [pathname, states]);
 
   useEffect(() => {
     const pathParts = pathname.split("/").filter(Boolean); // ex: ["listings", "queensland-state"]
@@ -201,47 +280,42 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({ onFilterChange }) => {
         make: make || undefined,
         condition: condition || undefined,
         sleeps: sleeps || undefined,
+        minKg: atmFrom || undefined,
+        maxKg: atmTo || undefined,
       });
     }, 0);
   }, [pathname, categories, makes, states, searchParams, onFilterChange]);
 
-  const handleSuburbSelection = (selected: string) => {
-    setLocationInput(selected);
-    setLocationSuggestions([]);
+  const handleSuburbSelection = (shortAddress: string) => {
+    setLocationInput(shortAddress);
 
-    const [suburbSlug, postcode] = selected.split("/");
+    const match = shortAddress.match(/^(.+?)\s+[A-Z]{2,}\s+(\d{4})$/);
+    if (!match) return;
 
-    // ✅ Match suburbSlug to state's suburb values
-    const matchedState = states.find((state) =>
-      state.regions?.some((region) =>
-        region.suburbs?.some((sub) => sub.value === suburbSlug)
-      )
-    );
+    const suburbName = match[1].trim().toLowerCase();
+    const postcode = match[2];
 
-    if (matchedState) {
-      setSelectedState(matchedState.value); // e.g., "new-south-wales"
-      setSelectedStateName(matchedState.name);
+    let matchedState: StateOption | undefined;
+    let suburbSlug: string | undefined;
+
+    for (const state of states) {
+      for (const region of state.regions || []) {
+        for (const suburb of region.suburbs || []) {
+          if (suburb.name.toLowerCase() === suburbName) {
+            matchedState = state;
+            suburbSlug = suburb.value?.split(".")[0];
+            break;
+          }
+        }
+        if (matchedState) break;
+      }
+      if (matchedState) break;
     }
 
-    // ✅ Build URL
-    const slugParts = [];
-    if (suburbSlug) slugParts.push(suburbSlug);
-    if (matchedState?.value) slugParts.push(`${matchedState.value}-state`);
-    if (postcode) slugParts.push(postcode);
-
-    const finalUrl = `/listings/${slugParts.join("/")}`;
-    router.push(finalUrl);
-
-    // ✅ Trigger filter change
-    onFilterChange({
-      category: selectedCategory || undefined,
-      make: selectedMake || undefined,
-      location: matchedState?.value, // This gets passed to backend
-      condition: selectedConditionName || undefined,
-      sleeps: selectedSleepName || undefined,
-    });
-
-    setIsModalOpen(false);
+    if (matchedState && suburbSlug) {
+      setPendingLocation(shortAddress);
+      setPendingState(matchedState);
+    }
   };
 
   useEffect(() => {
@@ -267,22 +341,45 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({ onFilterChange }) => {
       location: selectedState || undefined,
       condition: selectedConditionName || undefined,
       sleeps: selectedSleepName || undefined,
+      minKg: atmFrom || undefined,
+      maxKg: atmTo || undefined,
     };
 
-    // ✅ Send to ListingsPage
     onFilterChange(newFilters);
 
-    // ✅ Build URL
     const slugParts: string[] = [];
-    if (newFilters.category) slugParts.push(`${newFilters.category}-category`);
-    if (newFilters.location) {
-      const stateSlug =
-        newFilters.location.toLowerCase().replace(/\s+/g, "-") + "-state";
-      slugParts.push(stateSlug);
+
+    // Add suburb
+    if (selectedSuburbName) {
+      slugParts.push(
+        `${selectedSuburbName.toLowerCase().replace(/\s+/g, "-")}-suburb`
+      );
     }
 
-    const url = `/listings/${slugParts.join("/")}`;
-    router.push(url);
+    // Add state
+    if (selectedStateName) {
+      slugParts.push(
+        `${selectedStateName.toLowerCase().replace(/\s+/g, "-")}-state`
+      );
+    }
+
+    // Add postcode
+    const match = locationInput.match(/\b\d{4}\b/);
+    if (match) {
+      slugParts.push(match[0]);
+    }
+
+    // 🔥 Add ATM-based slug logic
+    if (atmFrom && atmTo) {
+      slugParts.push(`between-${atmFrom}-kg-${atmTo}-kg-atm`);
+    } else if (atmFrom) {
+      slugParts.push(`over-${atmFrom}-kg-atm`);
+    } else if (atmTo) {
+      slugParts.push(`under-${atmTo}-kg-atm`);
+    }
+
+    const finalURL = `/listings/${slugParts.join("/")}`;
+    router.push(finalURL);
   };
 
   const resetFilters = () => {
@@ -295,6 +392,8 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({ onFilterChange }) => {
     setSelectedSleepName("");
     setLocationInput("");
     setLocationSuggestions([]);
+    setAtmFrom(null);
+    setAtmTo(null);
   };
 
   useEffect(() => {
@@ -367,7 +466,9 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({ onFilterChange }) => {
             Location
             {selectedStateName && (
               <span className="filter-accordion-items">
-                : {selectedStateName}
+                {selectedStateName}
+                {selectedRegionName && `  ${selectedRegionName}`} <br />
+                {selectedSuburbName && `  ${selectedSuburbName}`}
               </span>
             )}
           </h5>
@@ -453,7 +554,13 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({ onFilterChange }) => {
         <div className="row">
           <div className="col-6">
             <h6 className="cfs-filter-label-sub">From</h6>
-            <select className="cfs-select-input">
+            <select
+              className="cfs-select-input"
+              value={atmFrom ?? ""}
+              onChange={(e) =>
+                setAtmFrom(e.target.value ? parseInt(e.target.value) : null)
+              } // Convert to number
+            >
               <option value="">Min</option>
               {atm.map((val) => (
                 <option key={val} value={val}>
@@ -464,8 +571,16 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({ onFilterChange }) => {
           </div>
           <div className="col-6">
             <h6 className="cfs-filter-label-sub">To</h6>
-            <select className="cfs-select-input">
-              <option value="">Min</option>
+            <select
+              className="cfs-select-input"
+              value={
+                atmTo !== null && atmTo !== undefined ? atmTo.toString() : ""
+              }
+              onChange={(e) =>
+                setAtmTo(e.target.value ? parseInt(e.target.value) : null)
+              } // Convert to number
+            >
+              <option value="">Max</option>
               {atm.map((val) => (
                 <option key={val} value={val}>
                   {val} kg
@@ -684,7 +799,9 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({ onFilterChange }) => {
                 {locationSuggestions.map((loc, index) => (
                   <li
                     key={index}
-                    onClick={() => handleSuburbSelection(loc.short_address)}
+                    onClick={() => {
+                      handleSuburbSelection(loc.short_address); // e.g., "Bass Hill NSW 2197"
+                    }}
                   >
                     {loc.short_address}
                   </li>
@@ -697,7 +814,54 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({ onFilterChange }) => {
                 type="button"
                 className="cfs-btn btn"
                 onClick={() => {
-                  console.log("Selected Location:", selectedLocation);
+                  const input = locationInput.trim();
+
+                  if (!input) {
+                    setSelectedState(null);
+                    setSelectedStateName(null);
+                    setSelectedRegionName(null);
+                    setSelectedSuburbName(null);
+                    setIsModalOpen(false);
+                    return;
+                  }
+
+                  const match = input.match(/^(.+?)\s+[A-Z]{2,}\s+(\d{4})$/);
+
+                  if (match) {
+                    const suburbName = match[1].trim().toLowerCase();
+
+                    let matchedState: StateOption | null = null;
+                    let matchedRegionName: string | null = null;
+                    let matchedSuburbName: string | null = null;
+
+                    for (const state of states) {
+                      for (const region of state.regions || []) {
+                        for (const suburb of region.suburbs || []) {
+                          if (suburb.name.trim().toLowerCase() === suburbName) {
+                            matchedState = state;
+                            matchedRegionName = region.name;
+                            matchedSuburbName = suburb.name;
+                            break;
+                          }
+                        }
+                        if (matchedState) break;
+                      }
+                      if (matchedState) break;
+                    }
+
+                    if (matchedState) {
+                      setSelectedState(matchedState.value);
+                      setSelectedStateName(matchedState.name);
+                      setSelectedRegionName(matchedRegionName);
+                      setSelectedSuburbName(matchedSuburbName);
+
+                      setFilters((prev) => ({
+                        ...prev,
+                        location: matchedState.value,
+                      }));
+                    }
+                  }
+
                   setIsModalOpen(false);
                 }}
               >

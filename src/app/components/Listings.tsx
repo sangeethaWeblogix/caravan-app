@@ -1,4 +1,4 @@
- "use client";
+"use client";
 
 import { Suspense, useCallback, useEffect, useRef, useState } from "react";
 import { fetchListings } from "../../api/listings/api";
@@ -52,8 +52,8 @@ export interface Filters {
   location?: string;
   minPrice?: string;
   maxPrice?: string;
-  minKg?: string;
-  maxKg?: string;
+  minKg?: string | number;
+  maxKg?: string | number;
   condition?: string;
   sleeps?: string;
   states?: string;
@@ -121,6 +121,8 @@ export default function ListingsPage({ category, location }: Props) {
         ...appliedFilters,
         page,
         state: appliedFilters.location,
+        minKg: appliedFilters.minKg?.toString(),
+        maxKg: appliedFilters.maxKg?.toString(),
         location: undefined, // avoid duplication
       });
 

@@ -1,4 +1,4 @@
- const API_BASE = process.env.NEXT_PUBLIC_CFS_API_BASE;
+const API_BASE = process.env.NEXT_PUBLIC_CFS_API_BASE;
 
 interface Filters {
   page?: number;
@@ -26,28 +26,27 @@ export const fetchListings = async (filters: Filters = {}) => {
     maxKg,
     condition,
     sleeps,
-    state
+    state,
   } = filters;
 
   const params = new URLSearchParams();
-  params.append('paged', page.toString());
+  params.append("paged", page.toString());
 
-  if (category) params.append('category', category);
-  if (make) params.append('make', make);
-    if (state) params.append("state", state);
-  if (location) params.append('location', location);
-  if (minPrice) params.append('min_price', minPrice);
-  if (maxPrice) params.append('max_price', maxPrice);
-  if (minKg) params.append('min_kg', minKg);
-  if (maxKg) params.append('max_kg', maxKg);
-  if (condition) params.append('condition', condition);
-  if (sleeps) params.append('sleeps', sleeps);
-   const res = await fetch(`${API_BASE}/new-list?${params.toString()}`);
+  if (category) params.append("category", category);
+  if (make) params.append("make", make);
+  if (state) params.append("state", state);
+  if (location) params.append("location", location);
+  if (minPrice) params.append("min_price", minPrice);
+  if (maxPrice) params.append("max_price", maxPrice);
+  if (minKg) params.append("from_atm", `${minKg}kg`);
+  if (maxKg) params.append("to_atm", `${maxKg}kg`);
 
-  if (!res.ok) throw new Error('API failed');
+  if (condition) params.append("condition", condition);
+  if (sleeps) params.append("sleeps", sleeps);
+  const res = await fetch(`${API_BASE}/new-list?${params.toString()}`);
+
+  if (!res.ok) throw new Error("API failed");
 
   const data = await res.json();
-   return data;
+  return data;
 };
-
-

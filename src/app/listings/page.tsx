@@ -1,4 +1,4 @@
- import React, { Suspense } from "react";
+import React, { Suspense } from "react";
 import Listing from "../../app/components/Listings";
 
 const page = () => {

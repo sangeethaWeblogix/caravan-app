@@ -6,7 +6,7 @@ import { Navigation } from "swiper/modules";
 import "swiper/css";
 import "swiper/css/navigation";
 import "../listings/listings.css";
- 
+
 interface Product {
   id: number;
   name: string;
@@ -44,14 +44,16 @@ export default function ListingContent({
     <div className="col-lg-6 col-md-8">
       <div className="top-filter mb-10">
         <div className="row align-items-center">
-          <div className="col-lg-6"><p className="show_count">
-  Showing {(pagination.current_page - 1) * pagination.per_page + 1}
-  –
-  {Math.min(pagination.current_page * pagination.per_page, pagination.total_products)}
-  of {pagination.total_products} results
-</p>
-
-           </div>
+          <div className="col-lg-6">
+            <p className="show_count">
+              Showing {(pagination.current_page - 1) * pagination.per_page + 1}–
+              {Math.min(
+                pagination.current_page * pagination.per_page,
+                pagination.total_products
+              )}
+              of {pagination.total_products} results
+            </p>
+          </div>
           <div className="col-4 d-lg-none d-md-none">
             <button className="mobile_fltn navbar-toggler mytogglebutton">
               <i className="bi bi-search" /> &nbsp;Filter
@@ -86,34 +88,48 @@ export default function ListingContent({
             key={product.id}
           >
             <div className="vehicleSearch__column-poster">
-              <Link href={product.link}>
-                <div>
-                  <Swiper
-                    navigation
-                    modules={[Navigation]}
-                    className="mySwiper"
-                  >
-                    <SwiperSlide>
-                      <div className="swiper-zoom-container">
-
-                      <Image
-                        src={product.image} //"/images/img.png"
-                        alt={product.name}
-                        width={1593}
-                        height={1195}
-                      />
-                      </div>
-                    </SwiperSlide>
-                  </Swiper>
-                </div>
-              </Link>
+              {product.link ? (
+                <Link href={product.link}>
+                  <div>
+                    <Swiper
+                      navigation
+                      modules={[Navigation]}
+                      className="mySwiper"
+                    >
+                      <SwiperSlide>
+                        <div className="swiper-zoom-container">
+                          <Image
+                            src={"/images/img.png"} //"/images/img.png" "product.image"
+                            alt={product.name}
+                            width={1593}
+                            height={1195}
+                          />
+                        </div>
+                      </SwiperSlide>
+                    </Swiper>
+                  </div>
+                </Link>
+              ) : (
+                <Image
+                  src={"/images/img.png"} //"/images/img.png" "product.image"
+                  alt={product.name}
+                  width={1593}
+                  height={1195}
+                />
+              )}
               <div className="vehicleThumbDetails">
                 <div className="title">
-                  <Link href={product.link}>
+                  {product.link ? (
+                    <Link href={product.link}>
+                      <h3 className="woocommerce-loop-product__title">
+                        {product.name}
+                      </h3>
+                    </Link>
+                  ) : (
                     <h3 className="woocommerce-loop-product__title">
                       {product.name}
                     </h3>
-                  </Link>
+                  )}
                 </div>
                 <ul className="vehicleDetailsWithIcons simple">
                   {(product.categories || []).map((tag, i) => (
@@ -190,11 +206,13 @@ export default function ListingContent({
                 </button>
               </span>
             </li>
-            <li className="page-count"> page {pagination.current_page} of {pagination.total_pages}  
-           </li>
+            <li className="page-count">
+              {" "}
+              page {pagination.current_page} of {pagination.total_pages}
+            </li>
             <li className="">
               <button
-              className="next-icon"
+                className="next-icon"
                 onClick={onNext}
                 disabled={pagination.current_page === pagination.total_pages}
               >
