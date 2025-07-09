@@ -102,13 +102,50 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({ onFilterChange }) => {
   const conditionDatas = ["Near New", "New", "Used"];
   const [pendingLocation, setPendingLocation] = useState<string>("");
   const [pendingState, setPendingState] = useState<StateOption | null>(null);
-
+  const [priceFrom, setPriceFrom] = useState<number | null>(null);
+  const [priceTo, setPriceTo] = useState<number | null>(null);
   const atm = [600, 800, 1000, 1250, 1500, 1750, 2000, 2250, 2500, 2750];
 
   const price = [
     10000, 20000, 30000, 40000, 50000, 60000, 70000, 80000, 90000, 100000,
     125000, 150000, 175000, 200000, 225000, 250000, 275000, 300000,
   ];
+  useEffect(() => {
+    const slug = pathname.split("/listings/")[1];
+
+    if (slug?.includes("over") && slug?.includes("-")) {
+      const value = parseInt(slug.split("-")[1]);
+      setPriceFrom(value);
+      setPriceTo(null);
+      setFilters((prev) => ({
+        ...prev,
+        minPrice: value.toString(),
+        maxPrice: undefined,
+      }));
+    } else if (slug?.includes("under") && slug?.includes("-")) {
+      const value = parseInt(slug.split("-")[1]);
+      setPriceFrom(null);
+      setPriceTo(value);
+      setFilters((prev) => ({
+        ...prev,
+        minPrice: undefined,
+        maxPrice: value.toString(),
+      }));
+    } else if (slug?.includes("between") && slug?.includes("-")) {
+      const [from, to] = slug
+        .replace("between-", "")
+        .replace("-price", "")
+        .split("-")
+        .map(Number);
+      setPriceFrom(from);
+      setPriceTo(to);
+      setFilters((prev) => ({
+        ...prev,
+        minPrice: from.toString(),
+        maxPrice: to.toString(),
+      }));
+    }
+  }, [pathname]);
 
   const years = Array.from(
     { length: new Date().getFullYear() - 1914 + 1 },
@@ -154,6 +191,8 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({ onFilterChange }) => {
       selectedSleepName ||
       selectedState ||
       atmFrom ||
+      priceFrom ||
+      priceTo ||
       atmTo
   );
   useEffect(() => {
@@ -282,6 +321,8 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({ onFilterChange }) => {
         sleeps: sleeps || undefined,
         minKg: atmFrom || undefined,
         maxKg: atmTo || undefined,
+        minPrice: priceFrom !== null ? priceFrom.toString() : undefined,
+        maxPrice: priceTo !== null ? priceTo.toString() : undefined,
       });
     }, 0);
   }, [pathname, categories, makes, states, searchParams, onFilterChange]);
@@ -343,6 +384,8 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({ onFilterChange }) => {
       sleeps: selectedSleepName || undefined,
       minKg: atmFrom || undefined,
       maxKg: atmTo || undefined,
+      minPrice: priceFrom !== null ? priceFrom.toString() : undefined,
+      maxPrice: priceTo !== null ? priceTo.toString() : undefined,
     };
 
     onFilterChange(newFilters);
@@ -376,6 +419,14 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({ onFilterChange }) => {
       slugParts.push(`over-${atmFrom}-kg-atm`);
     } else if (atmTo) {
       slugParts.push(`under-${atmTo}-kg-atm`);
+    }
+
+    if (priceFrom && priceTo) {
+      slugParts.push(`between-${priceFrom}-${priceTo}`);
+    } else if (priceFrom) {
+      slugParts.push(`over-${priceFrom}`);
+    } else if (priceTo) {
+      slugParts.push(`under-${priceTo}`);
     }
 
     const finalURL = `/listings/${slugParts.join("/")}`;
@@ -597,22 +648,34 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({ onFilterChange }) => {
         <div className="row">
           <div className="col-6">
             <h6 className="cfs-filter-label-sub">From</h6>
-            <select className="cfs-select-input">
+            <select
+              className="cfs-select-input"
+              value={priceFrom ?? ""}
+              onChange={(e) =>
+                setPriceFrom(e.target.value ? parseInt(e.target.value) : null)
+              }
+            >
               <option value="">Min</option>
-              {price.map((value, idx) => (
-                <option key={idx} value={value}>
-                  $ {value}
+              {price.map((val) => (
+                <option key={val} value={val}>
+                  ${val}
                 </option>
               ))}
             </select>
           </div>
           <div className="col-6">
             <h6 className="cfs-filter-label-sub">To</h6>
-            <select className="cfs-select-input">
+            <select
+              className="cfs-select-input"
+              value={priceTo ?? ""}
+              onChange={(e) =>
+                setPriceTo(e.target.value ? parseInt(e.target.value) : null)
+              }
+            >
               <option value="">Max</option>
-              {price.map((value, idx) => (
-                <option key={idx} value={value}>
-                  $ {value}
+              {price.map((value) => (
+                <option key={value} value={value}>
+                  ${value}
                 </option>
               ))}
             </select>

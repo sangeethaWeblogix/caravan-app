@@ -36,8 +36,8 @@ export const fetchListings = async (filters: Filters = {}) => {
   if (make) params.append("make", make);
   if (state) params.append("state", state);
   if (location) params.append("location", location);
-  if (minPrice) params.append("min_price", minPrice);
-  if (maxPrice) params.append("max_price", maxPrice);
+  if (minPrice) params.append("from_price", `${minPrice}`);
+  if (maxPrice) params.append("to_price", `${maxPrice}`);
   if (minKg) params.append("from_atm", `${minKg}kg`);
   if (maxKg) params.append("to_atm", `${maxKg}kg`);
 
