@@ -50,8 +50,8 @@ export interface Filters {
   category?: string;
   make?: string;
   location?: string;
-  minPrice?: string;
-  maxPrice?: string;
+  from_price?: string | number;
+  to_price?: string | number;
   minKg?: string | number;
   maxKg?: string | number;
   condition?: string;
@@ -68,6 +68,8 @@ export default function ListingsPage({ category, location }: Props) {
   const parsedCategory = category?.replace("-category", "") || undefined;
   const parsedLocation =
     location?.replace("-state", "")?.replace(/-/g, " ") || undefined;
+  const pathname =
+    typeof window !== "undefined" ? window.location.pathname : "";
 
   const initialFilters: Filters = {
     ...(parsedCategory && { category: parsedCategory }),
@@ -104,9 +106,7 @@ export default function ListingsPage({ category, location }: Props) {
       loadListings(page, filtersRef.current);
       setPagination((prev) => ({ ...prev, current_page: page }));
     }
-  }, [searchParams.toString()]); // 🔁 Trigger re-run on full param change
-
-  // Effect that handles fetching listings on page change
+  }, [searchParams.toString()]);
 
   const loadListings = async (page = 1, appliedFilters: Filters = filters) => {
     setIsLoading(true);
@@ -119,6 +119,8 @@ export default function ListingsPage({ category, location }: Props) {
         state: appliedFilters.location,
         minKg: appliedFilters.minKg?.toString(),
         maxKg: appliedFilters.maxKg?.toString(),
+        minPrice: appliedFilters.from_price?.toString(), // ✅ fixed
+        maxPrice: appliedFilters.to_price?.toString(), // ✅ fixed
         location: undefined, // avoid duplication
       });
 
@@ -179,6 +181,17 @@ export default function ListingsPage({ category, location }: Props) {
       slugParts.push(`under-${maxKg}-kg-atm`);
     }
 
+    const minPrice = filters.from_price;
+    const maxPrice = filters.to_price;
+
+    if (minPrice && maxPrice) {
+      slugParts.push(`between-${minPrice}-${maxPrice}`);
+    } else if (minPrice) {
+      slugParts.push(`over-${minPrice}`);
+    } else if (maxPrice) {
+      slugParts.push(`under-${maxPrice}`);
+    }
+
     return `/listings/${slugParts.join("/")}`;
   };
 
@@ -187,7 +200,17 @@ export default function ListingsPage({ category, location }: Props) {
     current.set("paged", page.toString());
 
     Object.entries(filters).forEach(([key, value]) => {
-      if (value && !["category", "location", "minKg", "maxKg"].includes(key)) {
+      if (
+        value &&
+        ![
+          "category",
+          "location",
+          "minKg",
+          "maxKg",
+          "from_price",
+          "to_price",
+        ].includes(key)
+      ) {
         current.set(key, value.toString());
       } else {
         current.delete(key);

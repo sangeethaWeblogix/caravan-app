@@ -40,8 +40,8 @@ export interface Filters {
   category?: string;
   make?: string;
   location?: string;
-  minPrice?: string;
-  maxPrice?: string;
+  from_price?: string | number; // ✅ add this
+  to_price?: string | number;
   condition?: string;
   sleeps?: string;
   states?: string;
@@ -102,6 +102,8 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({ onFilterChange }) => {
   const conditionDatas = ["Near New", "New", "Used"];
   const [pendingLocation, setPendingLocation] = useState<string>("");
   const [pendingState, setPendingState] = useState<StateOption | null>(null);
+  const [minPrice, setMinPrice] = useState<number | null>(null);
+  const [maxPrice, setMaxPrice] = useState<number | null>(null);
 
   const atm = [
     600, 800, 1000, 1250, 1500, 1750, 2000, 2250, 2500, 2750, 3000, 3500, 4000,
@@ -157,7 +159,9 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({ onFilterChange }) => {
       selectedSleepName ||
       selectedState ||
       atmFrom ||
-      atmTo
+      atmTo ||
+      minPrice || // ✅ include minPrice
+      maxPrice
   );
 
   useEffect(() => {
@@ -182,6 +186,25 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({ onFilterChange }) => {
       if (match) {
         setAtmFrom(null);
         setAtmTo(parseInt(match[1]));
+      }
+    }
+    if (slug?.includes("between") && slug.match(/between-(\d+)-(\d+)/)) {
+      const match = slug.match(/between-(\d+)-(\d+)/);
+      if (match) {
+        setMinPrice(parseInt(match[1]));
+        setMaxPrice(parseInt(match[2]));
+      }
+    } else if (slug?.includes("over")) {
+      const match = slug.match(/over-(\d+)/);
+      if (match) {
+        setMinPrice(parseInt(match[1]));
+        setMaxPrice(null);
+      }
+    } else if (slug?.includes("under")) {
+      const match = slug.match(/under-(\d+)/);
+      if (match) {
+        setMinPrice(null);
+        setMaxPrice(parseInt(match[1]));
       }
     }
   }, [pathname]);
@@ -287,6 +310,8 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({ onFilterChange }) => {
         sleeps: sleeps || undefined,
         minKg: atmFrom || undefined,
         maxKg: atmTo || undefined,
+        from_price: minPrice || undefined, // ✅ Add this
+        to_price: maxPrice || undefined,
       });
     }, 0);
   }, [pathname, categories, makes, states, searchParams, onFilterChange]);
@@ -348,6 +373,8 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({ onFilterChange }) => {
       sleeps: selectedSleepName || undefined,
       minKg: atmFrom || undefined,
       maxKg: atmTo || undefined,
+      from_price: minPrice || undefined,
+      to_price: maxPrice || undefined,
     };
 
     onFilterChange(newFilters);
@@ -381,6 +408,14 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({ onFilterChange }) => {
       slugParts.push(`over-${atmFrom}-kg-atm`);
     } else if (atmTo) {
       slugParts.push(`under-${atmTo}-kg-atm`);
+    }
+
+    if (minPrice && maxPrice) {
+      slugParts.push(`between-${minPrice}-${maxPrice}`);
+    } else if (minPrice) {
+      slugParts.push(`over-${minPrice}`);
+    } else if (maxPrice) {
+      slugParts.push(`under-${maxPrice}`);
     }
 
     const finalURL = `/listings/${slugParts.join("/")}`;
@@ -601,7 +636,13 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({ onFilterChange }) => {
         <div className="row">
           <div className="col-6">
             <h6 className="cfs-filter-label-sub">From</h6>
-            <select className="cfs-select-input">
+            <select
+              className="cfs-select-input"
+              value={minPrice?.toString() || ""}
+              onChange={(e) =>
+                setMinPrice(e.target.value ? parseInt(e.target.value) : null)
+              }
+            >
               <option value="">Min</option>
               {price.map((value, idx) => (
                 <option key={idx} value={value}>
@@ -612,7 +653,13 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({ onFilterChange }) => {
           </div>
           <div className="col-6">
             <h6 className="cfs-filter-label-sub">To</h6>
-            <select className="cfs-select-input">
+            <select
+              className="cfs-select-input"
+              value={maxPrice?.toString() || ""}
+              onChange={(e) =>
+                setMaxPrice(e.target.value ? parseInt(e.target.value) : null)
+              }
+            >
               <option value="">Max</option>
               {price.map((value, idx) => (
                 <option key={idx} value={value}>
