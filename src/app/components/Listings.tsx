@@ -85,32 +85,28 @@ export default function ListingsPage({ category, location }: Props) {
   const [hasSearched, setHasSearched] = useState(false);
   const router = useRouter();
   const searchParams = useSearchParams();
-  const initialPage = parseInt(searchParams.get("paged") || "1", 10); // Use 'paged' instead of 'page'
+  const initialPage = parseInt(searchParams.get("paged") || "1", 10);
 
   const [pagination, setPagination] = useState<Pagination>({
     current_page: initialPage,
     total_pages: 1,
     total_items: 0,
-    per_page: 12,
+    per_page: 12, // The number of items per page
     total_products: 0,
   });
 
   // Update pagination when page URL param changes
   useEffect(() => {
-    const page = parseInt(searchParams.get("paged") || "1", 10); // Fetch the correct page from URL
+    const pageParam = searchParams.get("paged");
+    const page = parseInt(pageParam || "1", 10);
+
     if (pagination.current_page !== page) {
+      loadListings(page, filtersRef.current);
       setPagination((prev) => ({ ...prev, current_page: page }));
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchParams]); // Effect triggered whenever searchParams changes
+  }, [searchParams.toString()]); // 🔁 Trigger re-run on full param change
 
   // Effect that handles fetching listings on page change
-  useEffect(() => {
-    if (hasSearched) {
-      loadListings(pagination.current_page, filtersRef.current);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pagination.current_page]);
 
   const loadListings = async (page = 1, appliedFilters: Filters = filters) => {
     setIsLoading(true);
@@ -119,7 +115,7 @@ export default function ListingsPage({ category, location }: Props) {
     try {
       const response = await fetchListings({
         ...appliedFilters,
-        page,
+        page, // Current page number
         state: appliedFilters.location,
         minKg: appliedFilters.minKg?.toString(),
         maxKg: appliedFilters.maxKg?.toString(),
@@ -138,7 +134,7 @@ export default function ListingsPage({ category, location }: Props) {
         setPagination({
           current_page: 1,
           total_pages: 1,
-          per_page: 12,
+          per_page: pagination.per_page,
           total_products: 0,
         });
       }
@@ -150,45 +146,51 @@ export default function ListingsPage({ category, location }: Props) {
     }
   };
 
-  useEffect(() => {
-    if (!hasSearched) {
-      const parsedCategory = category?.replace("-category", "") || undefined;
-      const parsedLocation =
-        location?.replace("-state", "")?.replace(/-/g, " ") || undefined;
-
-      const defaultFilters: Filters = {
-        ...(parsedCategory && { category: parsedCategory }),
-        ...(parsedLocation && { location: parsedLocation }),
-      };
-
-      setFilters(defaultFilters);
-      filtersRef.current = defaultFilters;
-      setHasSearched(true);
-
-      // ✅ Read from URL page (initialPage)
-      loadListings(initialPage, defaultFilters);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [category, location, categories]);
+  // Handle filter changes and update the page
+  const handleFilterChange = useCallback((newFilters: Filters) => {
+    setHasSearched(true);
+    setFilters(newFilters);
+    filtersRef.current = newFilters;
+    setPagination({
+      current_page: 1,
+      total_pages: 1,
+      total_items: 0,
+      per_page: 12,
+      total_products: 0,
+    });
+    loadListings(1, newFilters);
+  }, []);
 
   const buildSlugPath = () => {
     const slugParts: string[] = [];
+
     if (filters.category) slugParts.push(`${filters.category}-category`);
     if (filters.location)
       slugParts.push(`${filters.location.replace(/\s+/g, "-")}-state`);
+
+    const minKg = filters.minKg;
+    const maxKg = filters.maxKg;
+
+    if (minKg && maxKg) {
+      slugParts.push(`between-${minKg}-kg-${maxKg}-kg-atm`);
+    } else if (minKg) {
+      slugParts.push(`over-${minKg}-kg-atm`);
+    } else if (maxKg) {
+      slugParts.push(`under-${maxKg}-kg-atm`);
+    }
+
     return `/listings/${slugParts.join("/")}`;
   };
 
   const updateURLWithFilters = (page: number) => {
     const current = new URLSearchParams(searchParams.toString());
-    current.set("paged", page.toString()); // Use 'paged' for the query parameter
+    current.set("paged", page.toString());
 
-    // Only add filters not already present in the path
     Object.entries(filters).forEach(([key, value]) => {
-      if (value && key !== "category" && key !== "location") {
-        current.set(key, value);
+      if (value && !["category", "location", "minKg", "maxKg"].includes(key)) {
+        current.set(key, value.toString());
       } else {
-        current.delete(key); // Clean up old values
+        current.delete(key);
       }
     });
 
@@ -198,33 +200,18 @@ export default function ListingsPage({ category, location }: Props) {
   const handleNextPage = () => {
     if (pagination.current_page < pagination.total_pages) {
       const nextPage = pagination.current_page + 1;
-      window.scrollTo({ top: 0, behavior: "instant" });
-      setPagination((prev) => ({ ...prev, current_page: nextPage }));
-      updateURLWithFilters(nextPage);
+      updateURLWithFilters(nextPage); // triggers useEffect to fetch correct page
     }
   };
 
   const handlePrevPage = () => {
     if (pagination.current_page > 1) {
       const prevPage = pagination.current_page - 1;
-      setPagination((prev) => ({ ...prev, current_page: prevPage }));
       updateURLWithFilters(prevPage);
+      filtersRef.current && loadListings(prevPage, filtersRef.current);
+      setPagination((prev) => ({ ...prev, current_page: prevPage }));
     }
   };
-
-  const handleFilterChange = useCallback((newFilters: Filters) => {
-    setHasSearched(true);
-    setFilters(newFilters);
-    setPagination({
-      current_page: 1,
-      total_pages: 1,
-      total_items: 0,
-      per_page: 12,
-      total_products: 0,
-    });
-    loadListings(1, newFilters);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
 
   return (
     <section className="services section-padding pb-30 style-1">
