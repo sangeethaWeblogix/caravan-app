@@ -188,6 +188,7 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({ onFilterChange }) => {
         setAtmTo(parseInt(match[1]));
       }
     }
+
     if (slug?.includes("between") && slug.match(/between-(\d+)-(\d+)/)) {
       const match = slug.match(/between-(\d+)-(\d+)/);
       if (match) {
@@ -206,6 +207,16 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({ onFilterChange }) => {
         setMinPrice(null);
         setMaxPrice(parseInt(match[1]));
       }
+    }
+    const conditionMatch = slug?.match(/(near-new|new|used)-condition/);
+    if (conditionMatch) {
+      const matchedCondition = conditionMatch[1].replace(/-/g, " ");
+      setSelectedConditionName(
+        matchedCondition
+          .split(" ")
+          .map((word) => word[0].toUpperCase() + word.slice(1))
+          .join(" ")
+      );
     }
   }, [pathname]);
 
@@ -295,8 +306,8 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({ onFilterChange }) => {
     }
 
     const condition = searchParams.get("condition");
-    if (condition) setSelectedConditionName(condition);
-
+    if (condition && !selectedConditionName)
+      setSelectedConditionName(condition);
     const sleeps = searchParams.get("sleeps");
     if (sleeps) setSelectedSleepName(sleeps);
 
@@ -306,7 +317,7 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({ onFilterChange }) => {
         category: categoryMatch?.slug,
         location: stateMatch?.value,
         make: make || undefined,
-        condition: condition || undefined,
+        condition: selectedConditionName || undefined,
         sleeps: sleeps || undefined,
         minKg: atmFrom || undefined,
         maxKg: atmTo || undefined,
@@ -380,7 +391,25 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({ onFilterChange }) => {
     onFilterChange(newFilters);
 
     const slugParts: string[] = [];
-
+    if (
+      selectedConditionName &&
+      !selectedCategory &&
+      !selectedState &&
+      !selectedSuburbName &&
+      !selectedMake &&
+      !atmFrom &&
+      !atmTo &&
+      !minPrice &&
+      !maxPrice &&
+      !selectedSleepName
+    ) {
+      slugParts.push(
+        `${selectedConditionName.toLowerCase().replace(/\s+/g, "-")}-condition`
+      );
+      const finalURL = `/listings/${slugParts.join("/")}`;
+      router.push(finalURL);
+      return;
+    }
     // Add suburb
     if (selectedSuburbName) {
       slugParts.push(
@@ -418,8 +447,29 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({ onFilterChange }) => {
       slugParts.push(`under-${maxPrice}`);
     }
 
-    const finalURL = `/listings/${slugParts.join("/")}`;
-    router.push(finalURL);
+    // Condition
+    if (selectedConditionName) {
+      slugParts.push(
+        `${selectedConditionName.toLowerCase().replace(/\s+/g, "-")}-condition`
+      );
+    }
+
+    // Sleep
+    let slugifiedURL = `/listings/${slugParts.join("/")}`
+      .replace(/\s+/g, "-")
+      .replace(/-+/g, "-")
+      .toLowerCase();
+
+    // Query Params (preserve selected filters)
+    const query: Record<string, string> = {};
+    if (selectedConditionName) query.condition = selectedConditionName;
+    if (selectedMake) query.make = selectedMake;
+    if (selectedSleepName) query.sleeps = selectedSleepName;
+
+    const queryString = new URLSearchParams(query).toString();
+    if (queryString) slugifiedURL += `?${queryString}`;
+
+    router.push(slugifiedURL);
   };
 
   const resetFilters = () => {

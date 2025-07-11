@@ -41,7 +41,8 @@ export const fetchListings = async (filters: Filters = {}) => {
   if (minKg) params.append("from_atm", `${minKg}kg`);
   if (maxKg) params.append("to_atm", `${maxKg}kg`);
 
-  if (condition) params.append("condition", condition);
+  if (condition)
+    params.append("condition", condition.toLowerCase().replace(/\s+/g, "-"));
   if (sleeps) params.append("sleeps", sleeps);
   const res = await fetch(`${API_BASE}/new-list?${params.toString()}`);
 

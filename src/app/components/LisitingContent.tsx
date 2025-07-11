@@ -17,6 +17,7 @@ interface Product {
   price_difference?: string;
   image: string;
   link: string;
+  condition: string;
   location?: string;
   categories?: string[];
 }
@@ -71,6 +72,7 @@ export default function ListingContent({
                     <option value="featured">Featured</option>
                     <option value="price">Price (Low to High)</option>
                     <option value="price-desc">Price (High to Low)</option>
+
                     <option value="year-desc">Year Made (High to Low)</option>
                     <option value="year-asc">Year Made (Low to High)</option>
                   </select>
@@ -146,6 +148,11 @@ export default function ListingContent({
                   {product.kg && (
                     <li>
                       <span className="attribute3">{product.kg}</span>
+                    </li>
+                  )}
+                  {product.condition && (
+                    <li>
+                      <span className="attribute3">{product.condition}</span>
                     </li>
                   )}
                 </ul>

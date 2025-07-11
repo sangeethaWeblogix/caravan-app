@@ -20,6 +20,7 @@ interface Product {
   image: string;
   link: string;
   location?: string;
+  condition: string;
   categories?: string[];
 }
 
@@ -62,18 +63,22 @@ export interface Filters {
 interface Props {
   category?: string;
   location?: string;
+  condition?: string;
 }
 
-export default function ListingsPage({ category, location }: Props) {
+export default function ListingsPage({ category, location, condition }: Props) {
   const parsedCategory = category?.replace("-category", "") || undefined;
   const parsedLocation =
     location?.replace("-state", "")?.replace(/-/g, " ") || undefined;
+  const parsedCondition = condition?.replace("-condition", "") || undefined;
+
   const pathname =
     typeof window !== "undefined" ? window.location.pathname : "";
 
   const initialFilters: Filters = {
     ...(parsedCategory && { category: parsedCategory }),
     ...(parsedLocation && { location: parsedLocation }),
+    ...(parsedCondition && { condition: parsedCondition }),
   };
 
   const [filters, setFilters] = useState<Filters>(initialFilters);
@@ -108,6 +113,13 @@ export default function ListingsPage({ category, location }: Props) {
     }
   }, [searchParams.toString()]);
 
+  useEffect(() => {
+    if (!hasSearched && Object.keys(initialFilters).length > 0) {
+      filtersRef.current = initialFilters; // ✅ set ref properly on first mount
+      loadListings(initialPage, initialFilters);
+    }
+  }, []);
+
   const loadListings = async (page = 1, appliedFilters: Filters = filters) => {
     setIsLoading(true);
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -117,6 +129,7 @@ export default function ListingsPage({ category, location }: Props) {
         ...appliedFilters,
         page, // Current page number
         state: appliedFilters.location,
+        condition: appliedFilters.condition,
         minKg: appliedFilters.minKg?.toString(),
         maxKg: appliedFilters.maxKg?.toString(),
         minPrice: appliedFilters.from_price?.toString(), // ✅ fixed
@@ -169,7 +182,8 @@ export default function ListingsPage({ category, location }: Props) {
     if (filters.category) slugParts.push(`${filters.category}-category`);
     if (filters.location)
       slugParts.push(`${filters.location.replace(/\s+/g, "-")}-state`);
-
+    if (filters.condition)
+      slugParts.push(`${filters.condition.toLowerCase()}-condition`);
     const minKg = filters.minKg;
     const maxKg = filters.maxKg;
 
@@ -209,6 +223,7 @@ export default function ListingsPage({ category, location }: Props) {
           "maxKg",
           "from_price",
           "to_price",
+          "condition",
         ].includes(key)
       ) {
         current.set(key, value.toString());
