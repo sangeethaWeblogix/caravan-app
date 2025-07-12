@@ -436,6 +436,11 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
       router.push(finalURL);
       return;
     }
+
+    if (selectedCategory) {
+      slugParts.push(`${selectedCategory}-category`);
+    }
+
     // Add suburb
     if (selectedSuburbName) {
       slugParts.push(

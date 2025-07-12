@@ -108,27 +108,13 @@ export default function ListingsPage({ category, location, condition }: Props) {
   // Update pagination when page URL param changes
   useEffect(() => {
     const pageParam = searchParams.get("paged");
-    const page = parseInt(pageParam || "1", 12);
+    const page = parseInt(pageParam || "1", 10);
 
-    // ✅ Prevent calling API again for same page
-    if (pagination.current_page === page) return;
-
-    setPagination((prev) => ({
-      ...prev,
-      current_page: page,
-    }));
-
-    // ✅ First time (initial filters)
-    if (!hasSearched && Object.keys(initialFilters).length > 0) {
-      filtersRef.current = initialFilters;
-      setHasSearched(true);
-      loadListings(page, initialFilters);
-      return;
+    if (pagination.current_page !== page) {
+      loadListings(page, filtersRef.current);
+      setPagination((prev) => ({ ...prev, current_page: page }));
     }
-
-    // ✅ For page change (Next/Prev)
-    loadListings(page, filtersRef.current);
-  }, [searchParams, pagination]);
+  }, [searchParams.toString()]);
 
   useEffect(() => {
     if (!hasSearched && Object.keys(initialFilters).length > 0) {
@@ -279,6 +265,8 @@ export default function ListingsPage({ category, location, condition }: Props) {
     if (pagination.current_page > 1) {
       const prevPage = pagination.current_page - 1;
       updateURLWithFilters(prevPage);
+      filtersRef.current && loadListings(prevPage, filtersRef.current);
+      setPagination((prev) => ({ ...prev, current_page: prevPage }));
     }
   };
 

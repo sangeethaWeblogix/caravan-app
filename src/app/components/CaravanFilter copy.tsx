@@ -40,19 +40,20 @@ export interface Filters {
   category?: string;
   make?: string;
   location?: string;
-  minPrice?: string;
-  maxPrice?: string;
-  minKg?: string;
-  maxKg?: string;
+  from_price?: string | number; // ✅ add this
+  to_price?: string | number;
   condition?: string;
   sleeps?: string;
   states?: string;
+  minKg?: string | number;
+  maxKg?: string | number;
 }
 
 interface CaravanFilterProps {
   categories: Category[];
   makes: Make[];
   states: StateOption[];
+  currentFilters: Filters;
   onFilterChange: (filters: Filters) => void;
 }
 
@@ -60,7 +61,10 @@ interface Option {
   name: string;
   slug: string;
 }
-const CaravanFilter: React.FC<CaravanFilterProps> = ({ onFilterChange }) => {
+const CaravanFilter: React.FC<CaravanFilterProps> = ({
+  onFilterChange,
+  currentFilters,
+}) => {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -75,7 +79,7 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({ onFilterChange }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [locationInput, setLocationInput] = useState("");
   const [selectedLocation, setSelectedLocation] = useState<string>("");
-  const [selectedSleepName, setSelectedSleepName] = useState<string>("");
+
   const [selectedMake, setSelectedMake] = useState<string | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [selectedCategoryName, setSelectedCategoryName] = useState<
@@ -90,9 +94,30 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({ onFilterChange }) => {
   const [selectedStateName, setSelectedStateName] = useState<string | null>(
     null
   );
-  const conditionDatas = ["Near New", "New", "Used"];
+  const [selectedRegionName, setSelectedRegionName] = useState<string | null>(
+    null
+  );
+  const [selectedSuburbName, setSelectedSuburbName] = useState<string | null>(
+    null
+  );
+  const [atmFrom, setAtmFrom] = useState<number | null>(null);
+  const [atmTo, setAtmTo] = useState<number | null>(null);
+  const [sleepFrom, setSleepFrom] = useState<number | null>(null);
+  const [sleepTo, setSleepTo] = useState<number | null>(null);
 
-  const atm = [600, 800, 1000, 1250, 1500, 1750, 2000, 2250, 2500, 2750];
+  const conditionDatas = ["Near New", "New", "Used"];
+  const [pendingLocation, setPendingLocation] = useState<string>("");
+  const [pendingState, setPendingState] = useState<StateOption | null>(null);
+  const [minPrice, setMinPrice] = useState<number | null>(null);
+  const [maxPrice, setMaxPrice] = useState<number | null>(null);
+  const [selectedSleepName, setSelectedSleepName] = useState<string>(
+    currentFilters?.sleeps?.replace("-people", "") || ""
+  );
+
+  const atm = [
+    600, 800, 1000, 1250, 1500, 1750, 2000, 2250, 2500, 2750, 3000, 3500, 4000,
+    4500,
+  ];
 
   const price = [
     10000, 20000, 30000, 40000, 50000, 60000, 70000, 80000, 90000, 100000,
@@ -135,14 +160,131 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({ onFilterChange }) => {
     }
   }, [selectedCategory]);
 
+  useEffect(() => {
+    if (currentFilters?.sleeps) {
+      setSelectedSleepName(currentFilters.sleeps.replace("-people", ""));
+    }
+  }, [currentFilters?.sleeps]);
+
+  useEffect(() => {
+    if (selectedSleepName) {
+      setFilters((prev) => ({
+        ...prev,
+        sleeps: `${selectedSleepName}-people`,
+      }));
+    }
+  }, [selectedSleepName]);
+
   const isAnyFilterSelected = Boolean(
     selectedCategory ||
       selectedMake ||
       selectedLocation ||
       selectedConditionName ||
       selectedSleepName ||
-      selectedState
+      selectedState ||
+      atmFrom ||
+      atmTo ||
+      minPrice || // ✅ include minPrice
+      maxPrice
   );
+
+  useEffect(() => {
+    const slug = pathname.split("/listings/")[1];
+
+    if (slug?.includes("between") && slug?.includes("kg-atm")) {
+      const match = slug.match(/between-(\d+)-kg-(\d+)-kg-atm/);
+      if (match) {
+        const from = parseInt(match[1]);
+        const to = parseInt(match[2]);
+        setAtmFrom(from);
+        setAtmTo(to);
+      }
+    } else if (slug?.includes("over") && slug?.includes("kg-atm")) {
+      const match = slug.match(/over-(\d+)-kg-atm/);
+      if (match) {
+        setAtmFrom(parseInt(match[1]));
+        setAtmTo(null);
+      }
+    } else if (slug?.includes("under") && slug?.includes("kg-atm")) {
+      const match = slug.match(/under-(\d+)-kg-atm/);
+      if (match) {
+        setAtmFrom(null);
+        setAtmTo(parseInt(match[1]));
+      }
+    }
+
+    if (slug?.includes("between") && slug.match(/between-(\d+)-(\d+)/)) {
+      const match = slug.match(/between-(\d+)-(\d+)/);
+      if (match) {
+        setMinPrice(parseInt(match[1]));
+        setMaxPrice(parseInt(match[2]));
+      }
+    } else if (slug?.includes("over")) {
+      const match = slug.match(/over-(\d+)/);
+      if (match) {
+        setMinPrice(parseInt(match[1]));
+        setMaxPrice(null);
+      }
+    } else if (slug?.includes("under")) {
+      const match = slug.match(/under-(\d+)/);
+      if (match) {
+        setMinPrice(null);
+        setMaxPrice(parseInt(match[1]));
+      }
+    }
+    const conditionMatch = slug?.match(/(near-new|new|used)-condition/);
+    if (conditionMatch) {
+      const matchedCondition = conditionMatch[1].replace(/-/g, " ");
+      setSelectedConditionName(
+        matchedCondition
+          .split(" ")
+          .map((word) => word[0].toUpperCase() + word.slice(1))
+          .join(" ")
+      );
+    }
+  }, [pathname]);
+
+  useEffect(() => {
+    const pathParts = pathname.split("/").filter(Boolean);
+    const suburbSlug = pathParts[1]?.replace("-suburb", "") || "";
+    const stateSlug = pathParts[2]?.replace("-state", "") || "";
+    const postcode = pathParts[3] || "";
+
+    if (!suburbSlug || !stateSlug || !postcode) return;
+
+    let matchedState: StateOption | null = null;
+    let matchedRegionName: string | null = null;
+    let matchedSuburbName: string | null = null;
+
+    for (const state of states) {
+      if (state.name.toLowerCase().replace(/\s+/g, "-") === stateSlug) {
+        matchedState = state;
+        for (const region of state.regions || []) {
+          for (const suburb of region.suburbs || []) {
+            if (suburb.name.toLowerCase().replace(/\s+/g, "-") === suburbSlug) {
+              matchedRegionName = region.name;
+              matchedSuburbName = suburb.name;
+              break;
+            }
+          }
+          if (matchedSuburbName) break;
+        }
+        break;
+      }
+    }
+
+    if (matchedState && matchedSuburbName) {
+      setSelectedState(matchedState.value);
+      setSelectedStateName(matchedState.name);
+      setSelectedRegionName(matchedRegionName);
+      setSelectedSuburbName(matchedSuburbName);
+      setLocationInput(`${matchedSuburbName} ACT ${postcode}`);
+      setFilters((prev) => ({
+        ...prev,
+        location: matchedState.value,
+      }));
+    }
+  }, [pathname, states]);
 
   useEffect(() => {
     const pathParts = pathname.split("/").filter(Boolean); // ex: ["listings", "queensland-state"]
@@ -188,8 +330,8 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({ onFilterChange }) => {
     }
 
     const condition = searchParams.get("condition");
-    if (condition) setSelectedConditionName(condition);
-
+    if (condition && !selectedConditionName)
+      setSelectedConditionName(condition);
     const sleeps = searchParams.get("sleeps");
     if (sleeps) setSelectedSleepName(sleeps);
 
@@ -199,49 +341,46 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({ onFilterChange }) => {
         category: categoryMatch?.slug,
         location: stateMatch?.value,
         make: make || undefined,
-        condition: condition || undefined,
-        sleeps: sleeps || undefined,
+        condition: selectedConditionName || undefined,
+        sleeps: selectedSleepName ? `${selectedSleepName}-people` : undefined,
+        minKg: atmFrom || undefined,
+        maxKg: atmTo || undefined,
+        from_price: minPrice || undefined, // ✅ Add this
+        to_price: maxPrice || undefined,
       });
     }, 0);
   }, [pathname, categories, makes, states, searchParams, onFilterChange]);
 
-  const handleSuburbSelection = (selected: string) => {
-    setLocationInput(selected);
-    setLocationSuggestions([]);
+  const handleSuburbSelection = (shortAddress: string) => {
+    setLocationInput(shortAddress);
 
-    const [suburbSlug, postcode] = selected.split("/");
+    const match = shortAddress.match(/^(.+?)\s+[A-Z]{2,}\s+(\d{4})$/);
+    if (!match) return;
 
-    // ✅ Match suburbSlug to state's suburb values
-    const matchedState = states.find((state) =>
-      state.regions?.some((region) =>
-        region.suburbs?.some((sub) => sub.value === suburbSlug)
-      )
-    );
+    const suburbName = match[1].trim().toLowerCase();
+    const postcode = match[2];
 
-    if (matchedState) {
-      setSelectedState(matchedState.value); // e.g., "new-south-wales"
-      setSelectedStateName(matchedState.name);
+    let matchedState: StateOption | undefined;
+    let suburbSlug: string | undefined;
+
+    for (const state of states) {
+      for (const region of state.regions || []) {
+        for (const suburb of region.suburbs || []) {
+          if (suburb.name.toLowerCase() === suburbName) {
+            matchedState = state;
+            suburbSlug = suburb.value?.split(".")[0];
+            break;
+          }
+        }
+        if (matchedState) break;
+      }
+      if (matchedState) break;
     }
 
-    // ✅ Build URL
-    const slugParts = [];
-    if (suburbSlug) slugParts.push(suburbSlug);
-    if (matchedState?.value) slugParts.push(`${matchedState.value}-state`);
-    if (postcode) slugParts.push(postcode);
-
-    const finalUrl = `/listings/${slugParts.join("/")}`;
-    router.push(finalUrl);
-
-    // ✅ Trigger filter change
-    onFilterChange({
-      category: selectedCategory || undefined,
-      make: selectedMake || undefined,
-      location: matchedState?.value, // This gets passed to backend
-      condition: selectedConditionName || undefined,
-      sleeps: selectedSleepName || undefined,
-    });
-
-    setIsModalOpen(false);
+    if (matchedState && suburbSlug) {
+      setPendingLocation(shortAddress);
+      setPendingState(matchedState);
+    }
   };
 
   useEffect(() => {
@@ -266,23 +405,101 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({ onFilterChange }) => {
       make: selectedMake || undefined,
       location: selectedState || undefined,
       condition: selectedConditionName || undefined,
-      sleeps: selectedSleepName || undefined,
+      sleeps: selectedSleepName ? `${selectedSleepName}-people` : undefined,
+      maxKg: atmTo || undefined,
+      from_price: minPrice || undefined,
+      to_price: maxPrice || undefined,
     };
+    console.log("Triggered Filters:", filters);
 
-    // ✅ Send to ListingsPage
     onFilterChange(newFilters);
+    console.log("Triggered :", newFilters);
+    console.log("➡️ Final Filters to Parent", newFilters);
 
-    // ✅ Build URL
     const slugParts: string[] = [];
-    if (newFilters.category) slugParts.push(`${newFilters.category}-category`);
-    if (newFilters.location) {
-      const stateSlug =
-        newFilters.location.toLowerCase().replace(/\s+/g, "-") + "-state";
-      slugParts.push(stateSlug);
+    if (
+      selectedConditionName &&
+      !selectedCategory &&
+      !selectedState &&
+      !selectedSuburbName &&
+      !selectedMake &&
+      !atmFrom &&
+      !atmTo &&
+      !minPrice &&
+      !maxPrice &&
+      !selectedSleepName
+    ) {
+      slugParts.push(
+        `${selectedConditionName.toLowerCase().replace(/\s+/g, "-")}-condition`
+      );
+      const finalURL = `/listings/${slugParts.join("/")}`;
+      router.push(finalURL);
+      return;
     }
 
-    const url = `/listings/${slugParts.join("/")}`;
-    router.push(url);
+    if (selectedCategory) {
+      slugParts.push(`${selectedCategory}-category`);
+    }
+
+    // Add suburb
+    if (selectedSuburbName) {
+      slugParts.push(
+        `${selectedSuburbName.toLowerCase().replace(/\s+/g, "-")}-suburb`
+      );
+    }
+
+    // Add state
+    if (selectedStateName) {
+      slugParts.push(
+        `${selectedStateName.toLowerCase().replace(/\s+/g, "-")}-state`
+      );
+    }
+
+    // Add postcode
+    const match = locationInput.match(/\b\d{4}\b/);
+    if (match) {
+      slugParts.push(match[0]);
+    }
+
+    // 🔥 Add ATM-based slug logic
+    if (atmFrom && atmTo) {
+      slugParts.push(`between-${atmFrom}-kg-${atmTo}-kg-atm`);
+    } else if (atmFrom) {
+      slugParts.push(`over-${atmFrom}-kg-atm`);
+    } else if (atmTo) {
+      slugParts.push(`under-${atmTo}-kg-atm`);
+    }
+
+    // price
+    if (minPrice && maxPrice) {
+      slugParts.push(`between-${minPrice}-${maxPrice}`);
+    } else if (minPrice) {
+      slugParts.push(`over-${minPrice}`);
+    } else if (maxPrice) {
+      slugParts.push(`under-${maxPrice}`);
+    }
+
+    // Condition
+    if (selectedConditionName) {
+      slugParts.push(
+        `${selectedConditionName.toLowerCase().replace(/\s+/g, "-")}-condition`
+      );
+    }
+
+    let slugifiedURL = `/listings/${slugParts.join("/")}`
+      .replace(/\s+/g, "-")
+      .replace(/-+/g, "-")
+      .toLowerCase();
+
+    // Query Params (preserve selected filters)
+    const query: Record<string, string> = {};
+    if (selectedConditionName) query.condition = selectedConditionName;
+    if (selectedMake) query.make = selectedMake;
+
+    const queryString = new URLSearchParams(query).toString();
+    if (queryString) slugifiedURL += `?${queryString}`;
+
+    router.push(slugifiedURL);
   };
 
   const resetFilters = () => {
@@ -295,6 +512,8 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({ onFilterChange }) => {
     setSelectedSleepName("");
     setLocationInput("");
     setLocationSuggestions([]);
+    setAtmFrom(null);
+    setAtmTo(null);
   };
 
   useEffect(() => {
@@ -367,7 +586,9 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({ onFilterChange }) => {
             Location
             {selectedStateName && (
               <span className="filter-accordion-items">
-                : {selectedStateName}
+                {selectedStateName}
+                {selectedRegionName && `  ${selectedRegionName}`} <br />
+                {selectedSuburbName && `  ${selectedSuburbName}`}
               </span>
             )}
           </h5>
@@ -448,12 +669,19 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({ onFilterChange }) => {
       </div>
 
       {/* ATM Range */}
+      {/* ATM Range */}
       <div className="cs-full_width_section">
         <h5 className="cfs-filter-label">ATM</h5>
         <div className="row">
           <div className="col-6">
             <h6 className="cfs-filter-label-sub">From</h6>
-            <select className="cfs-select-input">
+            <select
+              className="cfs-select-input"
+              value={atmFrom?.toString() || ""}
+              onChange={(e) =>
+                setAtmFrom(e.target.value ? parseInt(e.target.value) : null)
+              }
+            >
               <option value="">Min</option>
               {atm.map((val) => (
                 <option key={val} value={val}>
@@ -464,8 +692,14 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({ onFilterChange }) => {
           </div>
           <div className="col-6">
             <h6 className="cfs-filter-label-sub">To</h6>
-            <select className="cfs-select-input">
-              <option value="">Min</option>
+            <select
+              className="cfs-select-input"
+              value={atmTo?.toString() || ""}
+              onChange={(e) =>
+                setAtmTo(e.target.value ? parseInt(e.target.value) : null)
+              }
+            >
+              <option value="">Max</option>
               {atm.map((val) => (
                 <option key={val} value={val}>
                   {val} kg
@@ -482,7 +716,13 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({ onFilterChange }) => {
         <div className="row">
           <div className="col-6">
             <h6 className="cfs-filter-label-sub">From</h6>
-            <select className="cfs-select-input">
+            <select
+              className="cfs-select-input"
+              value={minPrice?.toString() || ""}
+              onChange={(e) =>
+                setMinPrice(e.target.value ? parseInt(e.target.value) : null)
+              }
+            >
               <option value="">Min</option>
               {price.map((value, idx) => (
                 <option key={idx} value={value}>
@@ -493,7 +733,13 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({ onFilterChange }) => {
           </div>
           <div className="col-6">
             <h6 className="cfs-filter-label-sub">To</h6>
-            <select className="cfs-select-input">
+            <select
+              className="cfs-select-input"
+              value={maxPrice?.toString() || ""}
+              onChange={(e) =>
+                setMaxPrice(e.target.value ? parseInt(e.target.value) : null)
+              }
+            >
               <option value="">Max</option>
               {price.map((value, idx) => (
                 <option key={idx} value={value}>
@@ -544,13 +790,15 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({ onFilterChange }) => {
         )}
       </div>
       {/* Sleeps Accordion */}
+      {/* Sleep Range */}
+      {/* Sleeps Accordion */}
       <div className="cs-full_width_section">
         <div className="filter-accordion" onClick={() => toggle(setSleepsOpen)}>
           <h5 className="cfs-filter-label">
             Sleep
-            {selectedConditionName && (
+            {selectedSleepName && (
               <span className="filter-accordion-items">
-                : {selectedSleepName}
+                : {selectedSleepName} People
               </span>
             )}
           </h5>
@@ -563,11 +811,11 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({ onFilterChange }) => {
               <div
                 key={index}
                 className={`filter-accordion-item ${
-                  String(sleepValue) === selectedConditionName ? "selected" : ""
+                  selectedSleepName === String(sleepValue) ? "selected" : ""
                 }`}
                 onClick={() => {
                   setSelectedSleepName(String(sleepValue));
-                  setConditionOpen(false);
+                  setSleepsOpen(false);
                 }}
               >
                 {sleepValue} People
@@ -684,7 +932,9 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({ onFilterChange }) => {
                 {locationSuggestions.map((loc, index) => (
                   <li
                     key={index}
-                    onClick={() => handleSuburbSelection(loc.short_address)}
+                    onClick={() => {
+                      handleSuburbSelection(loc.short_address); // e.g., "Bass Hill NSW 2197"
+                    }}
                   >
                     {loc.short_address}
                   </li>
@@ -697,7 +947,54 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({ onFilterChange }) => {
                 type="button"
                 className="cfs-btn btn"
                 onClick={() => {
-                  console.log("Selected Location:", selectedLocation);
+                  const input = locationInput.trim();
+
+                  if (!input) {
+                    setSelectedState(null);
+                    setSelectedStateName(null);
+                    setSelectedRegionName(null);
+                    setSelectedSuburbName(null);
+                    setIsModalOpen(false);
+                    return;
+                  }
+
+                  const match = input.match(/^(.+?)\s+[A-Z]{2,}\s+(\d{4})$/);
+
+                  if (match) {
+                    const suburbName = match[1].trim().toLowerCase();
+
+                    let matchedState: StateOption | null = null;
+                    let matchedRegionName: string | null = null;
+                    let matchedSuburbName: string | null = null;
+
+                    for (const state of states) {
+                      for (const region of state.regions || []) {
+                        for (const suburb of region.suburbs || []) {
+                          if (suburb.name.trim().toLowerCase() === suburbName) {
+                            matchedState = state;
+                            matchedRegionName = region.name;
+                            matchedSuburbName = suburb.name;
+                            break;
+                          }
+                        }
+                        if (matchedState) break;
+                      }
+                      if (matchedState) break;
+                    }
+
+                    if (matchedState) {
+                      setSelectedState(matchedState.value);
+                      setSelectedStateName(matchedState.name);
+                      setSelectedRegionName(matchedRegionName);
+                      setSelectedSuburbName(matchedSuburbName);
+
+                      setFilters((prev) => ({
+                        ...prev,
+                        location: matchedState.value,
+                      }));
+                    }
+                  }
+
                   setIsModalOpen(false);
                 }}
               >
