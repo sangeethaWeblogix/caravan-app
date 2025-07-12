@@ -53,6 +53,7 @@ interface CaravanFilterProps {
   categories: Category[];
   makes: Make[];
   states: StateOption[];
+  currentFilters: Filters;
   onFilterChange: (filters: Filters) => void;
 }
 
@@ -60,7 +61,10 @@ interface Option {
   name: string;
   slug: string;
 }
-const CaravanFilter: React.FC<CaravanFilterProps> = ({ onFilterChange }) => {
+const CaravanFilter: React.FC<CaravanFilterProps> = ({
+  onFilterChange,
+  currentFilters,
+}) => {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -75,7 +79,7 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({ onFilterChange }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [locationInput, setLocationInput] = useState("");
   const [selectedLocation, setSelectedLocation] = useState<string>("");
-  const [selectedSleepName, setSelectedSleepName] = useState<string>("");
+
   const [selectedMake, setSelectedMake] = useState<string | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [selectedCategoryName, setSelectedCategoryName] = useState<
@@ -98,12 +102,17 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({ onFilterChange }) => {
   );
   const [atmFrom, setAtmFrom] = useState<number | null>(null);
   const [atmTo, setAtmTo] = useState<number | null>(null);
+  const [sleepFrom, setSleepFrom] = useState<number | null>(null);
+  const [sleepTo, setSleepTo] = useState<number | null>(null);
 
   const conditionDatas = ["Near New", "New", "Used"];
   const [pendingLocation, setPendingLocation] = useState<string>("");
   const [pendingState, setPendingState] = useState<StateOption | null>(null);
   const [minPrice, setMinPrice] = useState<number | null>(null);
   const [maxPrice, setMaxPrice] = useState<number | null>(null);
+  const [selectedSleepName, setSelectedSleepName] = useState<string>(
+    currentFilters?.sleeps?.replace("-people", "") || ""
+  );
 
   const atm = [
     600, 800, 1000, 1250, 1500, 1750, 2000, 2250, 2500, 2750, 3000, 3500, 4000,
@@ -150,6 +159,21 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({ onFilterChange }) => {
       setFilters((prev) => ({ ...prev, category: selectedCategory }));
     }
   }, [selectedCategory]);
+
+  useEffect(() => {
+    if (currentFilters?.sleeps) {
+      setSelectedSleepName(currentFilters.sleeps.replace("-people", ""));
+    }
+  }, [currentFilters?.sleeps]);
+
+  useEffect(() => {
+    if (selectedSleepName) {
+      setFilters((prev) => ({
+        ...prev,
+        sleeps: `${selectedSleepName}-people`,
+      }));
+    }
+  }, [selectedSleepName]);
 
   const isAnyFilterSelected = Boolean(
     selectedCategory ||
@@ -318,7 +342,7 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({ onFilterChange }) => {
         location: stateMatch?.value,
         make: make || undefined,
         condition: selectedConditionName || undefined,
-        sleeps: sleeps || undefined,
+        sleeps: selectedSleepName ? `${selectedSleepName}-people` : undefined,
         minKg: atmFrom || undefined,
         maxKg: atmTo || undefined,
         from_price: minPrice || undefined, // ✅ Add this
@@ -381,14 +405,16 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({ onFilterChange }) => {
       make: selectedMake || undefined,
       location: selectedState || undefined,
       condition: selectedConditionName || undefined,
-      sleeps: selectedSleepName || undefined,
-      minKg: atmFrom || undefined,
+      sleeps: selectedSleepName ? `${selectedSleepName}-people` : undefined,
       maxKg: atmTo || undefined,
       from_price: minPrice || undefined,
       to_price: maxPrice || undefined,
     };
+    console.log("Triggered Filters:", filters);
 
     onFilterChange(newFilters);
+    console.log("Triggered :", newFilters);
+    console.log("➡️ Final Filters to Parent", newFilters);
 
     const slugParts: string[] = [];
     if (
@@ -439,6 +465,7 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({ onFilterChange }) => {
       slugParts.push(`under-${atmTo}-kg-atm`);
     }
 
+    // price
     if (minPrice && maxPrice) {
       slugParts.push(`between-${minPrice}-${maxPrice}`);
     } else if (minPrice) {
@@ -454,7 +481,6 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({ onFilterChange }) => {
       );
     }
 
-    // Sleep
     let slugifiedURL = `/listings/${slugParts.join("/")}`
       .replace(/\s+/g, "-")
       .replace(/-+/g, "-")
@@ -464,7 +490,6 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({ onFilterChange }) => {
     const query: Record<string, string> = {};
     if (selectedConditionName) query.condition = selectedConditionName;
     if (selectedMake) query.make = selectedMake;
-    if (selectedSleepName) query.sleeps = selectedSleepName;
 
     const queryString = new URLSearchParams(query).toString();
     if (queryString) slugifiedURL += `?${queryString}`;
@@ -760,13 +785,15 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({ onFilterChange }) => {
         )}
       </div>
       {/* Sleeps Accordion */}
+      {/* Sleep Range */}
+      {/* Sleeps Accordion */}
       <div className="cs-full_width_section">
         <div className="filter-accordion" onClick={() => toggle(setSleepsOpen)}>
           <h5 className="cfs-filter-label">
             Sleep
-            {selectedConditionName && (
+            {selectedSleepName && (
               <span className="filter-accordion-items">
-                : {selectedSleepName}
+                : {selectedSleepName} People
               </span>
             )}
           </h5>
@@ -779,11 +806,11 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({ onFilterChange }) => {
               <div
                 key={index}
                 className={`filter-accordion-item ${
-                  String(sleepValue) === selectedConditionName ? "selected" : ""
+                  selectedSleepName === String(sleepValue) ? "selected" : ""
                 }`}
                 onClick={() => {
                   setSelectedSleepName(String(sleepValue));
-                  setConditionOpen(false);
+                  setSleepsOpen(false);
                 }}
               >
                 {sleepValue} People

@@ -43,7 +43,8 @@ export const fetchListings = async (filters: Filters = {}) => {
 
   if (condition)
     params.append("condition", condition.toLowerCase().replace(/\s+/g, "-"));
-  if (sleeps) params.append("sleeps", sleeps);
+  if (filters.sleeps) params.append("sleep", filters.sleeps);
+
   const res = await fetch(`${API_BASE}/new-list?${params.toString()}`);
 
   if (!res.ok) throw new Error("API failed");

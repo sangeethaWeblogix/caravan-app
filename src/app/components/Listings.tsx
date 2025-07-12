@@ -21,6 +21,7 @@ interface Product {
   link: string;
   location?: string;
   condition: string;
+  sleep?: string;
   categories?: string[];
 }
 
@@ -67,18 +68,20 @@ interface Props {
 }
 
 export default function ListingsPage({ category, location, condition }: Props) {
+  const pathname =
+    typeof window !== "undefined" ? window.location.pathname : "";
   const parsedCategory = category?.replace("-category", "") || undefined;
   const parsedLocation =
     location?.replace("-state", "")?.replace(/-/g, " ") || undefined;
   const parsedCondition = condition?.replace("-condition", "") || undefined;
-
-  const pathname =
-    typeof window !== "undefined" ? window.location.pathname : "";
+  const sleepMatch = pathname.match(/over-(\d+)-people-sleeping-capacity/);
+  const parsedSleep = sleepMatch ? `${sleepMatch[1]}-people` : undefined;
 
   const initialFilters: Filters = {
     ...(parsedCategory && { category: parsedCategory }),
     ...(parsedLocation && { location: parsedLocation }),
     ...(parsedCondition && { condition: parsedCondition }),
+    ...(parsedSleep && { sleeps: parsedSleep }),
   };
 
   const [filters, setFilters] = useState<Filters>(initialFilters);
@@ -123,6 +126,7 @@ export default function ListingsPage({ category, location, condition }: Props) {
   const loadListings = async (page = 1, appliedFilters: Filters = filters) => {
     setIsLoading(true);
     window.scrollTo({ top: 0, behavior: "smooth" });
+    console.log("Sending Filters to API", appliedFilters);
 
     try {
       const response = await fetchListings({
@@ -132,6 +136,7 @@ export default function ListingsPage({ category, location, condition }: Props) {
         condition: appliedFilters.condition,
         minKg: appliedFilters.minKg?.toString(),
         maxKg: appliedFilters.maxKg?.toString(),
+        sleeps: appliedFilters.sleeps,
         minPrice: appliedFilters.from_price?.toString(), // ✅ fixed
         maxPrice: appliedFilters.to_price?.toString(), // ✅ fixed
         location: undefined, // avoid duplication
@@ -163,9 +168,11 @@ export default function ListingsPage({ category, location, condition }: Props) {
 
   // Handle filter changes and update the page
   const handleFilterChange = useCallback((newFilters: Filters) => {
+    console.log("🚚 got from CaravanFilter →", newFilters); // 👈 should contain sleeps
     setHasSearched(true);
     setFilters(newFilters);
     filtersRef.current = newFilters;
+
     setPagination({
       current_page: 1,
       total_pages: 1,
@@ -173,6 +180,7 @@ export default function ListingsPage({ category, location, condition }: Props) {
       per_page: 12,
       total_products: 0,
     });
+
     loadListings(1, newFilters);
   }, []);
 
@@ -206,6 +214,16 @@ export default function ListingsPage({ category, location, condition }: Props) {
       slugParts.push(`under-${maxPrice}`);
     }
 
+    if (filters.sleeps) {
+      // remove any existing sleep-related slug first (if reusing filters)
+      const filteredSlugParts = slugParts.filter(
+        (part) => !part.includes("people-sleeping-capacity")
+      );
+      const num = filters.sleeps.split("-")[0];
+      filteredSlugParts.push(`over-${num}-people-sleeping-capacity`);
+      return `/listings/${filteredSlugParts.join("/")}`;
+    }
+
     return `/listings/${slugParts.join("/")}`;
   };
 
@@ -223,6 +241,7 @@ export default function ListingsPage({ category, location, condition }: Props) {
           "maxKg",
           "from_price",
           "to_price",
+          "sleeps",
           "condition",
         ].includes(key)
       ) {
@@ -273,6 +292,7 @@ export default function ListingsPage({ category, location, condition }: Props) {
                     makes={makes}
                     states={stateOptions}
                     onFilterChange={handleFilterChange}
+                    currentFilters={filters}
                   />
                 </Suspense>
               </div>
