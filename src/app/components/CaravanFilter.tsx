@@ -188,9 +188,12 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
       maxPrice
   );
 
+  // 🛠️ PATCHED CaravanFilter.tsx (only the price-from conflict fix shown)
+
   useEffect(() => {
     const slug = pathname.split("/listings/")[1];
 
+    // ✅ Detect ATM values from slug
     if (slug?.includes("between") && slug?.includes("kg-atm")) {
       const match = slug.match(/between-(\d+)-kg-(\d+)-kg-atm/);
       if (match) {
@@ -213,25 +216,28 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
       }
     }
 
-    if (slug?.includes("between") && slug.match(/between-(\d+)-(\d+)/)) {
-      const match = slug.match(/between-(\d+)-(\d+)/);
+    // ✅ Detect Price Slug specifically — prevent overlap with "over-3-people"
+    if (slug?.match(/between-(\d+)-(\d+)$/)) {
+      const match = slug.match(/between-(\d+)-(\d+)$/);
       if (match) {
         setMinPrice(parseInt(match[1]));
         setMaxPrice(parseInt(match[2]));
       }
-    } else if (slug?.includes("over")) {
-      const match = slug.match(/over-(\d+)/);
+    } else if (slug?.match(/over-(\d+)$/)) {
+      const match = slug.match(/over-(\d+)$/);
       if (match) {
         setMinPrice(parseInt(match[1]));
         setMaxPrice(null);
       }
-    } else if (slug?.includes("under")) {
-      const match = slug.match(/under-(\d+)/);
+    } else if (slug?.match(/under-(\d+)$/)) {
+      const match = slug.match(/under-(\d+)$/);
       if (match) {
         setMinPrice(null);
         setMaxPrice(parseInt(match[1]));
       }
     }
+
+    // ✅ Detect condition
     const conditionMatch = slug?.match(/(near-new|new|used)-condition/);
     if (conditionMatch) {
       const matchedCondition = conditionMatch[1].replace(/-/g, " ");
@@ -241,6 +247,13 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
           .map((word) => word[0].toUpperCase() + word.slice(1))
           .join(" ")
       );
+    }
+
+    // ✅ Detect sleeps separately
+    const sleepSlugMatch = slug?.match(/over-(\d+)-people-sleeping-capacity/);
+    if (sleepSlugMatch) {
+      const sleepValue = sleepSlugMatch[1];
+      setSelectedSleepName(sleepValue);
     }
   }, [pathname]);
 
@@ -439,6 +452,10 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
 
     if (selectedCategory) {
       slugParts.push(`${selectedCategory}-category`);
+    }
+
+    if (selectedSleepName) {
+      slugParts.push(`over-${selectedSleepName}-people-sleeping-capacity`);
     }
 
     // Add suburb
