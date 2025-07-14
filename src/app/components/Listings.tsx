@@ -128,6 +128,7 @@ export default function ListingsPage({ category, location, condition }: Props) {
 
     // ✅ For page change (Next/Prev)
     loadListings(page, filtersRef.current);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams, pagination]);
 
   useEffect(() => {
@@ -135,6 +136,7 @@ export default function ListingsPage({ category, location, condition }: Props) {
       filtersRef.current = initialFilters; // ✅ set ref properly on first mount
       loadListings(initialPage, initialFilters);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const loadListings = async (page = 1, appliedFilters: Filters = filters) => {
@@ -196,6 +198,7 @@ export default function ListingsPage({ category, location, condition }: Props) {
     });
 
     loadListings(1, newFilters);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const buildSlugPath = () => {

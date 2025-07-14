@@ -25,7 +25,6 @@ export const fetchListings = async (filters: Filters = {}) => {
     minKg,
     maxKg,
     condition,
-    sleeps,
     state,
   } = filters;
 

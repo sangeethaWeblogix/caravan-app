@@ -102,12 +102,9 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
   );
   const [atmFrom, setAtmFrom] = useState<number | null>(null);
   const [atmTo, setAtmTo] = useState<number | null>(null);
-  const [sleepFrom, setSleepFrom] = useState<number | null>(null);
-  const [sleepTo, setSleepTo] = useState<number | null>(null);
-
+  const setPendingLocation = useState<string>("")[1];
+  const setPendingState = useState<StateOption | null>(null)[1];
   const conditionDatas = ["Near New", "New", "Used"];
-  const [pendingLocation, setPendingLocation] = useState<string>("");
-  const [pendingState, setPendingState] = useState<StateOption | null>(null);
   const [minPrice, setMinPrice] = useState<number | null>(null);
   const [maxPrice, setMaxPrice] = useState<number | null>(null);
   const [selectedSleepName, setSelectedSleepName] = useState<string>(
@@ -362,8 +359,20 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
         to_price: maxPrice || undefined,
       });
     }, 0);
-  }, [pathname, categories, makes, states, searchParams, onFilterChange]);
-
+  }, [
+    pathname,
+    categories,
+    makes,
+    states,
+    searchParams,
+    onFilterChange,
+    atmFrom,
+    atmTo,
+    minPrice,
+    maxPrice,
+    selectedConditionName,
+    selectedSleepName,
+  ]);
   const handleSuburbSelection = (shortAddress: string) => {
     setLocationInput(shortAddress);
 
@@ -371,7 +380,7 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
     if (!match) return;
 
     const suburbName = match[1].trim().toLowerCase();
-    const postcode = match[2];
+    // const postcode = match[2];
 
     let matchedState: StateOption | undefined;
     let suburbSlug: string | undefined;
