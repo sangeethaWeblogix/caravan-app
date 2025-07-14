@@ -1,4 +1,4 @@
- "use client";
+"use client";
 
 import { Suspense, useCallback, useEffect, useRef, useState } from "react";
 import { fetchListings } from "../../api/listings/api";
@@ -20,6 +20,8 @@ interface Product {
   image: string;
   link: string;
   location?: string;
+  condition: string;
+  sleep?: string;
   categories?: string[];
 }
 
@@ -50,10 +52,10 @@ export interface Filters {
   category?: string;
   make?: string;
   location?: string;
-  minPrice?: string;
-  maxPrice?: string;
-  minKg?: string;
-  maxKg?: string;
+  from_price?: string | number;
+  to_price?: string | number;
+  minKg?: string | number;
+  maxKg?: string | number;
   condition?: string;
   sleeps?: string;
   states?: string;
@@ -62,16 +64,24 @@ export interface Filters {
 interface Props {
   category?: string;
   location?: string;
+  condition?: string;
 }
 
-export default function ListingsPage({ category, location }: Props) {
+export default function ListingsPage({ category, location, condition }: Props) {
+  const pathname =
+    typeof window !== "undefined" ? window.location.pathname : "";
   const parsedCategory = category?.replace("-category", "") || undefined;
   const parsedLocation =
     location?.replace("-state", "")?.replace(/-/g, " ") || undefined;
+  const parsedCondition = condition?.replace("-condition", "") || undefined;
+  const sleepMatch = pathname.match(/over-(\d+)-people-sleeping-capacity/);
+  const parsedSleep = sleepMatch ? `${sleepMatch[1]}-people` : undefined;
 
   const initialFilters: Filters = {
     ...(parsedCategory && { category: parsedCategory }),
     ...(parsedLocation && { location: parsedLocation }),
+    ...(parsedCondition && { condition: parsedCondition }),
+    ...(parsedSleep && { sleeps: parsedSleep }),
   };
 
   const [filters, setFilters] = useState<Filters>(initialFilters);
@@ -85,42 +95,66 @@ export default function ListingsPage({ category, location }: Props) {
   const [hasSearched, setHasSearched] = useState(false);
   const router = useRouter();
   const searchParams = useSearchParams();
-  const initialPage = parseInt(searchParams.get("paged") || "1", 10); // Use 'paged' instead of 'page'
+  const initialPage = parseInt(searchParams.get("paged") || "1", 10);
 
   const [pagination, setPagination] = useState<Pagination>({
     current_page: initialPage,
     total_pages: 1,
     total_items: 0,
-    per_page: 12,
+    per_page: 12, // The number of items per page
     total_products: 0,
   });
 
   // Update pagination when page URL param changes
   useEffect(() => {
-    const page = parseInt(searchParams.get("paged") || "1", 10); // Fetch the correct page from URL
-    if (pagination.current_page !== page) {
-      setPagination((prev) => ({ ...prev, current_page: page }));
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchParams]); // Effect triggered whenever searchParams changes
+    const pageParam = searchParams.get("paged");
+    const page = parseInt(pageParam || "1", 12);
 
-  // Effect that handles fetching listings on page change
+    // ✅ Prevent calling API again for same page
+    if (pagination.current_page === page) return;
+
+    setPagination((prev) => ({
+      ...prev,
+      current_page: page,
+    }));
+
+    // ✅ First time (initial filters)
+    if (!hasSearched && Object.keys(initialFilters).length > 0) {
+      filtersRef.current = initialFilters;
+      setHasSearched(true);
+      loadListings(page, initialFilters);
+      return;
+    }
+
+    // ✅ For page change (Next/Prev)
+    loadListings(page, filtersRef.current);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams, pagination]);
+
   useEffect(() => {
-    if (hasSearched) {
-      loadListings(pagination.current_page, filtersRef.current);
+    if (!hasSearched && Object.keys(initialFilters).length > 0) {
+      filtersRef.current = initialFilters; // ✅ set ref properly on first mount
+      loadListings(initialPage, initialFilters);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pagination.current_page]);
+  }, []);
 
   const loadListings = async (page = 1, appliedFilters: Filters = filters) => {
     setIsLoading(true);
     window.scrollTo({ top: 0, behavior: "smooth" });
+    console.log("Sending Filters to API", appliedFilters);
 
     try {
       const response = await fetchListings({
         ...appliedFilters,
-        page,
+        page, // Current page number
         state: appliedFilters.location,
+        condition: appliedFilters.condition,
+        minKg: appliedFilters.minKg?.toString(),
+        maxKg: appliedFilters.maxKg?.toString(),
+        sleeps: appliedFilters.sleeps,
+        minPrice: appliedFilters.from_price?.toString(), // ✅ fixed
+        maxPrice: appliedFilters.to_price?.toString(), // ✅ fixed
         location: undefined, // avoid duplication
       });
 
@@ -136,7 +170,7 @@ export default function ListingsPage({ category, location }: Props) {
         setPagination({
           current_page: 1,
           total_pages: 1,
-          per_page: 12,
+          per_page: pagination.per_page,
           total_products: 0,
         });
       }
@@ -148,45 +182,89 @@ export default function ListingsPage({ category, location }: Props) {
     }
   };
 
-  useEffect(() => {
-    if (!hasSearched) {
-      const parsedCategory = category?.replace("-category", "") || undefined;
-      const parsedLocation =
-        location?.replace("-state", "")?.replace(/-/g, " ") || undefined;
+  // Handle filter changes and update the page
+  const handleFilterChange = useCallback((newFilters: Filters) => {
+    console.log("🚚 got from CaravanFilter →", newFilters); // 👈 should contain sleeps
+    setHasSearched(true);
+    setFilters(newFilters);
+    filtersRef.current = newFilters;
 
-      const defaultFilters: Filters = {
-        ...(parsedCategory && { category: parsedCategory }),
-        ...(parsedLocation && { location: parsedLocation }),
-      };
+    setPagination({
+      current_page: 1,
+      total_pages: 1,
+      total_items: 0,
+      per_page: 12,
+      total_products: 0,
+    });
 
-      setFilters(defaultFilters);
-      filtersRef.current = defaultFilters;
-      setHasSearched(true);
-
-      // ✅ Read from URL page (initialPage)
-      loadListings(initialPage, defaultFilters);
-    }
+    loadListings(1, newFilters);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [category, location, categories]);
+  }, []);
 
   const buildSlugPath = () => {
     const slugParts: string[] = [];
+
     if (filters.category) slugParts.push(`${filters.category}-category`);
     if (filters.location)
       slugParts.push(`${filters.location.replace(/\s+/g, "-")}-state`);
+    if (filters.condition)
+      slugParts.push(`${filters.condition.toLowerCase()}-condition`);
+
+    const minPrice = filters.from_price;
+    const maxPrice = filters.to_price;
+
+    if (minPrice && maxPrice) {
+      slugParts.push(`between-${minPrice}-${maxPrice}`);
+    } else if (minPrice) {
+      slugParts.push(`over-${minPrice}`);
+    } else if (maxPrice) {
+      slugParts.push(`under-${maxPrice}`);
+    }
+
+    const minKg = filters.minKg;
+    const maxKg = filters.maxKg;
+
+    if (minKg && maxKg) {
+      slugParts.push(`between-${minKg}-kg-${maxKg}-kg-atm`);
+    } else if (minKg) {
+      slugParts.push(`over-${minKg}-kg-atm`);
+    } else if (maxKg) {
+      slugParts.push(`under-${maxKg}-kg-atm`);
+    }
+    if (filters.sleeps) {
+      // remove any existing sleep-related slug first (if reusing filters)
+      const filteredSlugParts = slugParts.filter(
+        (part) => !part.includes("people-sleeping-capacity")
+      );
+      const num = filters.sleeps.split("-")[0];
+      filteredSlugParts.push(`over-${num}-people-sleeping-capacity`);
+      return `/listings/${filteredSlugParts.join("/")}`;
+    }
+
     return `/listings/${slugParts.join("/")}`;
   };
 
   const updateURLWithFilters = (page: number) => {
     const current = new URLSearchParams(searchParams.toString());
-    current.set("paged", page.toString()); // Use 'paged' for the query parameter
+    current.set("paged", page.toString());
 
-    // Only add filters not already present in the path
     Object.entries(filters).forEach(([key, value]) => {
-      if (value && key !== "category" && key !== "location") {
-        current.set(key, value);
+      if (
+        value &&
+        ![
+          "category",
+          "location",
+          "minKg",
+          "maxKg",
+          "from_price",
+          "to_price",
+          "sleeps",
+          "condition",
+        ].includes(key)
+      ) {
+        current.set(key, value.toString());
       } else {
-        current.delete(key); // Clean up old values
+        current.delete(key);
       }
     });
 
@@ -196,33 +274,16 @@ export default function ListingsPage({ category, location }: Props) {
   const handleNextPage = () => {
     if (pagination.current_page < pagination.total_pages) {
       const nextPage = pagination.current_page + 1;
-      window.scrollTo({ top: 0, behavior: "instant" });
-      setPagination((prev) => ({ ...prev, current_page: nextPage }));
-      updateURLWithFilters(nextPage);
+      updateURLWithFilters(nextPage); // triggers useEffect to fetch correct page
     }
   };
 
   const handlePrevPage = () => {
     if (pagination.current_page > 1) {
       const prevPage = pagination.current_page - 1;
-      setPagination((prev) => ({ ...prev, current_page: prevPage }));
       updateURLWithFilters(prevPage);
     }
   };
-
-  const handleFilterChange = useCallback((newFilters: Filters) => {
-    setHasSearched(true);
-    setFilters(newFilters);
-    setPagination({
-      current_page: 1,
-      total_pages: 1,
-      total_items: 0,
-      per_page: 12,
-      total_products: 0,
-    });
-    loadListings(1, newFilters);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
 
   return (
     <section className="services section-padding pb-30 style-1">
@@ -246,6 +307,7 @@ export default function ListingsPage({ category, location }: Props) {
                     makes={makes}
                     states={stateOptions}
                     onFilterChange={handleFilterChange}
+                    currentFilters={filters}
                   />
                 </Suspense>
               </div>
