@@ -209,16 +209,6 @@ export default function ListingsPage({ category, location, condition }: Props) {
       slugParts.push(`${filters.location.replace(/\s+/g, "-")}-state`);
     if (filters.condition)
       slugParts.push(`${filters.condition.toLowerCase()}-condition`);
-    const minKg = filters.minKg;
-    const maxKg = filters.maxKg;
-
-    if (minKg && maxKg) {
-      slugParts.push(`between-${minKg}-kg-${maxKg}-kg-atm`);
-    } else if (minKg) {
-      slugParts.push(`over-${minKg}-kg-atm`);
-    } else if (maxKg) {
-      slugParts.push(`under-${maxKg}-kg-atm`);
-    }
 
     const minPrice = filters.from_price;
     const maxPrice = filters.to_price;
@@ -231,6 +221,16 @@ export default function ListingsPage({ category, location, condition }: Props) {
       slugParts.push(`under-${maxPrice}`);
     }
 
+    const minKg = filters.minKg;
+    const maxKg = filters.maxKg;
+
+    if (minKg && maxKg) {
+      slugParts.push(`between-${minKg}-kg-${maxKg}-kg-atm`);
+    } else if (minKg) {
+      slugParts.push(`over-${minKg}-kg-atm`);
+    } else if (maxKg) {
+      slugParts.push(`under-${maxKg}-kg-atm`);
+    }
     if (filters.sleeps) {
       // remove any existing sleep-related slug first (if reusing filters)
       const filteredSlugParts = slugParts.filter(
