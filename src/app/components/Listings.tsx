@@ -1,6 +1,13 @@
 "use client";
 
-import { Suspense, useCallback, useEffect, useRef, useState } from "react";
+import {
+  Suspense,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { fetchListings } from "../../api/listings/api";
 import Listing from "../../app/components/LisitingContent";
 import CaravanFilter from "../../app/components/CaravanFilter";
@@ -70,19 +77,24 @@ interface Props {
 export default function ListingsPage({ category, location, condition }: Props) {
   const pathname =
     typeof window !== "undefined" ? window.location.pathname : "";
-  const parsedCategory = category?.replace("-category", "") || undefined;
-  const parsedLocation =
-    location?.replace("-state", "")?.replace(/-/g, " ") || undefined;
-  const parsedCondition = condition?.replace("-condition", "") || undefined;
-  const sleepMatch = pathname.match(/over-(\d+)-people-sleeping-capacity/);
-  const parsedSleep = sleepMatch ? `${sleepMatch[1]}-people` : undefined;
 
-  const initialFilters: Filters = {
-    ...(parsedCategory && { category: parsedCategory }),
-    ...(parsedLocation && { location: parsedLocation }),
-    ...(parsedCondition && { condition: parsedCondition }),
-    ...(parsedSleep && { sleeps: parsedSleep }),
-  };
+  const initialFilters: Filters = useMemo(() => {
+    const parsedCategory = category?.replace("-category", "") || undefined;
+    const parsedLocation =
+      location?.replace("-state", "")?.replace(/-/g, " ") || undefined;
+    const parsedCondition = condition?.replace("-condition", "") || undefined;
+    const sleepMatch = pathname.match(/over-(\d+)-people-sleeping-capacity/);
+    const parsedSleep = sleepMatch ? `${sleepMatch[1]}-people` : undefined;
+
+    return {
+      ...(parsedCategory && { category: parsedCategory }),
+      ...(parsedLocation && { location: parsedLocation }),
+      ...(parsedCondition && { condition: parsedCondition }),
+      ...(parsedSleep && { sleeps: parsedSleep }),
+    };
+  }, [category, location, condition, pathname]);
+
+  const [filtersReady, setFiltersReady] = useState(false);
 
   const [filters, setFilters] = useState<Filters>(initialFilters);
   const filtersRef = useRef<Filters>(initialFilters);
@@ -108,9 +120,10 @@ export default function ListingsPage({ category, location, condition }: Props) {
   // Update pagination when page URL param changes
   useEffect(() => {
     const pageParam = searchParams.get("paged");
-    const page = parseInt(pageParam || "1", 12);
+    const page = parseInt(pageParam || "1", 10);
 
-    // ✅ Prevent calling API again for same page
+    if (!filtersReady) return; // ✅ Prevent early fetch
+
     if (pagination.current_page === page) return;
 
     setPagination((prev) => ({
@@ -118,70 +131,66 @@ export default function ListingsPage({ category, location, condition }: Props) {
       current_page: page,
     }));
 
-    // ✅ First time (initial filters)
-    if (!hasSearched && Object.keys(initialFilters).length > 0) {
-      filtersRef.current = initialFilters;
-      setHasSearched(true);
-      loadListings(page, initialFilters);
-      return;
-    }
-
-    // ✅ For page change (Next/Prev)
     loadListings(page, filtersRef.current);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchParams, pagination]);
+  }, [searchParams, pagination, filtersReady]);
+
+  const loadListings = useCallback(
+    async (page = 1, appliedFilters: Filters = filters) => {
+      setIsLoading(true);
+      window.scrollTo({ top: 0, behavior: "smooth" });
+      console.log("Sending Filters to API", appliedFilters);
+
+      try {
+        const response = await fetchListings({
+          ...appliedFilters,
+          page, // Current page number
+          state: appliedFilters.location,
+          condition: appliedFilters.condition,
+          minKg: appliedFilters.minKg?.toString(),
+          maxKg: appliedFilters.maxKg?.toString(),
+          sleeps: appliedFilters.sleeps,
+          minPrice: appliedFilters.from_price?.toString(),
+          maxPrice: appliedFilters.to_price?.toString(),
+          location: undefined, // avoid duplication
+        });
+
+        if (response?.data?.products && response?.pagination) {
+          setProducts(response.data.products);
+          setCategories(response.data.all_categories);
+          setMakes(response.data.make_options);
+          setStateOptions(response.data.states ?? []);
+          setPageTitle(response.title ?? "");
+          setPagination(response.pagination);
+        } else {
+          setProducts([]);
+          setPagination({
+            current_page: 1,
+            total_pages: 1,
+            per_page: pagination.per_page,
+            total_products: 0,
+          });
+        }
+      } catch (error) {
+        console.error("❌ Failed to fetch listings:", error);
+        setProducts([]);
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [filters, pagination.per_page]
+  );
 
   useEffect(() => {
-    if (!hasSearched && Object.keys(initialFilters).length > 0) {
-      filtersRef.current = initialFilters; // ✅ set ref properly on first mount
+    if (
+      !hasSearched &&
+      filtersReady &&
+      Object.keys(initialFilters).length > 0
+    ) {
+      filtersRef.current = initialFilters;
       loadListings(initialPage, initialFilters);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  const loadListings = async (page = 1, appliedFilters: Filters = filters) => {
-    setIsLoading(true);
-    window.scrollTo({ top: 0, behavior: "smooth" });
-    console.log("Sending Filters to API", appliedFilters);
-
-    try {
-      const response = await fetchListings({
-        ...appliedFilters,
-        page, // Current page number
-        state: appliedFilters.location,
-        condition: appliedFilters.condition,
-        minKg: appliedFilters.minKg?.toString(),
-        maxKg: appliedFilters.maxKg?.toString(),
-        sleeps: appliedFilters.sleeps,
-        minPrice: appliedFilters.from_price?.toString(), // ✅ fixed
-        maxPrice: appliedFilters.to_price?.toString(), // ✅ fixed
-        location: undefined, // avoid duplication
-      });
-
-      if (response?.data?.products && response?.pagination) {
-        setProducts(response.data.products);
-        setCategories(response.data.all_categories);
-        setMakes(response.data.make_options);
-        setStateOptions(response.data.states ?? []);
-        setPageTitle(response.title ?? "");
-        setPagination(response.pagination);
-      } else {
-        setProducts([]);
-        setPagination({
-          current_page: 1,
-          total_pages: 1,
-          per_page: pagination.per_page,
-          total_products: 0,
-        });
-      }
-    } catch (error) {
-      console.error("❌ Failed to fetch listings:", error);
-      setProducts([]);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
+  }, [filtersReady, hasSearched, initialFilters, initialPage, loadListings]);
   // Handle filter changes and update the page
   const handleFilterChange = useCallback((newFilters: Filters) => {
     console.log("🚚 got from CaravanFilter →", newFilters); // 👈 should contain sleeps
@@ -196,7 +205,7 @@ export default function ListingsPage({ category, location, condition }: Props) {
       per_page: 12,
       total_products: 0,
     });
-
+    setFiltersReady(true);
     loadListings(1, newFilters);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -231,14 +240,10 @@ export default function ListingsPage({ category, location, condition }: Props) {
     } else if (maxKg) {
       slugParts.push(`under-${maxKg}-kg-atm`);
     }
+
     if (filters.sleeps) {
-      // remove any existing sleep-related slug first (if reusing filters)
-      const filteredSlugParts = slugParts.filter(
-        (part) => !part.includes("people-sleeping-capacity")
-      );
       const num = filters.sleeps.split("-")[0];
-      filteredSlugParts.push(`over-${num}-people-sleeping-capacity`);
-      return `/listings/${filteredSlugParts.join("/")}`;
+      slugParts.push(`over-${num}-people-sleeping-capacity`);
     }
 
     return `/listings/${slugParts.join("/")}`;

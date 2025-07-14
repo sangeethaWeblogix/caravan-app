@@ -1,7 +1,13 @@
 "use client";
 
 import { fetchLocations } from "@/api/location/api";
-import React, { useState, Dispatch, SetStateAction, useEffect } from "react";
+import React, {
+  useState,
+  Dispatch,
+  SetStateAction,
+  useEffect,
+  useRef,
+} from "react";
 import { BiChevronDown } from "react-icons/bi";
 import { usePathname, useRouter } from "next/navigation";
 import { useSearchParams } from "next/navigation";
@@ -78,8 +84,7 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
   const [sleepsOpen, setSleepsOpen] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [locationInput, setLocationInput] = useState("");
-  const [selectedLocation, setSelectedLocation] = useState<string>("");
-
+  const setSelectedLocation = useState<string>("")[1];
   const [selectedMake, setSelectedMake] = useState<string | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [selectedCategoryName, setSelectedCategoryName] = useState<
@@ -102,14 +107,14 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
   );
   const [atmFrom, setAtmFrom] = useState<number | null>(null);
   const [atmTo, setAtmTo] = useState<number | null>(null);
-  const setPendingLocation = useState<string>("")[1];
-  const setPendingState = useState<StateOption | null>(null)[1];
+
   const conditionDatas = ["Near New", "New", "Used"];
   const [minPrice, setMinPrice] = useState<number | null>(null);
   const [maxPrice, setMaxPrice] = useState<number | null>(null);
   const [selectedSleepName, setSelectedSleepName] = useState<string>(
     currentFilters?.sleeps?.replace("-people", "") || ""
   );
+  const filtersInitialized = useRef(false);
 
   const atm = [
     600, 800, 1000, 1250, 1500, 1750, 2000, 2250, 2500, 2750, 3000, 3500, 4000,
@@ -151,108 +156,6 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
     setter((prev) => !prev);
   };
 
-  useEffect(() => {
-    if (selectedCategory) {
-      setFilters((prev) => ({ ...prev, category: selectedCategory }));
-    }
-  }, [selectedCategory]);
-
-  useEffect(() => {
-    if (currentFilters?.sleeps) {
-      setSelectedSleepName(currentFilters.sleeps.replace("-people", ""));
-    }
-  }, [currentFilters?.sleeps]);
-
-  useEffect(() => {
-    if (selectedSleepName) {
-      setFilters((prev) => ({
-        ...prev,
-        sleeps: `${selectedSleepName}-people`,
-      }));
-    }
-  }, [selectedSleepName]);
-
-  const isAnyFilterSelected = Boolean(
-    selectedCategory ||
-      selectedMake ||
-      selectedLocation ||
-      selectedConditionName ||
-      selectedSleepName ||
-      selectedState ||
-      atmFrom ||
-      atmTo ||
-      minPrice || // ✅ include minPrice
-      maxPrice
-  );
-
-  // 🛠️ PATCHED CaravanFilter.tsx (only the price-from conflict fix shown)
-
-  // useEffect(() => {
-  //   const slug = pathname.split("/listings/")[1];
-
-  //   // ✅ Detect ATM values from slug
-  //   if (slug?.includes("between") && slug?.includes("kg-atm")) {
-  //     const match = slug.match(/between-(\d+)-kg-(\d+)-kg-atm/);
-  //     if (match) {
-  //       const from = parseInt(match[1]);
-  //       const to = parseInt(match[2]);
-  //       setAtmFrom(from);
-  //       setAtmTo(to);
-  //     }
-  //   } else if (slug?.includes("over") && slug?.includes("kg-atm")) {
-  //     const match = slug.match(/over-(\d+)-kg-atm/);
-  //     if (match) {
-  //       setAtmFrom(parseInt(match[1]));
-  //       setAtmTo(null);
-  //     }
-  //   } else if (slug?.includes("under") && slug?.includes("kg-atm")) {
-  //     const match = slug.match(/under-(\d+)-kg-atm/);
-  //     if (match) {
-  //       setAtmFrom(null);
-  //       setAtmTo(parseInt(match[1]));
-  //     }
-  //   }
-
-  //   // ✅ Detect Price Slug specifically — prevent overlap with "over-3-people"
-  //   if (slug?.match(/between-(\d+)-(\d+)$/)) {
-  //     const match = slug.match(/between-(\d+)-(\d+)$/);
-  //     if (match) {
-  //       setMinPrice(parseInt(match[1]));
-  //       setMaxPrice(parseInt(match[2]));
-  //     }
-  //   } else if (slug?.match(/over-(\d+)$/)) {
-  //     const match = slug.match(/over-(\d+)$/);
-  //     if (match) {
-  //       setMinPrice(parseInt(match[1]));
-  //       setMaxPrice(null);
-  //     }
-  //   } else if (slug?.match(/under-(\d+)$/)) {
-  //     const match = slug.match(/under-(\d+)$/);
-  //     if (match) {
-  //       setMinPrice(null);
-  //       setMaxPrice(parseInt(match[1]));
-  //     }
-  //   }
-
-  //   // ✅ Detect condition
-  //   const conditionMatch = slug?.match(/(near-new|new|used)-condition/);
-  //   if (conditionMatch) {
-  //     const matchedCondition = conditionMatch[1].replace(/-/g, " ");
-  //     setSelectedConditionName(
-  //       matchedCondition
-  //         .split(" ")
-  //         .map((word) => word[0].toUpperCase() + word.slice(1))
-  //         .join(" ")
-  //     );
-  //   }
-
-  //   // ✅ Detect sleeps separately
-  //   const sleepSlugMatch = slug?.match(/over-(\d+)-people-sleeping-capacity/);
-  //   if (sleepSlugMatch) {
-  //     const sleepValue = sleepSlugMatch[1];
-  //     setSelectedSleepName(sleepValue);
-  //   }
-  // }, [pathname]);
   useEffect(() => {
     const slug = pathname.split("/listings/")[1];
     const segments = slug?.split("/") || [];
@@ -439,137 +342,86 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
   ]);
   const handleSuburbSelection = (shortAddress: string) => {
     setLocationInput(shortAddress);
-
     const match = shortAddress.match(/^(.+?)\s+[A-Z]{2,}\s+(\d{4})$/);
     if (!match) return;
 
     const suburbName = match[1].trim().toLowerCase();
-    // const postcode = match[2];
-
-    let matchedState: StateOption | undefined;
-    let suburbSlug: string | undefined;
-
     for (const state of states) {
-      for (const region of state.regions || []) {
-        for (const suburb of region.suburbs || []) {
-          if (suburb.name.toLowerCase() === suburbName) {
-            matchedState = state;
-            suburbSlug = suburb.value?.split(".")[0];
-            break;
-          }
-        }
-        if (matchedState) break;
+      const lowerName = state.name.toLowerCase();
+      if (shortAddress.toLowerCase().includes(lowerName)) {
+        setSelectedState(state.value);
+        setSelectedStateName(state.name);
+        setSelectedSuburbName(suburbName);
+        break;
       }
-      if (matchedState) break;
-    }
-
-    if (matchedState && suburbSlug) {
-      setPendingLocation(shortAddress);
-      setPendingState(matchedState);
     }
   };
+  // ✅ Fix: ensure the URL updates FIRST, then API call happens after
+
+  // ✅ Fix unused variable 'filters' warning
+  // Just remove it since it's not needed anymore
 
   useEffect(() => {
-    console.log("Triggered Filters:", {
-      category: selectedCategory,
-      location: selectedState,
-      make: selectedMake,
-      condition: selectedConditionName,
-      sleeps: selectedSleepName,
-    });
+    const timeout = setTimeout(() => {
+      const slugParts: string[] = [];
+
+      if (selectedConditionName)
+        slugParts.push(`${selectedConditionName.toLowerCase()}-condition`);
+      if (selectedCategory) slugParts.push(`${selectedCategory}-category`);
+      if (selectedSuburbName) slugParts.push(`${selectedSuburbName}-suburb`);
+      if (selectedStateName)
+        slugParts.push(`${selectedStateName.toLowerCase()}-state`);
+      const match = locationInput.match(/\b\d{4}\b/);
+      if (match) slugParts.push(match[0]);
+
+      if (minPrice && maxPrice)
+        slugParts.push(`between-${minPrice}-${maxPrice}`);
+      else if (minPrice) slugParts.push(`over-${minPrice}`);
+      else if (maxPrice) slugParts.push(`under-${maxPrice}`);
+
+      if (atmFrom && atmTo)
+        slugParts.push(`between-${atmFrom}-kg-${atmTo}-kg-atm`);
+      else if (atmFrom) slugParts.push(`over-${atmFrom}-kg-atm`);
+      else if (atmTo) slugParts.push(`under-${atmTo}-kg-atm`);
+
+      if (selectedSleepName) {
+        slugParts.push(`over-${selectedSleepName}-people-sleeping-capacity`);
+      }
+
+      let slugifiedURL = `/listings/${slugParts.join("/")}`
+        .replace(/\s+/g, "-")
+        .replace(/-+/g, "-")
+        .toLowerCase();
+
+      const query: Record<string, string> = {};
+      if (selectedMake) query.make = selectedMake;
+      const queryString = new URLSearchParams(query).toString();
+      if (queryString) slugifiedURL += `?${queryString}`;
+
+      if (filtersInitialized.current) {
+        router.push(slugifiedURL);
+      } else {
+        filtersInitialized.current = true;
+      }
+    }, 300);
+
+    return () => clearTimeout(timeout);
   }, [
     selectedCategory,
-    selectedState,
     selectedMake,
     selectedConditionName,
     selectedSleepName,
+    selectedState,
+    selectedSuburbName,
+    selectedStateName,
+    locationInput,
+    atmFrom,
+    atmTo,
+    minPrice,
+    maxPrice,
+    onFilterChange,
+    router,
   ]);
-
-  const handleSearch = () => {
-    const newFilters: Filters = {
-      category: selectedCategory || undefined,
-      make: selectedMake || undefined,
-      location: selectedState || undefined,
-      condition: selectedConditionName || undefined,
-      sleeps: selectedSleepName ? `${selectedSleepName}-people` : undefined,
-      maxKg: atmTo || undefined,
-      minKg: atmFrom || undefined,
-      from_price: minPrice || undefined,
-      to_price: maxPrice || undefined,
-    };
-
-    console.log("Triggered Filters:", filters);
-    console.log("Triggered :", newFilters);
-    console.log("➡️ Final Filters to Parent", newFilters);
-
-    onFilterChange(newFilters);
-
-    const slugParts: string[] = [];
-
-    // 1. Condition
-    if (selectedConditionName) {
-      slugParts.push(
-        `${selectedConditionName.toLowerCase().replace(/\s+/g, "-")}-condition`
-      );
-    }
-
-    // 2. Category
-    if (selectedCategory) {
-      slugParts.push(`${selectedCategory}-category`);
-    }
-
-    // 3. Suburb
-    if (selectedSuburbName) {
-      slugParts.push(
-        `${selectedSuburbName.toLowerCase().replace(/\s+/g, "-")}-suburb`
-      );
-    }
-
-    // 4. State
-    if (selectedStateName) {
-      slugParts.push(
-        `${selectedStateName.toLowerCase().replace(/\s+/g, "-")}-state`
-      );
-    }
-
-    // 5. Postcode
-    const match = locationInput.match(/\b\d{4}\b/);
-    if (match) {
-      slugParts.push(match[0]);
-    }
-
-    // 6. Price
-    if (minPrice && maxPrice) {
-      slugParts.push(`between-${minPrice}-${maxPrice}`);
-    } else if (minPrice) {
-      slugParts.push(`over-${minPrice}`);
-    } else if (maxPrice) {
-      slugParts.push(`under-${maxPrice}`);
-    }
-
-    // 7. ATM
-    if (atmFrom && atmTo) {
-      slugParts.push(`between-${atmFrom}-kg-${atmTo}-kg-atm`);
-    } else if (atmFrom) {
-      slugParts.push(`over-${atmFrom}-kg-atm`);
-    } else if (atmTo) {
-      slugParts.push(`under-${atmTo}-kg-atm`);
-    }
-
-    let slugifiedURL = `/listings/${slugParts.join("/")}`
-      .replace(/\s+/g, "-")
-      .replace(/-+/g, "-")
-      .toLowerCase();
-
-    // Query Params (if needed, e.g., make or condition for API)
-    const query: Record<string, string> = {};
-    if (selectedMake) query.make = selectedMake;
-
-    const queryString = new URLSearchParams(query).toString();
-    if (queryString) slugifiedURL += `?${queryString}`;
-
-    router.push(slugifiedURL);
-  };
 
   const resetFilters = () => {
     setSelectedCategory(null);
@@ -960,16 +812,6 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
           className="cfs-select-input"
           placeholder="Search by keyword"
         />
-      </div>
-      <div className="search_float_btn">
-        <button
-          type="button"
-          className="btn cfs-btn fullwidth_btn"
-          disabled={!isAnyFilterSelected}
-          onClick={handleSearch}
-        >
-          Search Filter
-        </button>
       </div>
 
       {/* Reset Button */}
