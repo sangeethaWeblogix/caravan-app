@@ -1,13 +1,7 @@
 "use client";
 
 import { fetchLocations } from "@/api/location/api";
-import React, {
-  useState,
-  Dispatch,
-  SetStateAction,
-  useEffect,
-  useRef,
-} from "react";
+import React, { useState, Dispatch, SetStateAction, useEffect } from "react";
 import { BiChevronDown } from "react-icons/bi";
 import { usePathname, useRouter } from "next/navigation";
 import { useSearchParams } from "next/navigation";
@@ -113,12 +107,6 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
   const conditionDatas = ["Near New", "New", "Used"];
   const [minPrice, setMinPrice] = useState<number | null>(null);
   const [maxPrice, setMaxPrice] = useState<number | null>(null);
-  const lastFiltersRef = useRef<Filters | null>(null);
-  const atmFromRef = useRef<number | null>(null);
-  const atmToRef = useRef<number | null>(null);
-  const minPriceRef = useRef<number | null>(null);
-  const maxPriceRef = useRef<number | null>(null);
-
   const [selectedSleepName, setSelectedSleepName] = useState<string>(
     currentFilters?.sleeps?.replace("-people", "") || ""
   );
@@ -199,72 +187,136 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
 
   // 🛠️ PATCHED CaravanFilter.tsx (only the price-from conflict fix shown)
 
+  // useEffect(() => {
+  //   const slug = pathname.split("/listings/")[1];
+
+  //   // ✅ Detect ATM values from slug
+  //   if (slug?.includes("between") && slug?.includes("kg-atm")) {
+  //     const match = slug.match(/between-(\d+)-kg-(\d+)-kg-atm/);
+  //     if (match) {
+  //       const from = parseInt(match[1]);
+  //       const to = parseInt(match[2]);
+  //       setAtmFrom(from);
+  //       setAtmTo(to);
+  //     }
+  //   } else if (slug?.includes("over") && slug?.includes("kg-atm")) {
+  //     const match = slug.match(/over-(\d+)-kg-atm/);
+  //     if (match) {
+  //       setAtmFrom(parseInt(match[1]));
+  //       setAtmTo(null);
+  //     }
+  //   } else if (slug?.includes("under") && slug?.includes("kg-atm")) {
+  //     const match = slug.match(/under-(\d+)-kg-atm/);
+  //     if (match) {
+  //       setAtmFrom(null);
+  //       setAtmTo(parseInt(match[1]));
+  //     }
+  //   }
+
+  //   // ✅ Detect Price Slug specifically — prevent overlap with "over-3-people"
+  //   if (slug?.match(/between-(\d+)-(\d+)$/)) {
+  //     const match = slug.match(/between-(\d+)-(\d+)$/);
+  //     if (match) {
+  //       setMinPrice(parseInt(match[1]));
+  //       setMaxPrice(parseInt(match[2]));
+  //     }
+  //   } else if (slug?.match(/over-(\d+)$/)) {
+  //     const match = slug.match(/over-(\d+)$/);
+  //     if (match) {
+  //       setMinPrice(parseInt(match[1]));
+  //       setMaxPrice(null);
+  //     }
+  //   } else if (slug?.match(/under-(\d+)$/)) {
+  //     const match = slug.match(/under-(\d+)$/);
+  //     if (match) {
+  //       setMinPrice(null);
+  //       setMaxPrice(parseInt(match[1]));
+  //     }
+  //   }
+
+  //   // ✅ Detect condition
+  //   const conditionMatch = slug?.match(/(near-new|new|used)-condition/);
+  //   if (conditionMatch) {
+  //     const matchedCondition = conditionMatch[1].replace(/-/g, " ");
+  //     setSelectedConditionName(
+  //       matchedCondition
+  //         .split(" ")
+  //         .map((word) => word[0].toUpperCase() + word.slice(1))
+  //         .join(" ")
+  //     );
+  //   }
+
+  //   // ✅ Detect sleeps separately
+  //   const sleepSlugMatch = slug?.match(/over-(\d+)-people-sleeping-capacity/);
+  //   if (sleepSlugMatch) {
+  //     const sleepValue = sleepSlugMatch[1];
+  //     setSelectedSleepName(sleepValue);
+  //   }
+  // }, [pathname]);
   useEffect(() => {
     const slug = pathname.split("/listings/")[1];
+    const segments = slug?.split("/") || [];
 
-    // ✅ Detect ATM values from slug
-    if (slug?.includes("between") && slug?.includes("kg-atm")) {
-      const match = slug.match(/between-(\d+)-kg-(\d+)-kg-atm/);
-      if (match) {
-        const from = parseInt(match[1]);
-        const to = parseInt(match[2]);
-        setAtmFrom(from);
-        setAtmTo(to);
-      }
-    } else if (slug?.includes("over") && slug?.includes("kg-atm")) {
-      const match = slug.match(/over-(\d+)-kg-atm/);
-      if (match) {
-        setAtmFrom(parseInt(match[1]));
+    segments.forEach((part) => {
+      // ATM: over
+      const overAtmMatch = part.match(/^over-(\d+)-kg-atm$/);
+      if (overAtmMatch) {
+        setAtmFrom(parseInt(overAtmMatch[1]));
         setAtmTo(null);
       }
-    } else if (slug?.includes("under") && slug?.includes("kg-atm")) {
-      const match = slug.match(/under-(\d+)-kg-atm/);
-      if (match) {
-        setAtmFrom(null);
-        setAtmTo(parseInt(match[1]));
-      }
-    }
 
-    // ✅ Detect Price Slug specifically — prevent overlap with "over-3-people"
-    if (slug?.match(/between-(\d+)-(\d+)$/)) {
-      const match = slug.match(/between-(\d+)-(\d+)$/);
-      if (match) {
-        setMinPrice(parseInt(match[1]));
-        setMaxPrice(parseInt(match[2]));
+      // ATM: under
+      const underAtmMatch = part.match(/^under-(\d+)-kg-atm$/);
+      if (underAtmMatch) {
+        setAtmFrom(null);
+        setAtmTo(parseInt(underAtmMatch[1]));
       }
-    } else if (slug?.match(/over-(\d+)$/)) {
-      const match = slug.match(/over-(\d+)$/);
-      if (match) {
-        setMinPrice(parseInt(match[1]));
+
+      // ATM: between
+      const betweenAtmMatch = part.match(/^between-(\d+)-kg-(\d+)-kg-atm$/);
+      if (betweenAtmMatch) {
+        setAtmFrom(parseInt(betweenAtmMatch[1]));
+        setAtmTo(parseInt(betweenAtmMatch[2]));
+      }
+
+      // Price: over
+      const overPriceMatch = part.match(/^over-(\d+)$/);
+      if (overPriceMatch) {
+        setMinPrice(parseInt(overPriceMatch[1]));
         setMaxPrice(null);
       }
-    } else if (slug?.match(/under-(\d+)$/)) {
-      const match = slug.match(/under-(\d+)$/);
-      if (match) {
+
+      // Price: under
+      const underPriceMatch = part.match(/^under-(\d+)$/);
+      if (underPriceMatch) {
         setMinPrice(null);
-        setMaxPrice(parseInt(match[1]));
+        setMaxPrice(parseInt(underPriceMatch[1]));
       }
-    }
 
-    // ✅ Detect condition
-    const conditionMatch = slug?.match(/(near-new|new|used)-condition/);
-    if (conditionMatch) {
-      const matchedCondition = conditionMatch[1].replace(/-/g, " ");
-      setSelectedConditionName(
-        matchedCondition
-          .split(" ")
+      // Price: between
+      const betweenPriceMatch = part.match(/^between-(\d+)-(\d+)$/);
+      if (betweenPriceMatch) {
+        setMinPrice(parseInt(betweenPriceMatch[1]));
+        setMaxPrice(parseInt(betweenPriceMatch[2]));
+      }
+
+      // Condition
+      const conditionMatch = part.match(/(near-new|new|used)-condition/);
+      if (conditionMatch) {
+        const formatted = conditionMatch[1]
+          .split("-")
           .map((word) => word[0].toUpperCase() + word.slice(1))
-          .join(" ")
-      );
-    }
+          .join(" ");
+        setSelectedConditionName(formatted);
+      }
 
-    // ✅ Detect sleeps separately
-    const sleepSlugMatch = slug?.match(/over-(\d+)-people-sleeping-capacity/);
-    if (sleepSlugMatch) {
-      const sleepValue = sleepSlugMatch[1];
-      setSelectedSleepName(sleepValue);
-    }
-  }, [pathname, atmFrom, atmTo, minPrice, maxPrice, selectedConditionName]);
+      // Sleeps
+      const sleepMatch = part.match(/^over-(\d+)-people-sleeping-capacity$/);
+      if (sleepMatch) {
+        setSelectedSleepName(sleepMatch[1]);
+      }
+    });
+  }, [pathname]);
 
   useEffect(() => {
     const pathParts = pathname.split("/").filter(Boolean);
@@ -373,6 +425,11 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
     }, 0);
   }, [
     pathname,
+    categories,
+    makes,
+    states,
+    searchParams,
+    onFilterChange,
     atmFrom,
     atmTo,
     minPrice,
@@ -428,9 +485,6 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
     selectedSleepName,
   ]);
 
-  // 🔁 Add this above your component logic (top of component)
-
-  // ✅ Inside component
   const handleSearch = () => {
     const newFilters: Filters = {
       category: selectedCategory || undefined,
@@ -446,75 +500,69 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
 
     console.log("Triggered Filters:", filters);
     console.log("Triggered :", newFilters);
+    console.log("➡️ Final Filters to Parent", newFilters);
 
-    const filtersChanged =
-      JSON.stringify(lastFiltersRef.current) !== JSON.stringify(newFilters);
+    onFilterChange(newFilters);
 
-    if (filtersChanged) {
-      lastFiltersRef.current = newFilters;
-      onFilterChange({ ...newFilters }); // ✅ new reference
-      console.log("➡️ Final Filters to Parent", newFilters);
-    }
-
-    // ✅ URL handling stays same
     const slugParts: string[] = [];
 
-    if (
-      selectedConditionName &&
-      !selectedCategory &&
-      !selectedState &&
-      !selectedSuburbName &&
-      !selectedMake &&
-      !atmFrom &&
-      !atmTo &&
-      !minPrice &&
-      !maxPrice &&
-      !selectedSleepName
-    ) {
+    // 1. Condition
+    if (selectedConditionName) {
       slugParts.push(
         `${selectedConditionName.toLowerCase().replace(/\s+/g, "-")}-condition`
       );
-      const finalURL = `/listings/${slugParts.join("/")}`;
-      router.push(finalURL);
-      return;
     }
 
-    if (selectedCategory) slugParts.push(`${selectedCategory}-category`);
-    if (selectedSleepName)
-      slugParts.push(`over-${selectedSleepName}-people-sleeping-capacity`);
-    if (selectedSuburbName)
+    // 2. Category
+    if (selectedCategory) {
+      slugParts.push(`${selectedCategory}-category`);
+    }
+
+    // 3. Suburb
+    if (selectedSuburbName) {
       slugParts.push(
         `${selectedSuburbName.toLowerCase().replace(/\s+/g, "-")}-suburb`
       );
-    if (selectedStateName)
+    }
+
+    // 4. State
+    if (selectedStateName) {
       slugParts.push(
         `${selectedStateName.toLowerCase().replace(/\s+/g, "-")}-state`
       );
+    }
 
+    // 5. Postcode
     const match = locationInput.match(/\b\d{4}\b/);
-    if (match) slugParts.push(match[0]);
+    if (match) {
+      slugParts.push(match[0]);
+    }
 
-    if (minPrice && maxPrice) slugParts.push(`between-${minPrice}-${maxPrice}`);
-    else if (minPrice) slugParts.push(`over-${minPrice}`);
-    else if (maxPrice) slugParts.push(`under-${maxPrice}`);
+    // 6. Price
+    if (minPrice && maxPrice) {
+      slugParts.push(`between-${minPrice}-${maxPrice}`);
+    } else if (minPrice) {
+      slugParts.push(`over-${minPrice}`);
+    } else if (maxPrice) {
+      slugParts.push(`under-${maxPrice}`);
+    }
 
-    if (atmFrom && atmTo)
+    // 7. ATM
+    if (atmFrom && atmTo) {
       slugParts.push(`between-${atmFrom}-kg-${atmTo}-kg-atm`);
-    else if (atmFrom) slugParts.push(`over-${atmFrom}-kg-atm`);
-    else if (atmTo) slugParts.push(`under-${atmTo}-kg-atm`);
-
-    if (selectedConditionName)
-      slugParts.push(
-        `${selectedConditionName.toLowerCase().replace(/\s+/g, "-")}-condition`
-      );
+    } else if (atmFrom) {
+      slugParts.push(`over-${atmFrom}-kg-atm`);
+    } else if (atmTo) {
+      slugParts.push(`under-${atmTo}-kg-atm`);
+    }
 
     let slugifiedURL = `/listings/${slugParts.join("/")}`
       .replace(/\s+/g, "-")
       .replace(/-+/g, "-")
       .toLowerCase();
 
+    // Query Params (if needed, e.g., make or condition for API)
     const query: Record<string, string> = {};
-    if (selectedConditionName) query.condition = selectedConditionName;
     if (selectedMake) query.make = selectedMake;
 
     const queryString = new URLSearchParams(query).toString();
@@ -699,13 +747,11 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
             <select
               className="cfs-select-input"
               value={atmFrom?.toString() || ""}
-              onChange={(e) => {
-                const value = e.target.value ? parseInt(e.target.value) : null;
-                setAtmFrom(value);
-                atmFromRef.current = value;
-              }}
+              onChange={(e) =>
+                setAtmFrom(e.target.value ? parseInt(e.target.value) : null)
+              }
             >
-              <option value="">Min</option>+
+              <option value="">Min</option>
               {atm.map((val) => (
                 <option key={val} value={val}>
                   {val} kg
@@ -774,7 +820,7 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
         </div>
       </div>
       {/* 8883944599
-9524163042 */}
+ 9524163042 */}
       {/* Condition Accordion */}
       <div className="cs-full_width_section">
         <div
