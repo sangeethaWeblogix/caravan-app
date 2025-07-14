@@ -20,6 +20,8 @@ interface Product {
   condition: string;
   location?: string;
   categories?: string[];
+  people?: string;
+  make?: string;
 }
 interface Pagination {
   current_page: number;
@@ -113,7 +115,7 @@ export default function ListingContent({
                 </Link>
               ) : (
                 <Image
-                  src={"/images/img.png"} //"/images/img.png" "product.image"
+                  src={product.image} //"/images/img.png" "product.image"
                   alt={product.name}
                   width={1593}
                   height={1195}
@@ -153,6 +155,16 @@ export default function ListingContent({
                   {product.condition && (
                     <li>
                       <span className="attribute3">{product.condition}</span>
+                    </li>
+                  )}
+                  {product.people && (
+                    <li>
+                      <span className="attribute3">{product.people}</span>
+                    </li>
+                  )}
+                  {product.make && (
+                    <li>
+                      <span className="attribute3">{product.make}</span>
                     </li>
                   )}
                 </ul>
