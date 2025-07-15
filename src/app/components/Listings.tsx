@@ -68,6 +68,8 @@ export interface Filters {
   states?: string;
   from_year?: number | string;
   to_year?: number | string;
+  from_length?: string | number;
+  to_length?: string | number;
 }
 
 interface Props {
@@ -156,6 +158,9 @@ export default function ListingsPage({ category, location, condition }: Props) {
           maxPrice: appliedFilters.to_price?.toString(),
           acustom_fromyears: appliedFilters.from_year?.toString(),
           acustom_toyears: appliedFilters.to_year?.toString(),
+          from_length: appliedFilters.from_length?.toString(),
+          to_length: appliedFilters.to_length?.toString(),
+
           location: undefined, // avoid duplication
         });
 
@@ -249,6 +254,17 @@ export default function ListingsPage({ category, location, condition }: Props) {
       const num = filters.sleeps.split("-")[0];
       slugParts.push(`over-${num}-people-sleeping-capacity`);
     }
+    // ✅ Add this for length filtering
+    const minLen = filters.from_length;
+    const maxLen = filters.to_length;
+
+    if (minLen && maxLen) {
+      slugParts.push(`between-${minLen}-${maxLen}-length-in-feet`);
+    } else if (minLen) {
+      slugParts.push(`over-${minLen}-length-in-feet`);
+    } else if (maxLen) {
+      slugParts.push(`under-${maxLen}-length-in-feet`);
+    }
 
     return `/listings/${slugParts.join("/")}`;
   };
@@ -271,6 +287,8 @@ export default function ListingsPage({ category, location, condition }: Props) {
           "condition",
           "from_year",
           "to_year",
+          "from_length",
+          "to_length",
         ].includes(key)
       ) {
         current.set(key, value.toString());

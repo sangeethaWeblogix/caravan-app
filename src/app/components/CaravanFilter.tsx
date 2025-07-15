@@ -55,6 +55,8 @@ export interface Filters {
   maxKg?: string | number;
   from_year?: number | string;
   to_year?: number | string;
+  from_length?: string | number;
+  to_length?: string | number;
 }
 
 interface CaravanFilterProps {
@@ -109,6 +111,8 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
   );
   const [atmFrom, setAtmFrom] = useState<number | null>(null);
   const [atmTo, setAtmTo] = useState<number | null>(null);
+  const [lengthFrom, setLengthFrom] = useState<number | null>(null);
+  const [lengthTo, setLengthTo] = useState<number | null>(null);
 
   const conditionDatas = ["Near New", "New", "Used"];
   const [minPrice, setMinPrice] = useState<number | null>(null);
@@ -135,7 +139,9 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
     (_, i) => 1914 + i
   );
 
-  const length = [12, 13, 14, 15, 16, 17, 18, 19, 20, 21];
+  const length = [
+    12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28,
+  ];
 
   const sleep = [1, 2, 3, 4, 5, 6, 7];
 
@@ -237,6 +243,29 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
       if (toYearMatch) {
         setYearTo(parseInt(toYearMatch[1]));
         setYearFrom(null);
+      }
+
+      // Length Slug: between-X-Y-length-in-feet
+      const betweenLenMatch = part.match(
+        /^between-(\d+)-(\d+)-length-in-feet$/
+      );
+      if (betweenLenMatch) {
+        setLengthFrom(parseInt(betweenLenMatch[1]));
+        setLengthTo(parseInt(betweenLenMatch[2]));
+      }
+
+      // over-X-length-in-feet
+      const overLenMatch = part.match(/^over-(\d+)-length-in-feet$/);
+      if (overLenMatch) {
+        setLengthFrom(parseInt(overLenMatch[1]));
+        setLengthTo(null);
+      }
+
+      // under-X-length-in-feet
+      const underLenMatch = part.match(/^under-(\d+)-length-in-feet$/);
+      if (underLenMatch) {
+        setLengthFrom(null);
+        setLengthTo(parseInt(underLenMatch[1]));
       }
     });
   }, [pathname]);
@@ -346,6 +375,8 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
         to_price: maxPrice || undefined,
         from_year: yearFrom || undefined,
         to_year: yearTo || undefined,
+        from_length: lengthFrom || undefined,
+        to_length: lengthTo || undefined,
       });
     }, 0);
   }, [
@@ -363,6 +394,8 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
     selectedSleepName,
     yearFrom,
     yearTo,
+    lengthFrom,
+    lengthTo,
   ]);
   const handleSuburbSelection = (shortAddress: string) => {
     setLocationInput(shortAddress);
@@ -412,6 +445,14 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
         slugParts.push(`over-${selectedSleepName}-people-sleeping-capacity`);
       }
 
+      if (lengthFrom && lengthTo) {
+        slugParts.push(`between-${lengthFrom}-${lengthTo}-length-in-feet`);
+      } else if (lengthFrom) {
+        slugParts.push(`over-${lengthFrom}-length-in-feet`);
+      } else if (lengthTo) {
+        slugParts.push(`under-${lengthTo}-length-in-feet`);
+      }
+
       let slugifiedURL = `/listings/${slugParts.join("/")}`
         .replace(/\s+/g, "-")
         .replace(/-+/g, "-")
@@ -421,6 +462,7 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
       if (selectedMake) query.make = selectedMake;
       if (yearFrom) query.acustom_fromyears = yearFrom.toString();
       if (yearTo) query.acustom_toyears = yearTo.toString();
+
       const queryString = new URLSearchParams(query).toString();
       if (queryString) slugifiedURL += `?${queryString}`;
 
@@ -449,6 +491,8 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
     router,
     yearFrom,
     yearTo,
+    lengthFrom,
+    lengthTo,
   ]);
 
   const resetFilters = () => {
@@ -821,7 +865,19 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
         <div className="row">
           <div className="col-6">
             <h6 className="cfs-filter-label-sub">From</h6>
-            <select className="cfs-select-input">
+            <select
+              className="cfs-select-input"
+              value={lengthFrom || ""}
+              onChange={(e) => {
+                const val = e.target.value ? parseInt(e.target.value) : null;
+                setLengthFrom(val);
+                onFilterChange({
+                  ...filters,
+                  from_length: val ?? undefined,
+                  to_length: lengthTo ?? undefined,
+                });
+              }}
+            >
               <option value="">Min</option>
               {length.map((value, idx) => (
                 <option key={idx} value={value}>
@@ -830,10 +886,17 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
               ))}
             </select>
           </div>
+
           <div className="col-6">
             <h6 className="cfs-filter-label-sub">To</h6>
-            <select className="cfs-select-input">
-              <option value="">Min</option>
+            <select
+              className="cfs-select-input"
+              value={lengthTo?.toString() || ""}
+              onChange={(e) =>
+                setLengthTo(e.target.value ? parseInt(e.target.value) : null)
+              }
+            >
+              <option value="">Max</option>
               {length.map((value, idx) => (
                 <option key={idx} value={value}>
                   {value} ft

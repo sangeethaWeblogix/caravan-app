@@ -14,6 +14,8 @@ interface Filters {
   state?: string;
   acustom_fromyears?: string;
   acustom_toyears?: string;
+  from_length?: string;
+  to_length?: string;
 }
 
 export const fetchListings = async (filters: Filters = {}) => {
@@ -26,6 +28,8 @@ export const fetchListings = async (filters: Filters = {}) => {
     maxPrice,
     minKg,
     maxKg,
+    from_length,
+    to_length,
     condition,
     state,
   } = filters;
@@ -41,6 +45,8 @@ export const fetchListings = async (filters: Filters = {}) => {
   if (maxPrice) params.append("to_price", `${maxPrice}`);
   if (minKg) params.append("from_atm", `${minKg}kg`);
   if (maxKg) params.append("to_atm", `${maxKg}kg`);
+  if (from_length) params.append("from_length", `${from_length}`);
+  if (to_length) params.append("to_length", `${to_length}`);
 
   if (filters.acustom_fromyears)
     params.append("acustom_fromyears", filters.acustom_fromyears);
