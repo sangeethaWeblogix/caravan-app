@@ -466,7 +466,7 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
           onClick={() => toggle(setCategoryOpen)}
         >
           <h5 className="cfs-filter-label">
-            Categorie
+            Category
             {selectedCategoryName && (
               <span className="filter-accordion-items">
                 : {selectedCategoryName}
@@ -606,7 +606,7 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
               <option value="">Min</option>
               {atm.map((val) => (
                 <option key={val} value={val}>
-                  {val} kg
+                  {val.toLocaleString()} kg
                 </option>
               ))}
             </select>
@@ -623,7 +623,7 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
               <option value="">Max</option>
               {atm.map((val) => (
                 <option key={val} value={val}>
-                  {val} kg
+                  {val.toLocaleString()} kg
                 </option>
               ))}
             </select>
@@ -647,7 +647,7 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
               <option value="">Min</option>
               {price.map((value, idx) => (
                 <option key={idx} value={value}>
-                  $ {value}
+                  ${value.toLocaleString()}{" "}
                 </option>
               ))}
             </select>
@@ -664,7 +664,7 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
               <option value="">Max</option>
               {price.map((value, idx) => (
                 <option key={idx} value={value}>
-                  $ {value}
+                  ${value.toLocaleString()}{" "}
                 </option>
               ))}
             </select>
@@ -748,7 +748,7 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
 
       {/* Year Range */}
       <div className="cs-full_width_section">
-        <h5 className="cfs-filter-label">Price</h5>
+        <h5 className="cfs-filter-label">Year</h5>
         <div className="row">
           <div className="col-6">
             <h6 className="cfs-filter-label-sub">From</h6>

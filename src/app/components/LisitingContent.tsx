@@ -102,25 +102,46 @@ export default function ListingContent({
                     >
                       <SwiperSlide>
                         <div className="swiper-zoom-container">
-                          <Image
-                            src={"/images/img.png"} //"/images/img.png" "product.image"
-                            alt={product.name}
-                            width={1593}
-                            height={1195}
-                          />
+                          {product.image && product.image.trim() !== "" ? (
+                            <Image
+                              src={product.image}
+                              alt="Caravan"
+                              width={1593}
+                              height={1195}
+                            />
+                          ) : (
+                            <Image
+                              src="/images/img.png"
+                              alt="Fallback Caravan"
+                              width={1593}
+                              height={1195}
+                            />
+                          )}
                         </div>
                       </SwiperSlide>
                     </Swiper>
                   </div>
                 </Link>
               ) : (
-                <Image
-                  src={product.image} //"/images/img.png" "product.image"
-                  alt={product.name}
-                  width={1593}
-                  height={1195}
-                />
+                <div className="swiper-zoom-container">
+                  {product.image && product.image.trim() !== "" ? (
+                    <Image
+                      src={product.image}
+                      alt="Caravan"
+                      width={1593}
+                      height={1195}
+                    />
+                  ) : (
+                    <Image
+                      src="/images/img.png"
+                      alt="Fallback Caravan"
+                      width={1593}
+                      height={1195}
+                    />
+                  )}
+                </div>
               )}
+
               <div className="vehicleThumbDetails">
                 <div className="title">
                   {product.link ? (
@@ -136,11 +157,18 @@ export default function ListingContent({
                   )}
                 </div>
                 <ul className="vehicleDetailsWithIcons simple">
+                  {product.condition && (
+                    <li>
+                      <span className="attribute3">{product.condition}</span>
+                    </li>
+                  )}
+
                   {(product.categories || []).map((tag, i) => (
                     <li key={i}>
                       <span className="attribute3">{tag}</span>
                     </li>
                   ))}
+
                   {product.length && (
                     <li>
                       <span className="attribute3">{product.length}</span>
@@ -152,11 +180,7 @@ export default function ListingContent({
                       <span className="attribute3">{product.kg}</span>
                     </li>
                   )}
-                  {product.condition && (
-                    <li>
-                      <span className="attribute3">{product.condition}</span>
-                    </li>
-                  )}
+
                   {product.people && (
                     <li>
                       <span className="attribute3">{product.people}</span>
@@ -172,7 +196,12 @@ export default function ListingContent({
                 <div className="vehicleThumbDetails__part">
                   <div className="price">
                     <div className="vehicleThumbDetails__part__price">
-                      {product.sale_price ? (
+                      {/* If regular price is 0, show POA */}
+                      {parseFloat(product.regular_price) === 0 ? (
+                        <span className="woocommerce-Price-amount amount">
+                          <bdi>POA</bdi>
+                        </span>
+                      ) : product.sale_price ? (
                         <>
                           <del>
                             <span className="woocommerce-Price-amount old-price amount">
@@ -191,14 +220,22 @@ export default function ListingContent({
                         </span>
                       )}
                     </div>
-                    {product.price_difference ? (
-                      <div className="vehicleThumbDetails__part__finance">
-                        <span className="n_price">
-                          <small>Save</small>
-                          <span>{product.price_difference}</span>
-                        </span>
-                      </div>
-                    ) : null}
+
+                    {(() => {
+                      const cleaned = (product.price_difference || "").replace(
+                        /[^0-9.]/g,
+                        ""
+                      );
+                      const numericValue = parseFloat(cleaned);
+                      return numericValue > 0 ? (
+                        <div className="vehicleThumbDetails__part__finance">
+                          <span className="n_price">
+                            <small>Save</small>
+                            <span>{product.price_difference}</span>
+                          </span>
+                        </div>
+                      ) : null;
+                    })()}
                   </div>
                   <div className="vehicleThumbDetails__features__address">
                     <label>Seller Location</label>
