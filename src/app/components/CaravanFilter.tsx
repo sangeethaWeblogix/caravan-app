@@ -53,6 +53,8 @@ export interface Filters {
   states?: string;
   minKg?: string | number;
   maxKg?: string | number;
+  from_year?: number | string;
+  to_year?: number | string;
 }
 
 interface CaravanFilterProps {
@@ -115,6 +117,8 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
     currentFilters?.sleeps?.replace("-people", "") || ""
   );
   const filtersInitialized = useRef(false);
+  const [yearFrom, setYearFrom] = useState<number | null>(null);
+  const [yearTo, setYearTo] = useState<number | null>(null);
 
   const atm = [
     600, 800, 1000, 1250, 1500, 1750, 2000, 2250, 2500, 2750, 3000, 3500, 4000,
@@ -217,6 +221,22 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
       const sleepMatch = part.match(/^over-(\d+)-people-sleeping-capacity$/);
       if (sleepMatch) {
         setSelectedSleepName(sleepMatch[1]);
+      }
+
+      const yearRangeMatch = part.match(/^between-(\d+)-and-(\d+)-year-range$/);
+      if (yearRangeMatch) {
+        setYearFrom(parseInt(yearRangeMatch[1]));
+        setYearTo(parseInt(yearRangeMatch[2]));
+      }
+      const fromYearMatch = part.match(/^from-(\d+)-year-range$/);
+      if (fromYearMatch) {
+        setYearFrom(parseInt(fromYearMatch[1]));
+        setYearTo(null);
+      }
+      const toYearMatch = part.match(/^to-(\d+)-year-range$/);
+      if (toYearMatch) {
+        setYearTo(parseInt(toYearMatch[1]));
+        setYearFrom(null);
       }
     });
   }, [pathname]);
@@ -324,6 +344,8 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
         maxKg: atmTo || undefined,
         from_price: minPrice || undefined, // ✅ Add this
         to_price: maxPrice || undefined,
+        from_year: yearFrom || undefined,
+        to_year: yearTo || undefined,
       });
     }, 0);
   }, [
@@ -339,6 +361,8 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
     maxPrice,
     selectedConditionName,
     selectedSleepName,
+    yearFrom,
+    yearTo,
   ]);
   const handleSuburbSelection = (shortAddress: string) => {
     setLocationInput(shortAddress);
@@ -395,6 +419,8 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
 
       const query: Record<string, string> = {};
       if (selectedMake) query.make = selectedMake;
+      if (yearFrom) query.acustom_fromyears = yearFrom.toString();
+      if (yearTo) query.acustom_toyears = yearTo.toString();
       const queryString = new URLSearchParams(query).toString();
       if (queryString) slugifiedURL += `?${queryString}`;
 
@@ -421,6 +447,8 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
     maxPrice,
     onFilterChange,
     router,
+    yearFrom,
+    yearTo,
   ]);
 
   const resetFilters = () => {
@@ -752,10 +780,16 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
         <div className="row">
           <div className="col-6">
             <h6 className="cfs-filter-label-sub">From</h6>
-            <select className="cfs-select-input">
+            <select
+              className="cfs-select-input"
+              value={yearFrom?.toString() || ""}
+              onChange={(e) =>
+                setYearFrom(e.target.value ? parseInt(e.target.value) : null)
+              }
+            >
               <option value="">Min</option>
-              {years.map((value, idx) => (
-                <option key={idx} value={value}>
+              {years.map((value) => (
+                <option key={value} value={value}>
                   {value}
                 </option>
               ))}
@@ -763,10 +797,16 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
           </div>
           <div className="col-6">
             <h6 className="cfs-filter-label-sub">To</h6>
-            <select className="cfs-select-input">
+            <select
+              className="cfs-select-input"
+              value={yearTo?.toString() || ""}
+              onChange={(e) =>
+                setYearTo(e.target.value ? parseInt(e.target.value) : null)
+              }
+            >
               <option value="">Max</option>
-              {years.map((value, idx) => (
-                <option key={idx} value={value}>
+              {years.map((value) => (
+                <option key={value} value={value}>
                   {value}
                 </option>
               ))}

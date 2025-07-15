@@ -66,6 +66,8 @@ export interface Filters {
   condition?: string;
   sleeps?: string;
   states?: string;
+  from_year?: number | string;
+  to_year?: number | string;
 }
 
 interface Props {
@@ -152,6 +154,8 @@ export default function ListingsPage({ category, location, condition }: Props) {
           sleeps: appliedFilters.sleeps,
           minPrice: appliedFilters.from_price?.toString(),
           maxPrice: appliedFilters.to_price?.toString(),
+          acustom_fromyears: appliedFilters.from_year?.toString(),
+          acustom_toyears: appliedFilters.to_year?.toString(),
           location: undefined, // avoid duplication
         });
 
@@ -265,6 +269,8 @@ export default function ListingsPage({ category, location, condition }: Props) {
           "to_price",
           "sleeps",
           "condition",
+          "from_year",
+          "to_year",
         ].includes(key)
       ) {
         current.set(key, value.toString());
