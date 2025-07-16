@@ -16,6 +16,7 @@ interface Filters {
   acustom_toyears?: string;
   from_length?: string;
   to_length?: string;
+  model?: string;
 }
 
 export const fetchListings = async (filters: Filters = {}) => {
@@ -52,7 +53,7 @@ export const fetchListings = async (filters: Filters = {}) => {
     params.append("acustom_fromyears", filters.acustom_fromyears);
   if (filters.acustom_toyears)
     params.append("acustom_toyears", filters.acustom_toyears);
-
+  if (filters.model) params.append("model", filters.model); // ✅ Add this
   if (condition)
     params.append("condition", condition.toLowerCase().replace(/\s+/g, "-"));
   if (filters.sleeps) params.append("sleep", filters.sleeps);

@@ -70,6 +70,7 @@ export interface Filters {
   to_year?: number | string;
   from_length?: string | number;
   to_length?: string | number;
+  model?: string;
 }
 
 interface Props {
@@ -89,8 +90,12 @@ export default function ListingsPage({ category, location, condition }: Props) {
     const parsedCondition = condition?.replace("-condition", "") || undefined;
     const sleepMatch = pathname.match(/over-(\d+)-people-sleeping-capacity/);
     const parsedSleep = sleepMatch ? `${sleepMatch[1]}-people` : undefined;
-
+    const slugParts = pathname.split("/listings/")[1]?.split("/") || [];
+    const make = slugParts[0];
+    const model = slugParts[1]; // ✅ new line
     return {
+      ...(make && { make }),
+      ...(model && { model }), // ✅ include model
       ...(parsedCategory && { category: parsedCategory }),
       ...(parsedLocation && { location: parsedLocation }),
       ...(parsedCondition && { condition: parsedCondition }),
@@ -106,6 +111,8 @@ export default function ListingsPage({ category, location, condition }: Props) {
   const [pageTitle, setPageTitle] = useState("");
   const [categories, setCategories] = useState<Category[]>([]);
   const [makes, setMakes] = useState<MakeOption[]>([]);
+  const [models, setModels] = useState<MakeOption[]>([]);
+
   const [stateOptions, setStateOptions] = useState<StateOption[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
@@ -160,8 +167,9 @@ export default function ListingsPage({ category, location, condition }: Props) {
           acustom_toyears: appliedFilters.to_year?.toString(),
           from_length: appliedFilters.from_length?.toString(),
           to_length: appliedFilters.to_length?.toString(),
-
-          location: undefined, // avoid duplication
+          make: appliedFilters.make,
+          model: appliedFilters.model,
+          location: undefined, // avoid duplicatiSon
         });
 
         if (response?.data?.products && response?.pagination) {
@@ -169,6 +177,7 @@ export default function ListingsPage({ category, location, condition }: Props) {
           setCategories(response.data.all_categories);
           setMakes(response.data.make_options);
           setStateOptions(response.data.states ?? []);
+          setModels(response.data.model_options ?? []);
           setPageTitle(response.title ?? "");
           setPagination(response.pagination);
         } else {
@@ -221,7 +230,8 @@ export default function ListingsPage({ category, location, condition }: Props) {
 
   const buildSlugPath = () => {
     const slugParts: string[] = [];
-
+    if (filters.make) slugParts.push(filters.make); // ✅ ADD THIS LINE
+    if (filters.model) slugParts.push(filters.model); // ✅ insert model after make
     if (filters.category) slugParts.push(`${filters.category}-category`);
     if (filters.location)
       slugParts.push(`${filters.location.replace(/\s+/g, "-")}-state`);
@@ -289,6 +299,8 @@ export default function ListingsPage({ category, location, condition }: Props) {
           "to_year",
           "from_length",
           "to_length",
+          "make",
+          "model",
         ].includes(key)
       ) {
         current.set(key, value.toString());
@@ -334,6 +346,7 @@ export default function ListingsPage({ category, location, condition }: Props) {
                   <CaravanFilter
                     categories={categories}
                     makes={makes}
+                    models={models}
                     states={stateOptions}
                     onFilterChange={handleFilterChange}
                     currentFilters={filters}

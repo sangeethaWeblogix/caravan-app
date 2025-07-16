@@ -182,23 +182,16 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
 
   useEffect(() => {
     if (!selectedMake) {
-      // nothing selected – clear everything
       setModel([]);
-      setSelectedModel(null);
-      setSelectedModelName(null);
       return;
     }
 
-    /* 👇 clear old model BEFORE fetching the new list */
-    setSelectedModel(null);
-    setSelectedModelName(null);
-
     fetchModelsByMake(selectedMake)
-      .then(setModel) // model list for the new make
+      .then((models) => setModel(models))
       .catch(console.error);
   }, [selectedMake]);
 
-  console.log("filters", filters);
+  console.log("filters", model);
   const [locationSuggestions, setLocationSuggestions] = useState<
     LocationSuggestion[]
   >([]);
@@ -363,7 +356,7 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
       }));
     }
   }, [pathname, states]);
-  // filter  data
+
   useEffect(() => {
     const pathParts = pathname.split("/").filter(Boolean); // ex: ["listings", "queensland-state"]
     const slug1 = pathParts[1]; // could be category or state
@@ -407,18 +400,6 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
       setSelectedMake(makeSlug);
       const makeMatch = makes.find((m) => m.slug === makeSlug);
       if (makeMatch) setSelectedMakeName(makeMatch.name);
-    }
-
-    const modelSlug = segments[1]; // 0 = make, 1 = model
-
-    if (modelSlug) {
-      setSelectedModel(modelSlug);
-
-      // If you already have model list loaded
-      const modelMatch = models.find((m) => m.slug === modelSlug);
-      if (modelMatch) {
-        setSelectedModelName(modelMatch.name);
-      }
     }
 
     const condition = searchParams.get("condition");
@@ -519,8 +500,6 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
       // ✅ FIX: Move this up before the URL is formed
       if (selectedMake) slugParts.push(selectedMake);
 
-      if (selectedModel) slugParts.push(selectedModel); // ✅ add model to URL slug
-
       // ✅ Then generate URL
       let slugifiedURL = `/listings/${slugParts.join("/")}`
         .replace(/\s+/g, "-")
@@ -545,7 +524,6 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
   }, [
     selectedCategory,
     selectedMake,
-    selectedModel,
     selectedConditionName,
     selectedSleepName,
     selectedState,
@@ -583,6 +561,10 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
     });
   };
 
+  const handleFilterClick = (updatedValues: Partial<Filters>) => {
+    updateAllFilters(updatedValues); // updates filters via props
+  };
+
   const resetFilters = () => {
     setSelectedCategory(null);
     setSelectedCategoryName(null);
@@ -612,14 +594,6 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
 
     return () => clearTimeout(delayDebounce);
   }, [locationInput]);
-  useEffect(() => {
-    if (!selectedModel || model.length === 0) return;
-
-    const modelMatch = model.find((m) => m.slug === selectedModel);
-    if (modelMatch) {
-      setSelectedModelName(modelMatch.name);
-    }
-  }, [model, selectedModel]);
 
   return (
     <div className="filter-card mobile-search">
@@ -747,10 +721,8 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
                   onClick={() => {
                     setSelectedMake(make.slug);
                     setSelectedMakeName(make.name); // Show name near label
-                    setMakeOpen(false);
-                    setSelectedModel(null);
-                    setSelectedModelName(null);
-                    setModel([]); // Close dropdown
+                    setMakeOpen(false); // Close dropdown
+                    handleFilterClick({ make: make.slug });
                   }}
                 >
                   {make.name}
@@ -759,26 +731,24 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
           </div>
         )}
       </div>
-      {selectedMake && model.length > 0 && (
-        <div className="cs-full_width_section">
-          <div
-            className="filter-accordion"
-            onClick={() => toggle(setModelOpen)}
-          >
-            <h5 className="cfs-filter-label">
-              Model
-              {selectedModelName && (
-                <span className="filter-accordion-items">
-                  : {selectedModelName}
-                </span>
-              )}
-            </h5>
-            <BiChevronDown />
-          </div>
+      <div className="cs-full_width_section">
+        <div className="filter-accordion" onClick={() => toggle(setModelOpen)}>
+          <h5 className="cfs-filter-label">
+            {" "}
+            Model
+            {selectedModelName && (
+              <span className="filter-accordion-items">
+                : {selectedModelName}
+              </span>
+            )}
+          </h5>
+          <BiChevronDown />
+        </div>
 
-          {modelOpen && (
-            <div className="filter-accordion-items">
-              {model.map((mod) => (
+        {modelOpen && (
+          <div className="filter-accordion-items">
+            {Array.isArray(model) &&
+              model.map((mod) => (
                 <div
                   key={mod.slug}
                   className={`filter-accordion-item ${
@@ -788,15 +758,18 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
                     setSelectedModel(mod.slug);
                     setSelectedModelName(mod.name);
                     setModelOpen(false);
+
+                    handleFilterClick({ model: mod.slug });
+
+                    // ✅ Build URL with selected make and model
                   }}
                 >
                   {mod.name}
                 </div>
               ))}
-            </div>
-          )}
-        </div>
-      )}
+          </div>
+        )}
+      </div>
 
       {/* ATM Range */}
       {/* ATM Range */}
