@@ -146,6 +146,7 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
   const filtersInitialized = useRef(false);
   const [yearFrom, setYearFrom] = useState<number | null>(null);
   const [yearTo, setYearTo] = useState<number | null>(null);
+  const [showAllMakes, setShowAllMakes] = useState(false);
 
   const atm = [
     600, 800, 1000, 1250, 1500, 1750, 2000, 2250, 2500, 2750, 3000, 3500, 4000,
@@ -738,7 +739,7 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
         {makeOpen && (
           <div className="filter-accordion-items">
             {Array.isArray(makes) &&
-              makes.map((make) => (
+              (showAllMakes ? makes : makes.slice(0, 10)).map((make) => (
                 <div
                   key={make.slug}
                   className={`filter-accordion-item ${
@@ -746,16 +747,31 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
                   }`}
                   onClick={() => {
                     setSelectedMake(make.slug);
-                    setSelectedMakeName(make.name); // Show name near label
+                    setSelectedMakeName(make.name);
                     setMakeOpen(false);
                     setSelectedModel(null);
                     setSelectedModelName(null);
-                    setModel([]); // Close dropdown
+                    setModel([]);
                   }}
                 >
                   {make.name}
                 </div>
               ))}
+
+            {makes.length > 10 && (
+              <div
+                className="filter-accordion-item show-more-toggle"
+                onClick={() => setShowAllMakes(!showAllMakes)}
+                style={{
+                  cursor: "pointer",
+                  fontWeight: 500,
+                  marginTop: "6px",
+                  color: "#007bff",
+                }}
+              >
+                {showAllMakes ? "Show Less" : "Show More"}
+              </div>
+            )}
           </div>
         )}
       </div>
