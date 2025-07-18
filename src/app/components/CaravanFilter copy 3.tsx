@@ -13,7 +13,6 @@ import { usePathname, useRouter } from "next/navigation";
 import { useSearchParams } from "next/navigation";
 import { fetchProductList } from "@/api/productList/api";
 import { fetchModelsByMake } from "@/api/model/api";
-import { generateSlugURL } from "./urlBuilder";
 
 type LocationSuggestion = {
   key: string;
@@ -64,9 +63,6 @@ export interface Filters {
   from_length?: string | number;
   to_length?: string | number;
   model?: string;
-  state?: string;
-  region?: string;
-  suburb?: string;
 }
 
 interface CaravanFilterProps {
@@ -162,7 +158,6 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
   const [yearFrom, setYearFrom] = useState<number | null>(null);
   const [yearTo, setYearTo] = useState<number | null>(null);
   const [showAllMakes, setShowAllMakes] = useState(false);
-  const justSelectedStateRef = useRef(false);
 
   const atm = [
     600, 800, 1000, 1250, 1500, 1750, 2000, 2250, 2500, 2750, 3000, 3500, 4000,
@@ -229,17 +224,6 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
     const segments = slug?.split("/") || [];
 
     segments.forEach((part) => {
-      // 👇 Match something like "queensland-state"
-      const stateMatch = states.find(
-        (state) =>
-          part === `${state.name.toLowerCase().replace(/\s+/g, "-")}-state`
-      );
-
-      if (stateMatch) {
-        setSelectedState(stateMatch.value); // e.g., "QLD"
-        setSelectedStateName(stateMatch.name); // e.g., "Queensland"
-      }
-
       // ATM: over
       const overAtmMatch = part.match(/^over-(\d+)-kg-atm$/);
       if (overAtmMatch) {
@@ -356,7 +340,7 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
     const slug2 = pathParts[2]; // could be undefined or state
 
     let categoryMatch: Option | undefined;
-    // let stateMatch: StateOption | undefined;
+    let stateMatch: StateOption | undefined;
 
     // Check if slug1 is category
     if (slug1?.endsWith("-category")) {
@@ -371,36 +355,28 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
       (s) =>
         rawStateSlug === `${s.name.toLowerCase().replace(/\s+/g, "-")}-state`
     );
-    // if (matchedState) {
-    //   stateMatch = matchedState;
-    // }
+    if (matchedState) {
+      stateMatch = matchedState;
+    }
     // Update filters
     if (categoryMatch) {
       setSelectedCategory(categoryMatch.slug);
       setSelectedCategoryName(categoryMatch.name);
     }
 
-    // if (stateMatch) {
-    //   setSelectedState(stateMatch.value);
-    //   setSelectedStateName(stateMatch.name);
-    // }
+    if (stateMatch) {
+      setSelectedState(stateMatch.value);
+      setSelectedStateName(stateMatch.name);
+    }
 
     // Search Params: make, condition, sleeps
     const slug = pathname.split("/listings/")[1];
     const segments = slug?.split("/") || [];
-    const makeSlug = segments.find(
-      (s) =>
-        !s.endsWith("-state") &&
-        !s.endsWith("-region") &&
-        !s.endsWith("-suburb")
-    );
-
+    const makeSlug = segments[0];
     if (makeSlug) {
+      setSelectedMake(makeSlug);
       const makeMatch = makes.find((m) => m.slug === makeSlug);
-      if (makeMatch) {
-        setSelectedMake(makeMatch.slug);
-        setSelectedMakeName(makeMatch.name);
-      }
+      if (makeMatch) setSelectedMakeName(makeMatch.name);
     }
 
     const modelSlug = segments[1]; // 0 = make, 1 = model
@@ -425,7 +401,7 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
     setTimeout(() => {
       onFilterChange({
         category: categoryMatch?.slug,
-        location: selectedStateName || undefined,
+        location: stateMatch?.value,
         make: selectedMake || undefined,
         condition: selectedConditionName || undefined,
         sleeps: selectedSleepName ? `${selectedSleepName}-people` : undefined,
@@ -438,7 +414,6 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
         from_length: lengthFrom || undefined,
         to_length: lengthTo || undefined,
         model: selectedModel || undefined,
-        state: selectedStateName || undefined,
       });
     }, 0);
   }, [
@@ -458,10 +433,7 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
     yearTo,
     lengthFrom,
     lengthTo,
-    selectedStateName,
-    selectedState,
   ]);
-
   const handleSuburbSelection = (shortAddress: string) => {
     setLocationInput(shortAddress);
     const match = shortAddress.match(/^(.+?)\s+[A-Z]{2,}\s+(\d{4})$/);
@@ -480,74 +452,15 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
   };
 
   useEffect(() => {
-    const slug = pathname.split("/listings/")[1];
-    const segments = slug?.split("/") || [];
-
-    let stateSlug = segments.find((s) => s.endsWith("-state"));
-    let makeSlug = segments.find(
-      (s) =>
-        !s.endsWith("-state") &&
-        !s.endsWith("-region") &&
-        !s.endsWith("-suburb")
-    );
-    let modelSlug: string | undefined;
-
-    // If there's a makeSlug, model might be next
-    if (makeSlug) {
-      const makeIndex = segments.indexOf(makeSlug);
-      modelSlug = segments[makeIndex + 1];
-    }
-
-    // ✅ Set STATE
-    if (stateSlug) {
-      const stateName = stateSlug.replace("-state", "").replace(/-/g, " ");
-      const matchedState = states.find(
-        (s) => s.name.toLowerCase() === stateName.toLowerCase()
-      );
-      if (matchedState) {
-        setSelectedState(matchedState.value);
-        setSelectedStateName(matchedState.name);
-      }
-    }
-
-    // ✅ Set MAKE
-    if (makeSlug) {
-      const makeMatch = makes.find((m) => m.slug === makeSlug);
-      if (makeMatch) {
-        setSelectedMake(makeMatch.slug);
-        setSelectedMakeName(makeMatch.name);
-      }
-    }
-
-    // ✅ Set MODEL
-    if (modelSlug) {
-      const modelMatch = models.find((m) => m.slug === modelSlug);
-      if (modelMatch) {
-        setSelectedModel(modelMatch.slug);
-        setSelectedModelName(modelMatch.name);
-      }
-    }
-
-    // ✅ Continue other filters here...
-  }, [pathname, states, makes, models]);
-
-  useEffect(() => {
     const timeout = setTimeout(() => {
-      if (justSelectedStateRef.current) {
-        justSelectedStateRef.current = false;
-        return;
-      }
-
       const slugParts: string[] = [];
 
       if (selectedConditionName)
         slugParts.push(`${selectedConditionName.toLowerCase()}-condition`);
-
       if (selectedCategory) slugParts.push(`${selectedCategory}-category`);
       if (selectedSuburbName) slugParts.push(`${selectedSuburbName}-suburb`);
       if (selectedStateName)
         slugParts.push(`${selectedStateName.toLowerCase()}-state`);
-      console.log("selectedStateName", selectedStateName);
       const match = locationInput.match(/\b\d{4}\b/);
       if (match) slugParts.push(match[0]);
 
@@ -646,7 +559,6 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
 
     return () => clearTimeout(delayDebounce);
   }, [locationInput]);
-
   useEffect(() => {
     if (!selectedModel || model.length === 0) return;
 
@@ -855,9 +767,9 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
           <div className="filter-accordion-items">
             {states
               .find((s) => s.value === selectedState)
-              ?.regions?.map((region, index) => (
+              ?.regions?.map((region) => (
                 <div
-                  key={index}
+                  key={region.value}
                   className="filter-accordion-subitem"
                   style={{ marginLeft: "16px", cursor: "pointer" }}
                   onClick={() => {
@@ -911,19 +823,6 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
                   setSelectedSuburbName(null);
                   setFilteredSuburbs([]);
                   setStateOpen(true);
-                  justSelectedStateRef.current = true;
-
-                  const newFilters = {
-                    ...currentFilters,
-                    state: state.name,
-                  };
-
-                  onFilterChange(newFilters);
-
-                  setTimeout(() => {
-                    const url = generateSlugURL(currentFilters, state.name);
-                    router.push(url);
-                  }, 300);
                 }}
               >
                 {state.name}
@@ -1120,7 +1019,7 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
         </div>
       </div>
       {/* 8883944599
- 9524163042 */}
+9524163042 */}
       {/* Condition Accordion */}
       <div className="cs-full_width_section">
         <div

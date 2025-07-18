@@ -58,14 +58,13 @@ export interface MakeOption {
 export interface Filters {
   category?: string;
   make?: string;
-  location?: string;
-  from_price?: string | number;
+  from_price?: string | number; // ✅ add this
   to_price?: string | number;
-  minKg?: string | number;
-  maxKg?: string | number;
   condition?: string;
   sleeps?: string;
-  states?: string;
+  state?: string;
+  minKg?: string | number;
+  maxKg?: string | number;
   from_year?: number | string;
   to_year?: number | string;
   from_length?: string | number;
@@ -85,23 +84,35 @@ export default function ListingsPage({ category, location, condition }: Props) {
 
   const initialFilters: Filters = useMemo(() => {
     const parsedCategory = category?.replace("-category", "") || undefined;
-    const parsedLocation =
-      location?.replace("-state", "")?.replace(/-/g, " ") || undefined;
     const parsedCondition = condition?.replace("-condition", "") || undefined;
     const sleepMatch = pathname.match(/over-(\d+)-people-sleeping-capacity/);
     const parsedSleep = sleepMatch ? `${sleepMatch[1]}-people` : undefined;
+
     const slugParts = pathname.split("/listings/")[1]?.split("/") || [];
-    const make = slugParts[0];
-    const model = slugParts[1]; // ✅ new line
+
+    // ✅ safely extract state
+    const statePart = slugParts.find((part) => part.endsWith("-state"));
+    const parsedState = statePart
+      ? statePart.replace(/-state$/, "").replace(/-/g, " ")
+      : undefined;
+
+    // ✅ ignore state slug from being treated as make
+    const filteredSlugParts = slugParts.filter(
+      (part) => part !== statePart // remove state part from slug array
+    );
+
+    const make = filteredSlugParts[0];
+    const model = filteredSlugParts[1];
+
     return {
       ...(make && { make }),
-      ...(model && { model }), // ✅ include model
+      ...(model && { model }),
       ...(parsedCategory && { category: parsedCategory }),
-      ...(parsedLocation && { location: parsedLocation }),
       ...(parsedCondition && { condition: parsedCondition }),
       ...(parsedSleep && { sleeps: parsedSleep }),
+      ...(parsedState && { state: parsedState }), // ✅ now passed safely
     };
-  }, [category, location, condition, pathname]);
+  }, [category, condition, pathname]);
 
   const [filtersReady, setFiltersReady] = useState(false);
 
@@ -156,7 +167,6 @@ export default function ListingsPage({ category, location, condition }: Props) {
         const response = await fetchListings({
           ...appliedFilters,
           page, // Current page number
-          state: appliedFilters.location,
           condition: appliedFilters.condition,
           minKg: appliedFilters.minKg?.toString(),
           maxKg: appliedFilters.maxKg?.toString(),
@@ -169,7 +179,7 @@ export default function ListingsPage({ category, location, condition }: Props) {
           to_length: appliedFilters.to_length?.toString(),
           make: appliedFilters.make,
           model: appliedFilters.model,
-          location: undefined, // avoid duplicatiSon
+          state: appliedFilters.state, // ✅ add this
         });
 
         if (response?.data?.products && response?.pagination) {
@@ -225,6 +235,7 @@ export default function ListingsPage({ category, location, condition }: Props) {
     });
     setFiltersReady(true);
     loadListings(1, newFilters);
+    console.log("🔗 calling updateURLWithFilters");
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -233,10 +244,25 @@ export default function ListingsPage({ category, location, condition }: Props) {
     if (filters.make) slugParts.push(filters.make); // ✅ ADD THIS LINE
     if (filters.model) slugParts.push(filters.model); // ✅ insert model after make
     if (filters.category) slugParts.push(`${filters.category}-category`);
-    if (filters.location)
-      slugParts.push(`${filters.location.replace(/\s+/g, "-")}-state`);
     if (filters.condition)
       slugParts.push(`${filters.condition.toLowerCase()}-condition`);
+
+    // if (filters.suburb) {
+    //   slugParts.push(`${filters.suburb.toLowerCase()}-suburb`);
+    // }
+    // if (filters.region) {
+    //   slugParts.push(`${filters.region.toLowerCase()}-region`);
+    // }
+    if (filters.state) {
+      slugParts.push(
+        `${filters.state.toLowerCase().replace(/\s+/g, "-")}-state`
+      );
+    }
+
+    // if (locationInput.match(/\b\d{4}\b/)) {
+    //   slugParts.push(locationInput.match(/\b\d{4}\b/)![0]); // push postcode
+    // }
+    console.log("🌐 Current Filters State:", filters.state);
 
     const minPrice = filters.from_price;
     const maxPrice = filters.to_price;

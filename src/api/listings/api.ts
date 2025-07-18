@@ -4,7 +4,6 @@ interface Filters {
   page?: number;
   category?: string;
   make?: string;
-  location?: string;
   minPrice?: string;
   maxPrice?: string;
   minKg?: string;
@@ -12,6 +11,8 @@ interface Filters {
   condition?: string;
   sleeps?: string;
   state?: string;
+  region?: string;
+  suburb?: string;
   acustom_fromyears?: string;
   acustom_toyears?: string;
   from_length?: string;
@@ -24,7 +25,6 @@ export const fetchListings = async (filters: Filters = {}) => {
     page = 1,
     category,
     make,
-    location,
     minPrice,
     maxPrice,
     minKg,
@@ -33,6 +33,8 @@ export const fetchListings = async (filters: Filters = {}) => {
     to_length,
     condition,
     state,
+    region,
+    suburb,
   } = filters;
 
   const params = new URLSearchParams();
@@ -41,7 +43,8 @@ export const fetchListings = async (filters: Filters = {}) => {
   if (category) params.append("category", category);
   if (make) params.append("make", make);
   if (state) params.append("state", state);
-  if (location) params.append("location", location);
+  if (region) params.append("region", region);
+  if (suburb) params.append("suburb", suburb);
   if (minPrice) params.append("from_price", `${minPrice}`);
   if (maxPrice) params.append("to_price", `${maxPrice}`);
   if (minKg) params.append("from_atm", `${minKg}kg`);
