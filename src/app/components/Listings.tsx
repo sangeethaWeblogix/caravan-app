@@ -70,6 +70,8 @@ export interface Filters {
   from_length?: string | number;
   to_length?: string | number;
   model?: string;
+  suburb?: string;
+  region?: string;
 }
 
 interface Props {
@@ -143,7 +145,7 @@ export default function ListingsPage({ category, location, condition }: Props) {
   useEffect(() => {
     const pageParam = searchParams.get("paged");
     const page = parseInt(pageParam || "1", 10);
-
+    console.log("📦 useEffect triggered for page:", page);
     if (!filtersReady) return; // ✅ Prevent early fetch
 
     if (pagination.current_page === page) return;
@@ -179,7 +181,9 @@ export default function ListingsPage({ category, location, condition }: Props) {
           to_length: appliedFilters.to_length?.toString(),
           make: appliedFilters.make,
           model: appliedFilters.model,
-          state: appliedFilters.state, // ✅ add this
+          state: appliedFilters.state,
+          region: appliedFilters.region,
+          suburb: appliedFilters.suburb, // ✅ add this
         });
 
         if (response?.data?.products && response?.pagination) {
@@ -208,6 +212,25 @@ export default function ListingsPage({ category, location, condition }: Props) {
     },
     [filters, pagination.per_page]
   );
+  // useEffect(() => {
+  //   if (
+  //     hasSearched ||
+  //     !filtersReady ||
+  //     Object.keys(initialFilters).length === 0
+  //   )
+  //     return;
+
+  //   const pageFromURL = parseInt(searchParams.get("paged") || "1", 10);
+
+  //   filtersRef.current = initialFilters;
+
+  //   setPagination((prev) => ({
+  //     ...prev,
+  //     current_page: pageFromURL,
+  //   }));
+
+  //   loadListings(pageFromURL, initialFilters);
+  // }, [filtersReady, hasSearched, initialFilters, loadListings, searchParams]);
 
   useEffect(() => {
     if (
@@ -247,16 +270,29 @@ export default function ListingsPage({ category, location, condition }: Props) {
     if (filters.condition)
       slugParts.push(`${filters.condition.toLowerCase()}-condition`);
 
-    // if (filters.suburb) {
-    //   slugParts.push(`${filters.suburb.toLowerCase()}-suburb`);
-    // }
-    // if (filters.region) {
-    //   slugParts.push(`${filters.region.toLowerCase()}-region`);
-    // }
-    if (filters.state) {
+    // 3. Build Location: State → Region → Suburb (with rules)
+    if (filters.state && !filters.region && !filters.suburb) {
+      // ✅ Only state
       slugParts.push(
         `${filters.state.toLowerCase().replace(/\s+/g, "-")}-state`
       );
+    } else if (filters.state && filters.region && !filters.suburb) {
+      // ✅ State + Region
+      slugParts.push(
+        `${filters.state.toLowerCase().replace(/\s+/g, "-")}-state`
+      );
+      slugParts.push(
+        `${filters.region.toLowerCase().replace(/\s+/g, "-")}-region`
+      );
+    } else if (filters.state && filters.region && filters.suburb) {
+      // ✅ Full: Suburb + State + Postcode
+      slugParts.push(
+        `${filters.suburb.toLowerCase().replace(/\s+/g, "-")}-suburb`
+      );
+      slugParts.push(
+        `${filters.state.toLowerCase().replace(/\s+/g, "-")}-state`
+      );
+      // if (filters.postcode) slugParts.push(filters.postcode);
     }
 
     // if (locationInput.match(/\b\d{4}\b/)) {
@@ -306,8 +342,13 @@ export default function ListingsPage({ category, location, condition }: Props) {
   };
 
   const updateURLWithFilters = (page: number) => {
+    console.log("✅ updateURLWithFilters CALLED with page:", page);
     const current = new URLSearchParams(searchParams.toString());
     current.set("paged", page.toString());
+    console.log(
+      "🧭 New URL will be:",
+      `${buildSlugPath()}?${current.toString()}`
+    );
 
     Object.entries(filters).forEach(([key, value]) => {
       if (
@@ -327,6 +368,9 @@ export default function ListingsPage({ category, location, condition }: Props) {
           "to_length",
           "make",
           "model",
+          "state",
+          "region",
+          "suburb",
         ].includes(key)
       ) {
         current.set(key, value.toString());
@@ -335,12 +379,16 @@ export default function ListingsPage({ category, location, condition }: Props) {
       }
     });
 
-    router.push(`${buildSlugPath()}?${current.toString()}`);
+    const finalUrl = `${buildSlugPath()}?${current.toString()}`;
+    console.log("🚀 Updating URL to:", finalUrl);
+    // 👇 Only update the URL. Let useEffect trigger the API
+    router.push(finalUrl);
   };
 
   const handleNextPage = () => {
     if (pagination.current_page < pagination.total_pages) {
       const nextPage = pagination.current_page + 1;
+      console.log("🟢 Triggering updateURLWithFilters with page:", nextPage);
       updateURLWithFilters(nextPage); // triggers useEffect to fetch correct page
     }
   };

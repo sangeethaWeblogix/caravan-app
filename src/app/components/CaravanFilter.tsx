@@ -184,7 +184,8 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
   ];
 
   const sleep = [1, 2, 3, 4, 5, 6, 7];
-
+  const [selectedRegion, setSelectedRegion] = useState<string>();
+  const [selectedSuburb, setSelectedSuburb] = useState<string>();
   useEffect(() => {
     const loadFilters = async () => {
       const res = await fetchProductList();
@@ -196,7 +197,20 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
     };
     loadFilters();
   }, []);
+  useEffect(() => {
+    if (selectedRegion && selectedState) {
+      const slugifiedState = selectedState.toLowerCase().replace(/\s+/g, "-");
+      const regionSlug = selectedRegion.toLowerCase().replace(/\s+/g, "-");
 
+      const query = searchParams.toString();
+
+      const slug = `/listings/${slugifiedState}-state/${regionSlug}-region${
+        query ? `?${query}` : ""
+      }`;
+
+      router.push(slug);
+    }
+  }, [selectedRegion, selectedState, searchParams]);
   useEffect(() => {
     if (!selectedMake) {
       // nothing selected – clear everything
@@ -342,10 +356,12 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
         setSelectedMake(makeMatch.slug);
         setSelectedMakeName(makeMatch.name);
       }
-      const modelMatch = model.find((m) => m.slug === part);
-      if (modelMatch) {
-        setSelectedModel(modelMatch.slug);
-        setSelectedModelName(modelMatch.name);
+      const isRegionSlug = part.endsWith("-region");
+
+      if (isRegionSlug) {
+        const regionName = part.replace("-region", "").replace(/-/g, " ");
+        setSelectedRegionName(regionName);
+        return; // ✅ skip model detection if it's region
       }
     });
   }, [pathname]);
@@ -403,7 +419,12 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
       }
     }
 
-    const modelSlug = segments[1]; // 0 = make, 1 = model
+    const modelSlug = segments.find(
+      (s) =>
+        !s.endsWith("-state") &&
+        !s.endsWith("-region") &&
+        !s.endsWith("-suburb")
+    );
 
     if (modelSlug) {
       setSelectedModel(modelSlug);
@@ -438,6 +459,8 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
         from_length: lengthFrom || undefined,
         to_length: lengthTo || undefined,
         model: selectedModel || undefined,
+        region: selectedRegionName || undefined,
+        suburb: selectedSuburbName || undefined,
         state: selectedStateName || undefined,
       });
     }, 0);
@@ -460,6 +483,8 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
     lengthTo,
     selectedStateName,
     selectedState,
+    selectedRegionName,
+    selectedSuburbName,
   ]);
 
   const handleSuburbSelection = (shortAddress: string) => {
@@ -547,6 +572,7 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
       if (selectedSuburbName) slugParts.push(`${selectedSuburbName}-suburb`);
       if (selectedStateName)
         slugParts.push(`${selectedStateName.toLowerCase()}-state`);
+      if (selectedRegionName) slugParts.push(`${selectedRegionName}-region`);
       console.log("selectedStateName", selectedStateName);
       const match = locationInput.match(/\b\d{4}\b/);
       if (match) slugParts.push(match[0]);
@@ -862,8 +888,19 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
                   style={{ marginLeft: "16px", cursor: "pointer" }}
                   onClick={() => {
                     setSelectedRegionName(region.name);
-                    setFilteredSuburbs(region.suburbs || []);
-                    setSelectedSuburbName(null);
+                    const slugifiedState = selectedState
+                      ?.toLowerCase()
+                      .replace(/\s+/g, "-");
+                    const regionSlug = region.name
+                      .toLowerCase()
+                      .replace(/\s+/g, "-");
+                    const query = searchParams.toString();
+
+                    const url = `/listings/${slugifiedState}-state/${regionSlug}-region${
+                      query ? `?${query}` : ""
+                    }`;
+
+                    router.push(url); // ✅ this keeps ?paged=2 and others
                   }}
                 >
                   {region.name}
@@ -887,6 +924,26 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
                     location: selectedState,
                   }));
                   setStateOpen(false);
+
+                  const slugSuburb = suburb.name
+                    .toLowerCase()
+                    .replace(/\s+/g, "-");
+                  const slugState = selectedStateName
+                    ?.toLowerCase()
+                    .replace(/\s+/g, "-");
+                  const postcodeMatch = locationInput.match(/\b\d{4}\b/);
+                  const postcode = postcodeMatch ? postcodeMatch[0] : "0000"; // fallback
+
+                  const suburbURL = `/listings/${slugSuburb}-suburb/${slugState}-state/${postcode}/`;
+                  router.push(suburbURL);
+
+                  onFilterChange({
+                    ...currentFilters,
+                    suburb: suburb.name,
+                    region: selectedRegionName || undefined,
+                    state: selectedStateName || undefined,
+                    model: selectedModel || undefined,
+                  });
                 }}
               >
                 {suburb.name}
