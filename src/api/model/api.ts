@@ -6,7 +6,7 @@ export const fetchModelsByMake = async (make: string) => {
   const json = await res.json();
   const modelOptions = json?.data?.model_options || [];
   console.log("modelll", modelOptions);
-  return modelOptions.map((m: any) => ({
+  return modelOptions.map((m: { name: string; slug: string }) => ({
     name: m.name,
     slug: m.slug,
   }));

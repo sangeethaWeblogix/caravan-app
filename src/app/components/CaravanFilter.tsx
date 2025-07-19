@@ -13,7 +13,6 @@ import { usePathname, useRouter } from "next/navigation";
 import { useSearchParams } from "next/navigation";
 import { fetchProductList } from "@/api/productList/api";
 import { fetchModelsByMake } from "@/api/model/api";
-import { generateSlugURL } from "./urlBuilder";
 
 type LocationSuggestion = {
   key: string;
@@ -188,7 +187,6 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
 
   const sleep = [1, 2, 3, 4, 5, 6, 7];
   const [selectedRegion, setSelectedRegion] = useState<string>();
-  const [selectedSuburb, setSelectedSuburb] = useState<string>();
   useEffect(() => {
     const loadFilters = async () => {
       const res = await fetchProductList();
@@ -214,6 +212,7 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
       router.push(slug);
     }
   }, [selectedRegion, selectedState, searchParams]);
+
   useEffect(() => {
     if (!selectedMake) {
       // nothing selected – clear everything
@@ -233,6 +232,7 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
   }, [selectedMake]);
 
   console.log("filters", filters);
+  console.log(setSelectedRegion, filteredRegions);
   const [locationSuggestions, setLocationSuggestions] = useState<
     LocationSuggestion[]
   >([]);
@@ -374,6 +374,7 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
       }
     });
   }, [pathname]);
+
   const accordionStyle = (highlight: boolean) => ({
     display: "flex",
     justifyContent: "space-between",
@@ -454,7 +455,7 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
   useEffect(() => {
     const pathParts = pathname.split("/").filter(Boolean); // ex: ["listings", "queensland-state"]
     const slug1 = pathParts[1]; // could be category or state
-    const slug2 = pathParts[2]; // could be undefined or state
+    // const slug2 = pathParts[2]; // could be undefined or state
 
     let categoryMatch: Option | undefined;
     // let stateMatch: StateOption | undefined;
@@ -466,12 +467,12 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
     }
 
     // Now check state (either in slug2 if category exists, or slug1 if only state)
-    const rawStateSlug =
-      slug2 ?? (slug1?.endsWith("-state") ? slug1 : undefined);
-    const matchedState = states.find(
-      (s) =>
-        rawStateSlug === `${s.name.toLowerCase().replace(/\s+/g, "-")}-state`
-    );
+    // const rawStateSlug =
+    //   slug2 ?? (slug1?.endsWith("-state") ? slug1 : undefined);
+    // const matchedState = states.find(
+    //   (s) =>
+    //     rawStateSlug === `${s.name.toLowerCase().replace(/\s+/g, "-")}-state`
+    // );
     // if (matchedState) {
     //   stateMatch = matchedState;
     // }
@@ -666,8 +667,8 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
     const slug = pathname.split("/listings/")[1];
     const segments = slug?.split("/") || [];
 
-    let stateSlug = segments.find((s) => s.endsWith("-state"));
-    let makeSlug = segments.find(
+    const stateSlug = segments.find((s) => s.endsWith("-state"));
+    const makeSlug = segments.find(
       (s) =>
         !s.endsWith("-state") &&
         !s.endsWith("-region") &&
@@ -802,6 +803,9 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
     yearTo,
     lengthFrom,
     lengthTo,
+    selectedPostcode,
+    selectedRegionName,
+    filteredRegions,
   ]);
 
   const resetFilters = () => {
@@ -1088,13 +1092,17 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
               </span>
             )}
           </h5>
-          <BiChevronDown />
+          <BiChevronDown
+            style={{
+              cursor: "pointer",
+              transform: makeOpen ? "rotate(180deg)" : "",
+            }}
+          />
         </div>
-
         {makeOpen && (
           <div className="filter-accordion-items">
             {Array.isArray(makes) &&
-              makes.map((make) => (
+              (showAllMakes ? makes : makes.slice(0, 10)).map((make) => (
                 <div
                   key={make.slug}
                   className={`filter-accordion-item ${
@@ -1106,12 +1114,28 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
                     setMakeOpen(false);
                     setSelectedModel(null);
                     setSelectedModelName(null);
-                    setModel([]); // Close dropdown
+                    setModel([]); // Reset model list
                   }}
                 >
                   {make.name}
                 </div>
               ))}
+
+            {/* Show More / Show Less toggle */}
+            {makes.length > 10 && (
+              <div
+                className="filter-accordion-subitem"
+                style={{
+                  cursor: "pointer",
+                  color: "#007BFF",
+                  marginTop: "8px",
+                  fontWeight: 500,
+                }}
+                onClick={() => setShowAllMakes((prev) => !prev)}
+              >
+                {showAllMakes ? "Show Less ▲" : "Show More ▼"}
+              </div>
+            )}
           </div>
         )}
       </div>

@@ -79,11 +79,11 @@ export interface Filters {
 
 interface Props {
   category?: string;
-  location?: string;
   condition?: string;
+  location?: string;
 }
 
-export default function ListingsPage({ category, location, condition }: Props) {
+export default function ListingsPage({ category, condition, location }: Props) {
   const pathname =
     typeof window !== "undefined" ? window.location.pathname : "";
 
@@ -163,7 +163,7 @@ export default function ListingsPage({ category, location, condition }: Props) {
     loadListings(page, filtersRef.current);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams, pagination, filtersReady]);
-
+  console.log(location);
   const loadListings = useCallback(
     async (page = 1, appliedFilters: Filters = filters) => {
       setIsLoading(true);
