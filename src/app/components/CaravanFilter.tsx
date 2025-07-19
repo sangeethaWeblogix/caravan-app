@@ -890,7 +890,16 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
       <div className="cs-full_width_section">
         <div className="filter-accordion" onClick={() => toggle(setStateOpen)}>
           <h5 className="cfs-filter-label">Location</h5>
-          <BiChevronDown />
+          <BiChevronDown
+            onClick={(e) => {
+              e.stopPropagation();
+              setStateOpen((prev) => !prev);
+            }}
+            style={{
+              cursor: "pointer",
+              transform: stateOpen ? "rotate(180deg)" : "",
+            }}
+          />{" "}
         </div>
 
         {/* STATE */}
@@ -911,7 +920,10 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
                   ×
                 </span>
                 <BiChevronDown
-                  onClick={() => setStateOpen((prev) => !prev)}
+                  onClick={(e) => {
+                    e.stopPropagation(); // prevent parent click from firing
+                    setStateOpen((prev) => !prev);
+                  }}
                   style={arrowStyle(stateOpen)}
                 />
               </div>
@@ -969,7 +981,7 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
               ?.regions?.map((region, idx) => (
                 <div
                   key={idx}
-                  className="filter-accordion-subitem"
+                  className="filter-accordion-item"
                   style={{ marginLeft: "16px", cursor: "pointer" }}
                   onClick={() => {
                     setSelectedRegionName(region.name);
@@ -996,7 +1008,7 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
               {filteredSuburbs.map((suburb, idx) => (
                 <div
                   key={`${suburb.value}-${idx}`}
-                  className="filter-accordion-subitem"
+                  className="filter-accordion-item"
                   style={suburbStyle(suburb.name === selectedSuburbName)}
                   onClick={() => {
                     const postcodeMatch = suburb.value?.match(/\d{4}$/); // extract from e.g., "heatherbrae-suburb/2324"
@@ -1026,7 +1038,7 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
           )}
 
         {/* 🔹 INITIAL STATE LIST */}
-        {!selectedState && (
+        {!selectedState && stateOpen && (
           <div className="filter-accordion-items">
             {states.map((state) => (
               <div
