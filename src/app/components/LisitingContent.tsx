@@ -6,6 +6,7 @@ import { Navigation } from "swiper/modules";
 import "swiper/css";
 import "swiper/css/navigation";
 import "../listings/listings.css";
+import Head from "next/head";
 
 interface Product {
   id: number;
@@ -35,6 +36,8 @@ interface Props {
   pagination: Pagination;
   onNext: () => void;
   onPrev: () => void;
+  metaTitle: string; // Add metaTitle prop
+  metaDescription: string; // Add metaDescription prop
 }
 
 export default function ListingContent({
@@ -42,9 +45,18 @@ export default function ListingContent({
   pagination,
   onNext,
   onPrev,
+  metaTitle,
+  metaDescription,
 }: Props) {
+  console.log("metaa", metaTitle);
+
   return (
     <>
+      <Head>
+        <title>{metaTitle}</title> {/* Dynamically set title */}
+        <meta name="description" content={metaDescription} />{" "}
+        {/* Dynamically set description */}
+      </Head>
       <div className="col-lg-6 col-md-8">
         <div className="top-filter mb-10">
           <div className="row align-items-center">

@@ -454,6 +454,8 @@ export default function ListingsPage({ category, condition, location }: Props) {
                   pagination={pagination}
                   onNext={handleNextPage}
                   onPrev={handlePrevPage}
+                  metaDescription={metaDescription}
+                  metaTitle={metaTitle}
                 />
               )}
 
