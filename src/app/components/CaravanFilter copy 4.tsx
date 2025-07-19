@@ -67,7 +67,6 @@ export interface Filters {
   state?: string;
   region?: string;
   suburb?: string;
-  postcode?: string;
 }
 
 interface CaravanFilterProps {
@@ -124,7 +123,6 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
   const setSelectedLocation = useState<string>("")[1];
   const [selectedMake, setSelectedMake] = useState<string | null>(null);
   const [selectedModel, setSelectedModel] = useState<string | null>(null);
-  const [selectedPostcode, setSelectedPostcode] = useState<string | null>(null);
 
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [selectedCategoryName, setSelectedCategoryName] = useState<
@@ -176,11 +174,10 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
     125000, 150000, 175000, 200000, 225000, 250000, 275000, 300000,
   ];
 
-  const years = [
-    2024, 2023, 2022, 2021, 2020, 2019, 2018, 2017, 2016, 2015, 2014, 2013,
-    2012, 2011, 2010, 2009, 2008, 2007, 2006, 2005, 2004, 1994, 1984, 1974,
-    1964, 1954, 1944, 1934, 1924, 1914,
-  ];
+  const years = Array.from(
+    { length: new Date().getFullYear() - 1914 + 1 },
+    (_, i) => 1914 + i
+  );
 
   const length = [
     12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28,
@@ -359,12 +356,6 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
         setSelectedMake(makeMatch.slug);
         setSelectedMakeName(makeMatch.name);
       }
-      const modelMatch = model.find((m) => m.slug === part);
-      if (modelMatch) {
-        setSelectedModel(modelMatch.slug);
-        setSelectedModelName(modelMatch.name);
-      }
-
       const isRegionSlug = part.endsWith("-region");
 
       if (isRegionSlug) {
@@ -374,82 +365,6 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
       }
     });
   }, [pathname]);
-  const accordionStyle = (highlight: boolean) => ({
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center",
-    borderRadius: "4px",
-    padding: "6px 12px",
-    marginBottom: "6px",
-    cursor: "pointer",
-    background: highlight ? "#f7f7f7" : "transparent",
-  });
-
-  const iconRowStyle = {
-    display: "flex",
-    alignItems: "center",
-    gap: "8px",
-  };
-
-  const closeIconStyle = {
-    fontWeight: "bold",
-    cursor: "pointer",
-  };
-
-  const arrowStyle = (isOpen: boolean) => ({
-    transform: isOpen ? "rotate(180deg)" : "rotate(0deg)",
-    transition: "0.3s",
-    marginLeft: "8px",
-    cursor: "pointer",
-  });
-
-  const suburbStyle = (isSelected: boolean) => ({
-    marginLeft: "24px",
-    cursor: "pointer",
-    padding: "6px 12px",
-    borderRadius: "4px",
-    backgroundColor: isSelected ? "#e8f0fe" : "transparent",
-  });
-  const resetStateFilters = () => {
-    setSelectedState(null);
-    setSelectedStateName(null);
-    setSelectedRegionName(null);
-    setSelectedSuburbName(null);
-    setFilteredSuburbs([]);
-    setStateOpen(false);
-    onFilterChange({
-      ...currentFilters,
-      state: undefined,
-      region: undefined,
-      suburb: undefined,
-    });
-  };
-
-  const resetRegionFilters = () => {
-    setSelectedRegionName(null);
-    setSelectedSuburbName(null);
-    setFilteredSuburbs([]);
-    setStateOpen(false);
-    onFilterChange({
-      ...currentFilters,
-      region: undefined,
-      suburb: undefined,
-    });
-  };
-
-  const resetSuburbFilters = () => {
-    setSelectedSuburbName(null);
-    setFilteredSuburbs([]);
-    setStateOpen(false);
-    onFilterChange({
-      ...currentFilters,
-      suburb: undefined,
-    });
-  };
-  // ⬇️ Place this inside your component top-level
-  useEffect(() => {
-    console.log("✅ filteredSuburbs updated:", filteredSuburbs);
-  }, [filteredSuburbs]);
 
   useEffect(() => {
     const pathParts = pathname.split("/").filter(Boolean); // ex: ["listings", "queensland-state"]
@@ -489,108 +404,37 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
     // Search Params: make, condition, sleeps
     const slug = pathname.split("/listings/")[1];
     const segments = slug?.split("/") || [];
-    const isKnownFilter = (s: string) =>
-      s.endsWith("-state") ||
-      s.endsWith("-category") ||
-      s.endsWith("-region") ||
-      s.endsWith("-suburb") ||
-      s.includes("-kg") ||
-      s.includes("-people") ||
-      s.includes("between-") ||
-      s.includes("over-") ||
-      s.includes("under-") ||
-      s.endsWith("-condition") ||
-      /^\d{4}$/.test(s); // postcode
+    const makeSlug = segments.find(
+      (s) =>
+        !s.endsWith("-state") &&
+        !s.endsWith("-region") &&
+        !s.endsWith("-suburb")
+    );
 
-    // ✅ Filter segments that are not known filters
-    const filteredSegments = segments.filter((s) => !isKnownFilter(s));
-
-    const makeSlug = filteredSegments[0];
-    const modelSlug = filteredSegments[1];
-
-    // ✅ Set MAKE
-    if (modelSlug && modelSlug !== makeSlug) {
-      const filteredModels = models.filter(
-        (m) => m.slug === selectedMake // if you're using make_slug
-      );
-
-      const modelMatch = filteredModels.find((m) => m.slug === modelSlug);
-
-      if (modelMatch) {
-        setSelectedModel(modelMatch.slug);
-        setSelectedModelName(modelMatch.name);
+    if (makeSlug) {
+      const makeMatch = makes.find((m) => m.slug === makeSlug);
+      if (makeMatch) {
+        setSelectedMake(makeMatch.slug);
+        setSelectedMakeName(makeMatch.name);
       }
     }
 
-    // const makeSlug = segments.find(
-    //   (s) =>
-    //     !s.endsWith("-state") &&
-    //     !s.endsWith("-category") &&
-    //     !s.endsWith("-region") &&
-    //     !s.endsWith("-suburb") &&
-    //     !s.includes("-kg") &&
-    //     !s.includes("-people") &&
-    //     !s.includes("between-") &&
-    //     !s.includes("over-") &&
-    //     !s.includes("under-") &&
-    //     !s.includes("-condition") &&
-    //     !/^\d{4}$/.test(s) // ✅ Exclude 4-digit postcodes
-    //   // ✅ Exclude known field values (safe check)
+    const modelSlug = segments.find(
+      (s) =>
+        !s.endsWith("-state") &&
+        !s.endsWith("-region") &&
+        !s.endsWith("-suburb")
+    );
 
-    //   // ✅ Exclude 4-digit postcodes
-    // );
+    if (modelSlug) {
+      setSelectedModel(modelSlug);
 
-    // if (makeSlug) {
-    //   const makeMatch = makes.find((m) => m.slug === makeSlug);
-    //   if (makeMatch) {
-    //     setSelectedMake(makeMatch.slug);
-    //     setSelectedMakeName(makeMatch.name);
-    //   }
-    // }
-
-    // const modelSlug = segments.find(
-    //   (s) =>
-    //     !s.endsWith("-state") &&
-    //     !s.endsWith("-category") &&
-    //     !s.endsWith("-region") &&
-    //     !s.endsWith("-suburb") &&
-    //     !s.includes("-kg") &&
-    //     !s.includes("-people") &&
-    //     !s.includes("between-") &&
-    //     !s.includes("over-") &&
-    //     !s.includes("under-") &&
-    //     !s.includes("-condition") &&
-    //     // ✅ Exclude known field values (safe check)
-    //     !/^\d{4}$/.test(s) // ✅ Exclude 4-digit postcodes
-    // );
-
-    // if (modelSlug) {
-    //   setSelectedModel(modelSlug);
-
-    //   // If you already have model list loaded
-    //   const modelMatch = models.find((m) => m.slug === modelSlug);
-    //   if (modelMatch) {
-    //     setSelectedModelName(modelMatch.name);
-    //   }
-    // }
-    // const makeSlug = segments[0];
-    // if (makeSlug) {
-    //   setSelectedMake(makeSlug);
-    //   const makeMatch = makes.find((m) => m.slug === makeSlug);
-    //   if (makeMatch) setSelectedMakeName(makeMatch.name);
-    // }
-
-    // const modelSlug = segments[1]; // 0 = make, 1 = model
-
-    // if (modelSlug) {
-    //   setSelectedModel(modelSlug);
-
-    //   // If you already have model list loaded
-    //   const modelMatch = models.find((m) => m.slug === modelSlug);
-    //   if (modelMatch) {
-    //     setSelectedModelName(modelMatch.name);
-    //   }
-    // }
+      // If you already have model list loaded
+      const modelMatch = models.find((m) => m.slug === modelSlug);
+      if (modelMatch) {
+        setSelectedModelName(modelMatch.name);
+      }
+    }
 
     const condition = searchParams.get("condition");
     if (condition && !selectedConditionName)
@@ -639,8 +483,6 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
     lengthTo,
     selectedStateName,
     selectedState,
-    selectedMake,
-    selectedModel,
     selectedRegionName,
     selectedSuburbName,
   ]);
@@ -728,12 +570,9 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
 
       if (selectedCategory) slugParts.push(`${selectedCategory}-category`);
       if (selectedSuburbName) slugParts.push(`${selectedSuburbName}-suburb`);
-
       if (selectedStateName)
         slugParts.push(`${selectedStateName.toLowerCase()}-state`);
-
       if (selectedRegionName) slugParts.push(`${selectedRegionName}-region`);
-      if (selectedPostcode) slugParts.push(selectedPostcode);
       console.log("selectedStateName", selectedStateName);
       const match = locationInput.match(/\b\d{4}\b/);
       if (match) slugParts.push(match[0]);
@@ -818,6 +657,16 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
     setAtmTo(null);
   };
 
+  const handleLocationArrowClick = () => {
+    if (selectedState && !selectedRegionName) {
+      // Toggle Region dropdown
+      setStateOpen((prev) => !prev);
+    } else if (selectedRegionName && !selectedSuburbName) {
+      // Toggle Suburb dropdown
+      setStateOpen((prev) => !prev);
+    }
+  };
+
   useEffect(() => {
     const delayDebounce = setTimeout(() => {
       if (locationInput.length >= 2) {
@@ -887,95 +736,190 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
         )}
       </div>
       {/* Location Accordion */}
+
       <div className="cs-full_width_section">
         <div className="filter-accordion" onClick={() => toggle(setStateOpen)}>
           <h5 className="cfs-filter-label">Location</h5>
           <BiChevronDown />
         </div>
 
-        {/* STATE */}
-        {selectedStateName && (
-          <div
-            className="filter-accordion-item"
-            style={accordionStyle(!selectedRegionName && !selectedSuburbName)}
-          >
-            <span
-              style={{ flexGrow: 1 }}
-              onClick={() => setStateOpen((prev) => !prev)}
+        <div>
+          {selectedStateName && (
+            <div
+              className="filter-accordion-item"
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                borderRadius: "4px",
+                padding: "6px 12px",
+                marginBottom: "6px",
+                cursor: "pointer",
+                background:
+                  !selectedRegionName && !selectedSuburbName
+                    ? "#f7f7f7"
+                    : "transparent",
+              }}
             >
-              {selectedStateName}
-            </span>
-            {selectedStateName && !selectedRegionName && (
-              <div style={iconRowStyle}>
-                <span onClick={resetStateFilters} style={closeIconStyle}>
-                  ×
-                </span>
-                <BiChevronDown
-                  onClick={() => setStateOpen((prev) => !prev)}
-                  style={arrowStyle(stateOpen)}
-                />
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* REGION */}
-        {selectedRegionName && (
-          <div
-            className="filter-accordion-item"
-            style={accordionStyle(!selectedSuburbName)}
-          >
-            <span
-              style={{ flexGrow: 1 }}
-              onClick={() => setStateOpen((prev) => !prev)}
+              <span
+                style={{ flexGrow: 1 }}
+                onClick={() => setStateOpen((prev) => !prev)}
+              >
+                {selectedStateName}
+              </span>
+              {selectedStateName && !selectedRegionName && (
+                <div
+                  style={{ display: "flex", alignItems: "center", gap: "8px" }}
+                >
+                  <span
+                    onClick={() => {
+                      setSelectedState(null);
+                      setSelectedStateName(null);
+                      setSelectedRegionName(null);
+                      setSelectedSuburbName(null);
+                      setFilteredSuburbs([]);
+                      setStateOpen(false);
+                      onFilterChange({
+                        ...currentFilters,
+                        state: undefined,
+                        region: undefined,
+                        suburb: undefined,
+                      });
+                    }}
+                    style={{ fontWeight: "bold", cursor: "pointer" }}
+                  >
+                    ×
+                  </span>
+                  <BiChevronDown
+                    onClick={() => setStateOpen((prev) => !prev)}
+                    style={{
+                      transform: stateOpen ? "rotate(180deg)" : "rotate(0deg)",
+                      transition: "0.3s",
+                      cursor: "pointer",
+                    }}
+                  />
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+        <div>
+          {selectedRegionName && (
+            <div
+              className="filter-accordion-item selected"
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                borderRadius: "4px",
+                padding: "6px 12px",
+                marginBottom: "6px",
+                cursor: "pointer",
+                background: !selectedSuburbName ? "#f7f7f7" : "transparent",
+              }}
             >
-              {selectedRegionName}
-            </span>
-            {!selectedSuburbName && (
-              <div style={iconRowStyle}>
-                <span onClick={resetRegionFilters} style={closeIconStyle}>
-                  ×
-                </span>
-                <BiChevronDown
-                  onClick={() => {
-                    const region = states
-                      .find((s) => s.value === selectedState)
-                      ?.regions?.find((r) => r.name === selectedRegionName);
-                    if (region) setFilteredSuburbs(region.suburbs || []);
-                    setStateOpen(true);
-                  }}
-                  style={arrowStyle(stateOpen)}
-                />
-              </div>
-            )}
-          </div>
-        )}
+              <span
+                style={{ flexGrow: 1 }}
+                onClick={() => setStateOpen((prev) => !prev)}
+              >
+                {selectedRegionName}
+              </span>
+              {stateOpen && selectedState && !selectedSuburbName && (
+                <div
+                  style={{ display: "flex", alignItems: "center", gap: "8px" }}
+                >
+                  {/* Close Region + Suburb */}
+                  <span
+                    onClick={() => {
+                      setSelectedRegionName(null);
+                      setSelectedSuburbName(null);
+                      setFilteredSuburbs([]);
+                      setStateOpen(false);
+                      onFilterChange({
+                        ...currentFilters,
+                        region: undefined,
+                        suburb: undefined,
+                      });
+                    }}
+                    style={{ fontWeight: "bold", cursor: "pointer" }}
+                  >
+                    ×
+                  </span>
 
-        {/* SUBURB */}
-        {selectedSuburbName && (
-          <div className="filter-accordion-item" style={accordionStyle(true)}>
-            <span style={{ flexGrow: 1 }}>{selectedSuburbName}</span>
-            <span onClick={resetSuburbFilters} style={closeIconStyle}>
-              ×
-            </span>
-          </div>
-        )}
+                  <BiChevronDown
+                    onClick={() => setStateOpen((prev) => !prev)}
+                    style={{
+                      transform: stateOpen ? "rotate(180deg)" : "rotate(0deg)",
+                      transition: "0.3s",
+                      marginLeft: "8px",
+                    }}
+                  />
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+        <div>
+          {selectedSuburbName && (
+            <div
+              className="filter-accordion-item"
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                borderRadius: "4px",
+                padding: "6px 12px",
+                marginBottom: "6px",
+                cursor: "pointer",
+                background: "#f7f7f7",
+              }}
+            >
+              <span style={{ flexGrow: 1 }}>{selectedSuburbName}</span>
 
-        {/* 🔽 REGION LIST */}
+              <span
+                onClick={() => {
+                  setSelectedSuburbName(null);
+                  setFilteredSuburbs([]);
+                  setStateOpen(false);
+                  onFilterChange({
+                    ...currentFilters,
+                    suburb: undefined,
+                  });
+                }}
+                style={{ fontWeight: "bold", cursor: "pointer" }}
+              >
+                ×
+              </span>
+            </div>
+          )}
+        </div>
+
+        {/* 🔽 Region Dropdown */}
         {stateOpen && selectedState && !selectedRegionName && (
           <div className="filter-accordion-items">
             {states
               .find((s) => s.value === selectedState)
-              ?.regions?.map((region, idx) => (
+              ?.regions?.map((region, index) => (
                 <div
-                  key={idx}
+                  key={index}
                   className="filter-accordion-subitem"
                   style={{ marginLeft: "16px", cursor: "pointer" }}
                   onClick={() => {
                     setSelectedRegionName(region.name);
-                    setFilteredSuburbs(region.suburbs || []);
-                    setSelectedSuburbName(null);
-                    setStateOpen(false);
+                    setFilteredSuburbs(region.suburbs || []); // ✅ this line is required
+                    const slugifiedState = selectedState
+                      ?.toLowerCase()
+                      .replace(/\s+/g, "-");
+                    const regionSlug = region.name
+                      .toLowerCase()
+                      .replace(/\s+/g, "-");
+                    const query = searchParams.toString();
+
+                    const url = `/listings/${slugifiedState}-state/${regionSlug}-region${
+                      query ? `?${query}` : ""
+                    }`;
+
+                    router.push(url); // ✅ this keeps ?paged=2 and others
                   }}
                 >
                   {region.name}
@@ -983,49 +927,51 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
               ))}
           </div>
         )}
+        {/* subrub dropdown */}
+        {stateOpen && selectedState && selectedRegionName && (
+          <div className="filter-accordion-items">
+            {filteredSuburbs.map((suburb, sidx) => (
+              <div
+                key={`${suburb.value}-${sidx}`}
+                className="filter-accordion-subitem"
+                style={{ marginLeft: "24px", cursor: "pointer" }}
+                onClick={() => {
+                  setSelectedSuburbName(suburb.name);
+                  setLocationInput(`${suburb.name} ${selectedStateName}`);
+                  setFilters((prev) => ({
+                    ...prev,
+                    location: selectedState,
+                  }));
+                  setStateOpen(false);
 
-        {/* 🔽 SUBURB LIST */}
-        {stateOpen &&
-          selectedState &&
-          selectedRegionName &&
-          !selectedSuburbName && (
-            <div className="filter-accordion-items">
-              {filteredSuburbs.length === 0 && (
-                <p style={{ marginLeft: 24 }}>❌ No suburbs available</p>
-              )}
-              {filteredSuburbs.map((suburb, idx) => (
-                <div
-                  key={`${suburb.value}-${idx}`}
-                  className="filter-accordion-subitem"
-                  style={suburbStyle(suburb.name === selectedSuburbName)}
-                  onClick={() => {
-                    const postcodeMatch = suburb.value?.match(/\d{4}$/); // extract from e.g., "heatherbrae-suburb/2324"
-                    const postcode = postcodeMatch ? postcodeMatch[0] : null;
-                    setSelectedSuburbName(suburb.name);
-                    setSelectedPostcode(postcode);
-                    setLocationInput(`${suburb.name} ${selectedStateName}`);
-                    setStateOpen(false);
-                    const updatedFilters: Filters = {
-                      ...currentFilters,
-                      suburb: suburb.name,
-                      region: selectedRegionName,
-                      state: selectedStateName || undefined,
-                      model: selectedModel || undefined,
-                      postcode: postcode || undefined,
-                    };
-                    setFilters(updatedFilters);
-                    onFilterChange(
-                      updatedFilters // ✅ pass it to ListingsPage
-                    );
-                  }}
-                >
-                  {suburb.name}
-                </div>
-              ))}
-            </div>
-          )}
+                  const slugSuburb = suburb.name
+                    .toLowerCase()
+                    .replace(/\s+/g, "-");
+                  const slugState = selectedStateName
+                    ?.toLowerCase()
+                    .replace(/\s+/g, "-");
+                  const postcodeMatch = locationInput.match(/\b\d{4}\b/);
+                  const postcode = postcodeMatch ? postcodeMatch[0] : "0000"; // fallback
 
-        {/* 🔹 INITIAL STATE LIST */}
+                  const suburbURL = `/listings/${slugSuburb}-suburb/${slugState}-state/${postcode}/`;
+                  router.push(suburbURL);
+
+                  onFilterChange({
+                    ...currentFilters,
+                    suburb: suburb.name,
+                    region: selectedRegionName || undefined,
+                    state: selectedStateName || undefined,
+                    model: selectedModel || undefined,
+                  });
+                }}
+              >
+                {suburb.name}
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* 🔹 State List */}
         {!selectedState && (
           <div className="filter-accordion-items">
             {states.map((state) => (
@@ -1039,9 +985,22 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
                   setSelectedStateName(state.name);
                   setSelectedRegionName(null);
                   setSelectedSuburbName(null);
-                  setFilteredRegions(state.regions || []);
                   setFilteredSuburbs([]);
                   setStateOpen(true);
+
+                  justSelectedStateRef.current = true;
+
+                  const newFilters = {
+                    ...currentFilters,
+                    state: state.name,
+                  };
+
+                  onFilterChange(newFilters);
+
+                  setTimeout(() => {
+                    const url = generateSlugURL(currentFilters, state.name);
+                    router.push(url);
+                  }, 300);
                 }}
               >
                 {state.name}
@@ -1082,7 +1041,7 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
         {makeOpen && (
           <div className="filter-accordion-items">
             {Array.isArray(makes) &&
-              makes.map((make) => (
+              (showAllMakes ? makes : makes.slice(0, 10)).map((make) => (
                 <div
                   key={make.slug}
                   className={`filter-accordion-item ${
@@ -1090,16 +1049,31 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
                   }`}
                   onClick={() => {
                     setSelectedMake(make.slug);
-                    setSelectedMakeName(make.name); // Show name near label
+                    setSelectedMakeName(make.name);
                     setMakeOpen(false);
                     setSelectedModel(null);
                     setSelectedModelName(null);
-                    setModel([]); // Close dropdown
+                    setModel([]);
                   }}
                 >
                   {make.name}
                 </div>
               ))}
+
+            {makes.length > 10 && (
+              <div
+                className="filter-accordion-item show-more-toggle"
+                onClick={() => setShowAllMakes(!showAllMakes)}
+                style={{
+                  cursor: "pointer",
+                  fontWeight: 500,
+                  marginTop: "6px",
+                  color: "#007bff",
+                }}
+              >
+                {showAllMakes ? "Show Less" : "Show More"}
+              </div>
+            )}
           </div>
         )}
       </div>
@@ -1132,11 +1106,6 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
                     setSelectedModel(mod.slug);
                     setSelectedModelName(mod.name);
                     setModelOpen(false);
-
-                    onFilterChange({
-                      ...currentFilters,
-                      model: mod.slug,
-                    });
                   }}
                 >
                   {mod.name}
@@ -1146,7 +1115,6 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
           )}
         </div>
       )}
-
       {/* ATM Range */}
       {/* ATM Range */}
       <div className="cs-full_width_section">
@@ -1229,7 +1197,7 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
         </div>
       </div>
       {/* 8883944599
-   9524163042 */}
+  9524163042 */}
       {/* Condition Accordion */}
       <div className="cs-full_width_section">
         <div

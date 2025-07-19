@@ -15,7 +15,7 @@ import SkeletonListing from "../../app/components/skelton";
 import Footer from "../../app/components/Footer";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-
+import Head from "next/head";
 interface Product {
   id: number;
   name: string;
@@ -58,11 +58,12 @@ export interface MakeOption {
 export interface Filters {
   category?: string;
   make?: string;
+  location?: string | null;
   from_price?: string | number; // ✅ add this
   to_price?: string | number;
   condition?: string;
   sleeps?: string;
-  state?: string;
+  states?: string;
   minKg?: string | number;
   maxKg?: string | number;
   from_year?: number | string;
@@ -70,8 +71,10 @@ export interface Filters {
   from_length?: string | number;
   to_length?: string | number;
   model?: string;
-  suburb?: string;
+  state?: string;
   region?: string;
+  suburb?: string;
+  postcode?: string;
 }
 
 interface Props {
@@ -125,6 +128,8 @@ export default function ListingsPage({ category, location, condition }: Props) {
   const [categories, setCategories] = useState<Category[]>([]);
   const [makes, setMakes] = useState<MakeOption[]>([]);
   const [models, setModels] = useState<MakeOption[]>([]);
+  const [metaTitle, setMetaTitle] = useState("");
+  const [metaDescription, setMetaDescription] = useState("");
 
   const [stateOptions, setStateOptions] = useState<StateOption[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -183,7 +188,7 @@ export default function ListingsPage({ category, location, condition }: Props) {
           model: appliedFilters.model,
           state: appliedFilters.state,
           region: appliedFilters.region,
-          suburb: appliedFilters.suburb, // ✅ add this
+          suburb: appliedFilters.suburb,
         });
 
         if (response?.data?.products && response?.pagination) {
@@ -194,6 +199,8 @@ export default function ListingsPage({ category, location, condition }: Props) {
           setModels(response.data.model_options ?? []);
           setPageTitle(response.title ?? "");
           setPagination(response.pagination);
+          setMetaTitle(response.seo?.metatitle ?? "");
+          setMetaDescription(response.seo?.metadescription ?? "");
         } else {
           setProducts([]);
           setPagination({
@@ -265,7 +272,9 @@ export default function ListingsPage({ category, location, condition }: Props) {
   const buildSlugPath = () => {
     const slugParts: string[] = [];
     if (filters.make) slugParts.push(filters.make); // ✅ ADD THIS LINE
-    if (filters.model) slugParts.push(filters.model); // ✅ insert model after make
+    if (filters.model && filters.model !== filters.make) {
+      slugParts.push(filters.model);
+    }
     if (filters.category) slugParts.push(`${filters.category}-category`);
     if (filters.condition)
       slugParts.push(`${filters.condition.toLowerCase()}-condition`);
@@ -292,12 +301,9 @@ export default function ListingsPage({ category, location, condition }: Props) {
       slugParts.push(
         `${filters.state.toLowerCase().replace(/\s+/g, "-")}-state`
       );
-      // if (filters.postcode) slugParts.push(filters.postcode);
+      if (filters.postcode) slugParts.push(filters.postcode);
     }
 
-    // if (locationInput.match(/\b\d{4}\b/)) {
-    //   slugParts.push(locationInput.match(/\b\d{4}\b/)![0]); // push postcode
-    // }
     console.log("🌐 Current Filters State:", filters.state);
 
     const minPrice = filters.from_price;
@@ -399,52 +405,64 @@ export default function ListingsPage({ category, location, condition }: Props) {
       updateURLWithFilters(prevPage);
     }
   };
-
+  useEffect(() => {
+    console.log("📌 Meta Title:", metaTitle);
+    console.log("📌 Meta Description:", metaDescription);
+  }, [metaTitle, metaDescription]);
   return (
-    <section className="services section-padding pb-30 style-1">
-      <div className="container">
-        <div className="content">
-          <div className="text-sm text-gray-600 header">
-            <Link href="/" className="hover:underline">
-              Home
-            </Link>{" "}
-            &gt;
-            <span className="font-medium text-black"> Listings</span>
-          </div>
-          <h1 className="page-title">{pageTitle}</h1>
-
-          <div className="row justify-content-center mt-8">
-            <div className="col-lg-3 col-12 col-md-4">
-              <div className="filter">
-                <Suspense fallback={<div>Loading filters...</div>}>
-                  <CaravanFilter
-                    categories={categories}
-                    makes={makes}
-                    models={models}
-                    states={stateOptions}
-                    onFilterChange={handleFilterChange}
-                    currentFilters={filters}
-                  />
-                </Suspense>
-              </div>
+    <>
+      <Head>
+        <title>{metaTitle || "Listings"}</title>
+        <meta
+          name="description"
+          content={metaDescription || "Explore caravans for sale"}
+        />
+      </Head>
+      <section className="services section-padding pb-30 style-1">
+        <div className="container">
+          <div className="content">
+            <div className="text-sm text-gray-600 header">
+              <Link href="/" className="hover:underline">
+                Home
+              </Link>{" "}
+              &gt;
+              <span className="font-medium text-black"> Listings</span>
             </div>
+            <h1 className="page-title">{pageTitle}</h1>
 
-            {isLoading ? (
-              <SkeletonListing />
-            ) : (
-              <Listing
-                products={products}
-                pagination={pagination}
-                onNext={handleNextPage}
-                onPrev={handlePrevPage}
-              />
-            )}
+            <div className="row justify-content-center mt-8">
+              <div className="col-lg-3 col-12 col-md-4">
+                <div className="filter">
+                  <Suspense fallback={<div>Loading filters...</div>}>
+                    <CaravanFilter
+                      categories={categories}
+                      makes={makes}
+                      models={models}
+                      states={stateOptions}
+                      onFilterChange={handleFilterChange}
+                      currentFilters={filters}
+                    />
+                  </Suspense>
+                </div>
+              </div>
 
-            <Footer />
-            <div className="col-lg-3 rightbar-stick"></div>
+              {isLoading ? (
+                <SkeletonListing />
+              ) : (
+                <Listing
+                  products={products}
+                  pagination={pagination}
+                  onNext={handleNextPage}
+                  onPrev={handlePrevPage}
+                />
+              )}
+
+              <Footer />
+              <div className="col-lg-3 rightbar-stick"></div>
+            </div>
           </div>
         </div>
-      </div>
-    </section>
+      </section>
+    </>
   );
 }
