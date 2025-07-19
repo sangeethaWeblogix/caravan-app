@@ -1,0 +1,16 @@
+.location-suggestions {
+  list-style: none;
+  padding: 0;
+  max-height: 200px;
+  overflow-y: auto;
+  margin-top: 8px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+.location-suggestions li {
+  padding: 10px 12px;
+  cursor: pointer;
+}
+.location-suggestions li:hover {
+  background-color: #f1f1f1;
+}

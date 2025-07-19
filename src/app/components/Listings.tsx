@@ -15,7 +15,7 @@ import SkeletonListing from "../../app/components/skelton";
 import Footer from "../../app/components/Footer";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-
+import Head from "next/head";
 interface Product {
   id: number;
   name: string;
@@ -58,41 +58,66 @@ export interface MakeOption {
 export interface Filters {
   category?: string;
   make?: string;
-  location?: string;
-  from_price?: string | number;
+  location?: string | null;
+  from_price?: string | number; // ✅ add this
   to_price?: string | number;
-  minKg?: string | number;
-  maxKg?: string | number;
   condition?: string;
   sleeps?: string;
   states?: string;
+  minKg?: string | number;
+  maxKg?: string | number;
+  from_year?: number | string;
+  to_year?: number | string;
+  from_length?: string | number;
+  to_length?: string | number;
+  model?: string;
+  state?: string;
+  region?: string;
+  suburb?: string;
+  postcode?: string;
 }
 
 interface Props {
   category?: string;
-  location?: string;
   condition?: string;
+  location?: string;
 }
 
-export default function ListingsPage({ category, location, condition }: Props) {
+export default function ListingsPage({ category, condition, location }: Props) {
   const pathname =
     typeof window !== "undefined" ? window.location.pathname : "";
 
   const initialFilters: Filters = useMemo(() => {
     const parsedCategory = category?.replace("-category", "") || undefined;
-    const parsedLocation =
-      location?.replace("-state", "")?.replace(/-/g, " ") || undefined;
     const parsedCondition = condition?.replace("-condition", "") || undefined;
     const sleepMatch = pathname.match(/over-(\d+)-people-sleeping-capacity/);
     const parsedSleep = sleepMatch ? `${sleepMatch[1]}-people` : undefined;
 
+    const slugParts = pathname.split("/listings/")[1]?.split("/") || [];
+
+    // ✅ safely extract state
+    const statePart = slugParts.find((part) => part.endsWith("-state"));
+    const parsedState = statePart
+      ? statePart.replace(/-state$/, "").replace(/-/g, " ")
+      : undefined;
+
+    // ✅ ignore state slug from being treated as make
+    const filteredSlugParts = slugParts.filter(
+      (part) => part !== statePart // remove state part from slug array
+    );
+
+    const make = filteredSlugParts[0];
+    const model = filteredSlugParts[1];
+
     return {
+      ...(make && { make }),
+      ...(model && { model }),
       ...(parsedCategory && { category: parsedCategory }),
-      ...(parsedLocation && { location: parsedLocation }),
       ...(parsedCondition && { condition: parsedCondition }),
       ...(parsedSleep && { sleeps: parsedSleep }),
+      ...(parsedState && { state: parsedState }), // ✅ now passed safely
     };
-  }, [category, location, condition, pathname]);
+  }, [category, condition, pathname]);
 
   const [filtersReady, setFiltersReady] = useState(false);
 
@@ -102,6 +127,10 @@ export default function ListingsPage({ category, location, condition }: Props) {
   const [pageTitle, setPageTitle] = useState("");
   const [categories, setCategories] = useState<Category[]>([]);
   const [makes, setMakes] = useState<MakeOption[]>([]);
+  const [models, setModels] = useState<MakeOption[]>([]);
+  const [metaTitle, setMetaTitle] = useState("");
+  const [metaDescription, setMetaDescription] = useState("");
+
   const [stateOptions, setStateOptions] = useState<StateOption[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
@@ -121,7 +150,7 @@ export default function ListingsPage({ category, location, condition }: Props) {
   useEffect(() => {
     const pageParam = searchParams.get("paged");
     const page = parseInt(pageParam || "1", 10);
-
+    console.log("📦 useEffect triggered for page:", page);
     if (!filtersReady) return; // ✅ Prevent early fetch
 
     if (pagination.current_page === page) return;
@@ -134,7 +163,7 @@ export default function ListingsPage({ category, location, condition }: Props) {
     loadListings(page, filtersRef.current);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams, pagination, filtersReady]);
-
+  console.log(location);
   const loadListings = useCallback(
     async (page = 1, appliedFilters: Filters = filters) => {
       setIsLoading(true);
@@ -145,14 +174,21 @@ export default function ListingsPage({ category, location, condition }: Props) {
         const response = await fetchListings({
           ...appliedFilters,
           page, // Current page number
-          state: appliedFilters.location,
           condition: appliedFilters.condition,
           minKg: appliedFilters.minKg?.toString(),
           maxKg: appliedFilters.maxKg?.toString(),
           sleeps: appliedFilters.sleeps,
           minPrice: appliedFilters.from_price?.toString(),
           maxPrice: appliedFilters.to_price?.toString(),
-          location: undefined, // avoid duplication
+          acustom_fromyears: appliedFilters.from_year?.toString(),
+          acustom_toyears: appliedFilters.to_year?.toString(),
+          from_length: appliedFilters.from_length?.toString(),
+          to_length: appliedFilters.to_length?.toString(),
+          make: appliedFilters.make,
+          model: appliedFilters.model,
+          state: appliedFilters.state,
+          region: appliedFilters.region,
+          suburb: appliedFilters.suburb,
         });
 
         if (response?.data?.products && response?.pagination) {
@@ -160,8 +196,11 @@ export default function ListingsPage({ category, location, condition }: Props) {
           setCategories(response.data.all_categories);
           setMakes(response.data.make_options);
           setStateOptions(response.data.states ?? []);
+          setModels(response.data.model_options ?? []);
           setPageTitle(response.title ?? "");
           setPagination(response.pagination);
+          setMetaTitle(response.seo?.metatitle ?? "");
+          setMetaDescription(response.seo?.metadescription ?? "");
         } else {
           setProducts([]);
           setPagination({
@@ -180,6 +219,25 @@ export default function ListingsPage({ category, location, condition }: Props) {
     },
     [filters, pagination.per_page]
   );
+  // useEffect(() => {
+  //   if (
+  //     hasSearched ||
+  //     !filtersReady ||
+  //     Object.keys(initialFilters).length === 0
+  //   )
+  //     return;
+
+  //   const pageFromURL = parseInt(searchParams.get("paged") || "1", 10);
+
+  //   filtersRef.current = initialFilters;
+
+  //   setPagination((prev) => ({
+  //     ...prev,
+  //     current_page: pageFromURL,
+  //   }));
+
+  //   loadListings(pageFromURL, initialFilters);
+  // }, [filtersReady, hasSearched, initialFilters, loadListings, searchParams]);
 
   useEffect(() => {
     if (
@@ -207,17 +265,46 @@ export default function ListingsPage({ category, location, condition }: Props) {
     });
     setFiltersReady(true);
     loadListings(1, newFilters);
+    console.log("🔗 calling updateURLWithFilters");
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const buildSlugPath = () => {
     const slugParts: string[] = [];
-
+    if (filters.make) slugParts.push(filters.make); // ✅ ADD THIS LINE
+    if (filters.model && filters.model !== filters.make) {
+      slugParts.push(filters.model);
+    }
     if (filters.category) slugParts.push(`${filters.category}-category`);
-    if (filters.location)
-      slugParts.push(`${filters.location.replace(/\s+/g, "-")}-state`);
     if (filters.condition)
       slugParts.push(`${filters.condition.toLowerCase()}-condition`);
+
+    // 3. Build Location: State → Region → Suburb (with rules)
+    if (filters.state && !filters.region && !filters.suburb) {
+      // ✅ Only state
+      slugParts.push(
+        `${filters.state.toLowerCase().replace(/\s+/g, "-")}-state`
+      );
+    } else if (filters.state && filters.region && !filters.suburb) {
+      // ✅ State + Region
+      slugParts.push(
+        `${filters.state.toLowerCase().replace(/\s+/g, "-")}-state`
+      );
+      slugParts.push(
+        `${filters.region.toLowerCase().replace(/\s+/g, "-")}-region`
+      );
+    } else if (filters.state && filters.region && filters.suburb) {
+      // ✅ Full: Suburb + State + Postcode
+      slugParts.push(
+        `${filters.suburb.toLowerCase().replace(/\s+/g, "-")}-suburb`
+      );
+      slugParts.push(
+        `${filters.state.toLowerCase().replace(/\s+/g, "-")}-state`
+      );
+      if (filters.postcode) slugParts.push(filters.postcode);
+    }
+
+    console.log("🌐 Current Filters State:", filters.state);
 
     const minPrice = filters.from_price;
     const maxPrice = filters.to_price;
@@ -245,13 +332,29 @@ export default function ListingsPage({ category, location, condition }: Props) {
       const num = filters.sleeps.split("-")[0];
       slugParts.push(`over-${num}-people-sleeping-capacity`);
     }
+    // ✅ Add this for length filtering
+    const minLen = filters.from_length;
+    const maxLen = filters.to_length;
+
+    if (minLen && maxLen) {
+      slugParts.push(`between-${minLen}-${maxLen}-length-in-feet`);
+    } else if (minLen) {
+      slugParts.push(`over-${minLen}-length-in-feet`);
+    } else if (maxLen) {
+      slugParts.push(`under-${maxLen}-length-in-feet`);
+    }
 
     return `/listings/${slugParts.join("/")}`;
   };
 
   const updateURLWithFilters = (page: number) => {
+    console.log("✅ updateURLWithFilters CALLED with page:", page);
     const current = new URLSearchParams(searchParams.toString());
     current.set("paged", page.toString());
+    console.log(
+      "🧭 New URL will be:",
+      `${buildSlugPath()}?${current.toString()}`
+    );
 
     Object.entries(filters).forEach(([key, value]) => {
       if (
@@ -265,6 +368,15 @@ export default function ListingsPage({ category, location, condition }: Props) {
           "to_price",
           "sleeps",
           "condition",
+          "from_year",
+          "to_year",
+          "from_length",
+          "to_length",
+          "make",
+          "model",
+          "state",
+          "region",
+          "suburb",
         ].includes(key)
       ) {
         current.set(key, value.toString());
@@ -273,12 +385,16 @@ export default function ListingsPage({ category, location, condition }: Props) {
       }
     });
 
-    router.push(`${buildSlugPath()}?${current.toString()}`);
+    const finalUrl = `${buildSlugPath()}?${current.toString()}`;
+    console.log("🚀 Updating URL to:", finalUrl);
+    // 👇 Only update the URL. Let useEffect trigger the API
+    router.push(finalUrl);
   };
 
   const handleNextPage = () => {
     if (pagination.current_page < pagination.total_pages) {
       const nextPage = pagination.current_page + 1;
+      console.log("🟢 Triggering updateURLWithFilters with page:", nextPage);
       updateURLWithFilters(nextPage); // triggers useEffect to fetch correct page
     }
   };
@@ -289,51 +405,64 @@ export default function ListingsPage({ category, location, condition }: Props) {
       updateURLWithFilters(prevPage);
     }
   };
-
+  useEffect(() => {
+    console.log("📌 Meta Title:", metaTitle);
+    console.log("📌 Meta Description:", metaDescription);
+  }, [metaTitle, metaDescription]);
   return (
-    <section className="services section-padding pb-30 style-1">
-      <div className="container">
-        <div className="content">
-          <div className="text-sm text-gray-600 header">
-            <Link href="/" className="hover:underline">
-              Home
-            </Link>{" "}
-            &gt;
-            <span className="font-medium text-black"> Listings</span>
-          </div>
-          <h1 className="page-title">{pageTitle}</h1>
-
-          <div className="row justify-content-center mt-8">
-            <div className="col-lg-3 col-12 col-md-4">
-              <div className="filter">
-                <Suspense fallback={<div>Loading filters...</div>}>
-                  <CaravanFilter
-                    categories={categories}
-                    makes={makes}
-                    states={stateOptions}
-                    onFilterChange={handleFilterChange}
-                    currentFilters={filters}
-                  />
-                </Suspense>
-              </div>
+    <>
+      <Head>
+        <title>{metaTitle || "Listings"}</title>
+        <meta
+          name="description"
+          content={metaDescription || "Explore caravans for sale"}
+        />
+      </Head>
+      <section className="services section-padding pb-30 style-1">
+        <div className="container">
+          <div className="content">
+            <div className="text-sm text-gray-600 header">
+              <Link href="/" className="hover:underline">
+                Home
+              </Link>{" "}
+              &gt;
+              <span className="font-medium text-black"> Listings</span>
             </div>
+            <h1 className="page-title">{pageTitle}</h1>
 
-            {isLoading ? (
-              <SkeletonListing />
-            ) : (
-              <Listing
-                products={products}
-                pagination={pagination}
-                onNext={handleNextPage}
-                onPrev={handlePrevPage}
-              />
-            )}
+            <div className="row justify-content-center mt-8">
+              <div className="col-lg-3 col-12 col-md-4">
+                <div className="filter">
+                  <Suspense fallback={<div>Loading filters...</div>}>
+                    <CaravanFilter
+                      categories={categories}
+                      makes={makes}
+                      models={models}
+                      states={stateOptions}
+                      onFilterChange={handleFilterChange}
+                      currentFilters={filters}
+                    />
+                  </Suspense>
+                </div>
+              </div>
 
-            <Footer />
-            <div className="col-lg-3 rightbar-stick"></div>
+              {isLoading ? (
+                <SkeletonListing />
+              ) : (
+                <Listing
+                  products={products}
+                  pagination={pagination}
+                  onNext={handleNextPage}
+                  onPrev={handlePrevPage}
+                />
+              )}
+
+              <Footer />
+              <div className="col-lg-3 rightbar-stick"></div>
+            </div>
           </div>
         </div>
-      </div>
-    </section>
+      </section>
+    </>
   );
 }
