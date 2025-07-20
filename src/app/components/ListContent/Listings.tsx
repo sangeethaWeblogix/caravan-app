@@ -238,7 +238,7 @@ export default function ListingsPage({ category, condition, location }: Props) {
           setModels(response.data.model_options ?? []);
           setPageTitle(response.title ?? "Caravan Listings");
           setPagination(response.pagination);
-          setMetaDescription(response.seo?.metaDescription);
+          setMetaDescription(response.seo?.metadescription);
           setMetaTitle(response.seo?.metatitle);
           console.log("my", metaTitle);
 
@@ -393,6 +393,14 @@ export default function ListingsPage({ category, condition, location }: Props) {
 
   // ✨ Add this useEffect at the bottom of your component
   useEffect(() => {
+    console.log("Updating meta tags", metaTitle);
+    console.log("Updating meta des", metaDescription);
+    console.log(
+      "Updating meta image",
+
+      metaImage
+    );
+
     if (metaTitle) {
       document.title = metaTitle; // Update the page title dynamically
     }
@@ -507,15 +515,23 @@ export default function ListingsPage({ category, condition, location }: Props) {
   return (
     <>
       <Head>
-        <title>{metaTitle}</title>
-        <meta name="description" content={metaDescription} />
-        <meta property="og:title" content={metaTitle} />
-        <meta property="og:description" content={metaDescription} />
-        <meta name="twitter:title" content={metaTitle} />
-        <meta name="twitter:description" content={metaDescription} />
-        <meta property="og:image" content={metaImage} />
-        <meta name="twitter:image" content={metaImage} />
+        <title>{metaTitle || "Default Title"}</title>
+        <meta
+          name="description"
+          content={metaDescription || "Default Description"}
+        />
+        <meta property="og:title" content={metaTitle || "Default Title"} />
+        <meta
+          property="og:description"
+          content={metaDescription || "Default Description"}
+        />
+        <meta name="twitter:title" content={metaTitle || "Default Title"} />
+        <meta
+          name="twitter:description"
+          content={metaDescription || "Default Description"}
+        />
       </Head>
+
       <section className="services section-padding pb-30 style-1">
         <div className="container">
           <div className="content">
