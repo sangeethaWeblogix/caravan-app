@@ -238,10 +238,15 @@ export default function ListingsPage({ category, condition, location }: Props) {
           setModels(response.data.model_options ?? []);
           setPageTitle(response.title ?? "");
           setPagination(response.pagination);
-          setMetaTitle(response.seo?.metatitle ?? "");
-          setMetaDescription(response.seo?.metadescription ?? "");
-          setMetaImage(response.seo?.metadescription ?? "/public/favicon.ico");
-        } else {
+          setMetaTitle(
+            response.seo?.metatitle ||
+              `${appliedFilters.category} Caravans for Sale`
+          );
+          setMetaDescription(
+            response.seo?.metadescription ||
+              `Browse ${appliedFilters.category} caravans for sale.`
+          );
+          setMetaImage(response.seo?.metaimage || "/favicon.ico"); // Fallback to favicon        } else {
           setProducts([]);
           setPagination({
             current_page: 1,
@@ -389,6 +394,7 @@ export default function ListingsPage({ category, condition, location }: Props) {
 
   // ✨ Add this useEffect at the bottom of your component
   useEffect(() => {
+    // Check if the metaTitle is set dynamically
     if (metaTitle) document.title = metaTitle;
 
     // Update description meta tag
@@ -420,8 +426,8 @@ export default function ListingsPage({ category, condition, location }: Props) {
     }
     ogDesc.setAttribute("content", metaDescription || "");
 
-    // For og:image and twitter:image, use the current metaImage (fallback to /favicon.ico if not set)
-    const imageUrl = metaImage || "/favicon.ico"; // This points to the favicon.ico in the public folder
+    // Set Open Graph and Twitter Image dynamically (default to /favicon.ico)
+    const imageUrl = metaImage || "/favicon.ico";
     let ogImg = document.querySelector("meta[property='og:image']");
     if (!ogImg) {
       ogImg = document.createElement("meta");
@@ -437,7 +443,9 @@ export default function ListingsPage({ category, condition, location }: Props) {
       document.head.appendChild(twImg);
     }
     twImg.setAttribute("content", imageUrl); // Fallback image if not provided
-  }, [metaTitle, metaDescription, metaImage]); // Ensure useEffect triggers on metaImage changes
+  }, [metaTitle, metaDescription, metaImage]); // Trigger useEffect whenever these values change
+
+  // Ensure useEffect triggers on metaImage changes
   // Trigger whenever these values change
   // Run when any of these values change
 
