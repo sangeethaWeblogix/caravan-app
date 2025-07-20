@@ -238,49 +238,11 @@ export default function ListingsPage({ category, condition, location }: Props) {
           setModels(response.data.model_options ?? []);
           setPageTitle(response.title ?? "Caravan Listings");
           setPagination(response.pagination);
+          setMetaDescription(response.seo?.metaDescription);
+          setMetaTitle(response.seo?.metatitle);
+          console.log("my", metaTitle);
 
           // Dynamically build the meta title and description using all filters
-          let filtersDescription = [];
-
-          if (appliedFilters.category) {
-            filtersDescription.push(`${appliedFilters.category} Caravans`);
-          }
-          if (appliedFilters.make) {
-            filtersDescription.push(`Make: ${appliedFilters.make}`);
-          }
-          if (appliedFilters.model) {
-            filtersDescription.push(`Model: ${appliedFilters.model}`);
-          }
-          if (appliedFilters.condition) {
-            filtersDescription.push(`Condition: ${appliedFilters.condition}`);
-          }
-          if (appliedFilters.sleeps) {
-            filtersDescription.push(`Sleeps: ${appliedFilters.sleeps}`);
-          }
-          if (appliedFilters.from_price && appliedFilters.to_price) {
-            filtersDescription.push(
-              `Price: $${appliedFilters.from_price} - $${appliedFilters.to_price}`
-            );
-          }
-          if (appliedFilters.minKg && appliedFilters.maxKg) {
-            filtersDescription.push(
-              `Weight: ${appliedFilters.minKg} - ${appliedFilters.maxKg} kg`
-            );
-          }
-          if (appliedFilters.from_year && appliedFilters.to_year) {
-            filtersDescription.push(
-              `Year: ${appliedFilters.from_year} - ${appliedFilters.to_year}`
-            );
-          }
-
-          // Join the filters into a descriptive meta title and description
-          const metaTitle = `${filtersDescription.join(" | ")} for Sale`;
-          const metaDescription = `Browse ${filtersDescription.join(
-            ", "
-          )} for sale in Australia.`;
-
-          setMetaTitle(metaTitle);
-          setMetaDescription(metaDescription);
           setMetaImage(response.seo?.metaimage || "/favicon.ico");
         } else {
           setProducts([]);
@@ -431,7 +393,9 @@ export default function ListingsPage({ category, condition, location }: Props) {
 
   // ✨ Add this useEffect at the bottom of your component
   useEffect(() => {
-    if (metaTitle) document.title = metaTitle;
+    if (metaTitle) {
+      document.title = metaTitle; // Update the page title dynamically
+    }
 
     // Update description meta tag
     let descTag = document.querySelector("meta[name='description']");
@@ -479,11 +443,7 @@ export default function ListingsPage({ category, condition, location }: Props) {
       document.head.appendChild(twImg);
     }
     twImg.setAttribute("content", imageUrl); // Fallback image if not provided
-  }, [metaTitle, metaDescription, metaImage]); // Ensure useEffect triggers on metaImage changes
-
-  // Ensure useEffect triggers on metaImage changes
-  // Trigger whenever these values change
-  // Run when any of these values change
+  }, [metaTitle, metaDescription, metaImage]); // Trigger this useEffect whenever any of these values change
 
   const updateURLWithFilters = (page: number) => {
     console.log("✅ updateURLWithFilters CALLED with page:", page);
@@ -543,10 +503,7 @@ export default function ListingsPage({ category, condition, location }: Props) {
       updateURLWithFilters(prevPage);
     }
   };
-  useEffect(() => {
-    console.log("📌 Meta Title:", metaTitle);
-    console.log("📌 Meta Description:", metaDescription);
-  }, [metaTitle, metaDescription]);
+
   return (
     <>
       <Head>
