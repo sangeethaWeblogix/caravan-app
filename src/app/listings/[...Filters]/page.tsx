@@ -1,7 +1,7 @@
- // app/listings/[...slug]/page.tsx or listings.tsx
+// app/listings/[...slug]/page.tsx or listings.tsx
 "use client";
 import { usePathname } from "next/navigation";
-import ListingsPage from "@/app/components/Listings";
+import ListingsPage from "@/app/components/ListContent/Listings";
 
 const Listings = () => {
   const pathname = usePathname();

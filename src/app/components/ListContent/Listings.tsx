@@ -8,14 +8,15 @@ import {
   useRef,
   useState,
 } from "react";
-import { fetchListings } from "../../api/listings/api";
-import Listing from "../../app/components/LisitingContent";
-import CaravanFilter from "../../app/components/CaravanFilter";
-import SkeletonListing from "../../app/components/skelton";
-import Footer from "../../app/components/Footer";
+import { fetchListings } from "../../../api/listings/api";
+import Listing from "./LisitingContent";
+import CaravanFilter from "../CaravanFilter";
+import SkeletonListing from "../skelton";
+import Footer from "../Footer";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import Head from "next/head";
+import { Metadata } from "next";
 interface Product {
   id: number;
   name: string;
@@ -82,7 +83,29 @@ interface Props {
   condition?: string;
   location?: string;
 }
+export async function generateMetadata(): Promise<Metadata> {
+  const response = await fetchListings({});
 
+  const metaTitle = response?.seo?.metatitle || "Caravan Listings";
+  const metaDescription =
+    response?.seo?.metadescription ||
+    "Browse all available caravans across Australia.";
+  const metaImage = response?.seo?.metaimage || "/public/favicon.ico"; // Ensure the correct path for the image
+
+  return {
+    title: metaTitle,
+    description: metaDescription,
+    openGraph: {
+      title: metaTitle,
+      description: metaDescription,
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: metaTitle,
+      description: metaDescription,
+    },
+  };
+}
 export default function ListingsPage({ category, condition, location }: Props) {
   const pathname =
     typeof window !== "undefined" ? window.location.pathname : "";
@@ -120,7 +143,7 @@ export default function ListingsPage({ category, condition, location }: Props) {
   }, [category, condition, pathname]);
 
   const [filtersReady, setFiltersReady] = useState(false);
-
+  const [metaImage, setMetaImage] = useState("public/favicon.ico"); // Default to favicon.ico
   const [filters, setFilters] = useState<Filters>(initialFilters);
   const filtersRef = useRef<Filters>(initialFilters);
   const [products, setProducts] = useState<Product[]>([]);
@@ -346,6 +369,82 @@ export default function ListingsPage({ category, condition, location }: Props) {
 
     return `/listings/${slugParts.join("/")}`;
   };
+
+  // ✨ Add this useEffect at the bottom of your component
+  useEffect(() => {
+    // Ensure the title is updated
+    if (metaTitle) document.title = metaTitle;
+
+    // Ensure <meta name="description">
+    let descTag = document.querySelector("meta[name='description']");
+    if (!descTag) {
+      descTag = document.createElement("meta");
+      descTag.setAttribute("name", "description");
+      document.head.appendChild(descTag);
+    }
+    descTag.setAttribute(
+      "content",
+      metaDescription || "Browse caravans for sale"
+    );
+
+    // Ensure Open Graph meta tags
+    let ogTitle = document.querySelector("meta[property='og:title']");
+    if (!ogTitle) {
+      ogTitle = document.createElement("meta");
+      ogTitle.setAttribute("property", "og:title");
+      document.head.appendChild(ogTitle);
+    }
+    ogTitle.setAttribute("content", metaTitle || "Caravan Listings");
+
+    let ogDesc = document.querySelector("meta[property='og:description']");
+    if (!ogDesc) {
+      ogDesc = document.createElement("meta");
+      ogDesc.setAttribute("property", "og:description");
+      document.head.appendChild(ogDesc);
+    }
+    ogDesc.setAttribute(
+      "content",
+      metaDescription || "Browse caravans for sale"
+    );
+
+    let ogImg = document.querySelector("meta[property='og:image']");
+    if (!ogImg) {
+      ogImg = document.createElement("meta");
+      ogImg.setAttribute("property", "og:image");
+      document.head.appendChild(ogImg);
+    }
+    // Default fallback image path, replace if available from API
+    const imageUrl = metaImage || "/favicon.ico";
+    ogImg.setAttribute("content", imageUrl);
+
+    // Ensure Twitter meta tags
+    let twTitle = document.querySelector("meta[name='twitter:title']");
+    if (!twTitle) {
+      twTitle = document.createElement("meta");
+      twTitle.setAttribute("name", "twitter:title");
+      document.head.appendChild(twTitle);
+    }
+    twTitle.setAttribute("content", metaTitle || "Caravan Listings");
+
+    let twDesc = document.querySelector("meta[name='twitter:description']");
+    if (!twDesc) {
+      twDesc = document.createElement("meta");
+      twDesc.setAttribute("name", "twitter:description");
+      document.head.appendChild(twDesc);
+    }
+    twDesc.setAttribute(
+      "content",
+      metaDescription || "Browse caravans for sale"
+    );
+
+    let twImg = document.querySelector("meta[name='twitter:image']");
+    if (!twImg) {
+      twImg = document.createElement("meta");
+      twImg.setAttribute("name", "twitter:image");
+      document.head.appendChild(twImg);
+    }
+    twImg.setAttribute("content", imageUrl); // Fallback image if not provided
+  }, [metaTitle, metaDescription, metaImage]);
 
   const updateURLWithFilters = (page: number) => {
     console.log("✅ updateURLWithFilters CALLED with page:", page);
