@@ -8,11 +8,6 @@ import Navbar from "./navbar/Navbar";
 import Footer from "./footer/Footer";
 import React from "react";
 
-export const metadata = {
-  title: "Caravan",
-  description: "Find caravans for sale",
-};
-
 export default function RootLayout({
   children,
 }: {

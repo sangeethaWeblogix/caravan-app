@@ -1,6 +1,6 @@
 // app/listings/page.tsx
 import React, { Suspense } from "react";
-import Listing from "../components/Listings"; // Path to your Listing component
+import Listing from "../components/ListContent/Listings"; // Path to your Listing component
 import { fetchListings } from "@/api/listings/api";
 import { Metadata } from "next";
 

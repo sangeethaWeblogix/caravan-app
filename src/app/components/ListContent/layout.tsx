@@ -5,7 +5,7 @@ import { Swiper, SwiperSlide } from "swiper/react";
 import { Navigation } from "swiper/modules";
 import "swiper/css";
 import "swiper/css/navigation";
-import "../listings/listings.css";
+import "../../listings/listings.css";
 import Head from "next/head";
 
 interface Product {
@@ -53,9 +53,12 @@ export default function ListingContent({
   return (
     <>
       <Head>
-        <title>{metaTitle}</title> {/* Dynamically set title */}
-        <meta name="description" content={metaDescription} />{" "}
-        {/* Dynamically set description */}
+        <title>{metaTitle}</title>
+        <meta name="description" content={metaDescription} />
+        <meta property="og:title" content={metaTitle} />
+        <meta property="og:description" content={metaDescription} />
+        <meta name="twitter:title" content={metaTitle} />
+        <meta name="twitter:description" content={metaDescription} />
       </Head>
       <div className="col-lg-6 col-md-8">
         <div className="top-filter mb-10">
