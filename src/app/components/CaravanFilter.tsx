@@ -448,9 +448,7 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
     });
   };
   // ⬇️ Place this inside your component top-level
-  useEffect(() => {
-    console.log("✅ filteredSuburbs updated:", filteredSuburbs);
-  }, [filteredSuburbs]);
+  useEffect(() => {}, [filteredSuburbs]);
 
   useEffect(() => {
     const pathParts = pathname.split("/").filter(Boolean); // ex: ["listings", "queensland-state"]
@@ -735,7 +733,6 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
 
       if (selectedRegionName) slugParts.push(`${selectedRegionName}-region`);
       if (selectedPostcode) slugParts.push(selectedPostcode);
-      console.log("selectedStateName", selectedStateName);
       const match = locationInput.match(/\b\d{4}\b/);
       if (match) slugParts.push(match[0]);
 

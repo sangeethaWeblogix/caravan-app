@@ -84,6 +84,8 @@ interface Props {
   location?: string;
 }
 export async function generateMetadata(): Promise<Metadata> {
+  const imageUrl = "public/favicon.ico";
+
   const response = await fetchListings({});
 
   const metaTitle = response?.seo?.metatitle || "Caravan Listings";
@@ -97,11 +99,27 @@ export async function generateMetadata(): Promise<Metadata> {
     openGraph: {
       title: metaTitle,
       description: metaDescription,
+      images: [
+        {
+          url: imageUrl, // Add image URL inside an array
+          width: 1200, // Optional: specify the image width
+          height: 630, // Optional: specify the image height
+          alt: "Caravan Listings", // Optional: specify alt text
+        },
+      ],
     },
     twitter: {
       card: "summary_large_image",
       title: metaTitle,
       description: metaDescription,
+      images: [
+        {
+          url: imageUrl, // Add image URL inside an array
+          width: 1200, // Optional: specify the image width
+          height: 630, // Optional: specify the image height
+          alt: "Caravan Listings", // Optional: specify alt text
+        },
+      ],
     },
   };
 }
@@ -172,7 +190,6 @@ export default function ListingsPage({ category, condition, location }: Props) {
   useEffect(() => {
     const pageParam = searchParams.get("paged");
     const page = parseInt(pageParam || "1", 10);
-    console.log("📦 useEffect triggered for page:", page);
     if (!filtersReady) return; // ✅ Prevent early fetch
 
     if (pagination.current_page === page) return;
@@ -223,7 +240,7 @@ export default function ListingsPage({ category, condition, location }: Props) {
           setPagination(response.pagination);
           setMetaTitle(response.seo?.metatitle ?? "");
           setMetaDescription(response.seo?.metadescription ?? "");
-          setMetaImage(response.seo?.metadescription ?? "/favicon.ico");
+          setMetaImage(response.seo?.metadescription ?? "/public/favicon.ico");
         } else {
           setProducts([]);
           setPagination({
@@ -374,7 +391,7 @@ export default function ListingsPage({ category, condition, location }: Props) {
   useEffect(() => {
     if (metaTitle) document.title = metaTitle;
 
-    // Set meta description
+    // Update description meta tag
     let descTag = document.querySelector("meta[name='description']");
     if (!descTag) {
       descTag = document.createElement("meta");
@@ -386,7 +403,7 @@ export default function ListingsPage({ category, condition, location }: Props) {
       metaDescription || "Browse caravans for sale"
     );
 
-    // Open Graph meta tags
+    // Update Open Graph meta tags
     let ogTitle = document.querySelector("meta[property='og:title']");
     if (!ogTitle) {
       ogTitle = document.createElement("meta");
@@ -403,8 +420,8 @@ export default function ListingsPage({ category, condition, location }: Props) {
     }
     ogDesc.setAttribute("content", metaDescription || "");
 
-    // Use metaImage for Open Graph and Twitter image
-    const imageUrl = metaImage || "/favicon.ico"; // Default fallback if no image URL
+    // For og:image and twitter:image, use the current metaImage (fallback to /favicon.ico if not set)
+    const imageUrl = metaImage || "/favicon.ico"; // This points to the favicon.ico in the public folder
     let ogImg = document.querySelector("meta[property='og:image']");
     if (!ogImg) {
       ogImg = document.createElement("meta");
@@ -413,31 +430,15 @@ export default function ListingsPage({ category, condition, location }: Props) {
     }
     ogImg.setAttribute("content", imageUrl);
 
-    // Twitter meta tags
-    let twTitle = document.querySelector("meta[name='twitter:title']");
-    if (!twTitle) {
-      twTitle = document.createElement("meta");
-      twTitle.setAttribute("name", "twitter:title");
-      document.head.appendChild(twTitle);
-    }
-    twTitle.setAttribute("content", metaTitle || "");
-
-    let twDesc = document.querySelector("meta[name='twitter:description']");
-    if (!twDesc) {
-      twDesc = document.createElement("meta");
-      twDesc.setAttribute("name", "twitter:description");
-      document.head.appendChild(twDesc);
-    }
-    twDesc.setAttribute("content", metaDescription || "");
-
     let twImg = document.querySelector("meta[name='twitter:image']");
     if (!twImg) {
       twImg = document.createElement("meta");
       twImg.setAttribute("name", "twitter:image");
       document.head.appendChild(twImg);
     }
-    twImg.setAttribute("content", imageUrl); // Fallback if no image provided
-  }, [metaTitle, metaDescription, metaImage]); // Trigger whenever these values change
+    twImg.setAttribute("content", imageUrl); // Fallback image if not provided
+  }, [metaTitle, metaDescription, metaImage]); // Ensure useEffect triggers on metaImage changes
+  // Trigger whenever these values change
   // Run when any of these values change
 
   const updateURLWithFilters = (page: number) => {
