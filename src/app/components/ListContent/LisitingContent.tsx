@@ -49,8 +49,7 @@ export default function ListingContent({
   metaTitle,
   metaDescription,
 }: Props) {
-  console.log("metaa", metaTitle);
-
+  const imageUrl = "public/favicon.ico";
   return (
     <>
       <Head>
@@ -60,6 +59,7 @@ export default function ListingContent({
         <meta property="og:description" content={metaDescription} />
         <meta name="twitter:title" content={metaTitle} />
         <meta name="twitter:description" content={metaDescription} />
+        <meta name="twitter:image" content={imageUrl} /> {/* Twitter image */}
       </Head>
 
       <div className="col-lg-6 col-md-8">

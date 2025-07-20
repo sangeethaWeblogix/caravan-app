@@ -48,8 +48,6 @@ export default function ListingContent({
   metaTitle,
   metaDescription,
 }: Props) {
-  console.log("metaa", metaTitle);
-
   return (
     <>
       <Head>
