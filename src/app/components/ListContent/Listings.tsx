@@ -90,7 +90,6 @@ export async function generateMetadata(): Promise<Metadata> {
   const metaDescription =
     response?.seo?.metadescription ||
     "Browse all available caravans across Australia.";
-  const metaImage = response?.seo?.metaimage || "/public/favicon.ico"; // Ensure the correct path for the image
 
   return {
     title: metaTitle,
@@ -143,7 +142,6 @@ export default function ListingsPage({ category, condition, location }: Props) {
   }, [category, condition, pathname]);
 
   const [filtersReady, setFiltersReady] = useState(false);
-  const [metaImage, setMetaImage] = useState("public/favicon.ico"); // Default to favicon.ico
   const [filters, setFilters] = useState<Filters>(initialFilters);
   const filtersRef = useRef<Filters>(initialFilters);
   const [products, setProducts] = useState<Product[]>([]);
@@ -153,6 +151,7 @@ export default function ListingsPage({ category, condition, location }: Props) {
   const [models, setModels] = useState<MakeOption[]>([]);
   const [metaTitle, setMetaTitle] = useState("");
   const [metaDescription, setMetaDescription] = useState("");
+  const [metaImage, setMetaImage] = useState("/favicon.ico"); // Default fallback image
 
   const [stateOptions, setStateOptions] = useState<StateOption[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -224,6 +223,7 @@ export default function ListingsPage({ category, condition, location }: Props) {
           setPagination(response.pagination);
           setMetaTitle(response.seo?.metatitle ?? "");
           setMetaDescription(response.seo?.metadescription ?? "");
+          setMetaImage(response.seo?.metadescription ?? "/favicon.ico");
         } else {
           setProducts([]);
           setPagination({
@@ -372,10 +372,9 @@ export default function ListingsPage({ category, condition, location }: Props) {
 
   // ✨ Add this useEffect at the bottom of your component
   useEffect(() => {
-    // Ensure the title is updated
     if (metaTitle) document.title = metaTitle;
 
-    // Ensure <meta name="description">
+    // Set meta description
     let descTag = document.querySelector("meta[name='description']");
     if (!descTag) {
       descTag = document.createElement("meta");
@@ -387,14 +386,14 @@ export default function ListingsPage({ category, condition, location }: Props) {
       metaDescription || "Browse caravans for sale"
     );
 
-    // Ensure Open Graph meta tags
+    // Open Graph meta tags
     let ogTitle = document.querySelector("meta[property='og:title']");
     if (!ogTitle) {
       ogTitle = document.createElement("meta");
       ogTitle.setAttribute("property", "og:title");
       document.head.appendChild(ogTitle);
     }
-    ogTitle.setAttribute("content", metaTitle || "Caravan Listings");
+    ogTitle.setAttribute("content", metaTitle || "");
 
     let ogDesc = document.querySelector("meta[property='og:description']");
     if (!ogDesc) {
@@ -402,29 +401,26 @@ export default function ListingsPage({ category, condition, location }: Props) {
       ogDesc.setAttribute("property", "og:description");
       document.head.appendChild(ogDesc);
     }
-    ogDesc.setAttribute(
-      "content",
-      metaDescription || "Browse caravans for sale"
-    );
+    ogDesc.setAttribute("content", metaDescription || "");
 
+    // Use metaImage for Open Graph and Twitter image
+    const imageUrl = metaImage || "/favicon.ico"; // Default fallback if no image URL
     let ogImg = document.querySelector("meta[property='og:image']");
     if (!ogImg) {
       ogImg = document.createElement("meta");
       ogImg.setAttribute("property", "og:image");
       document.head.appendChild(ogImg);
     }
-    // Default fallback image path, replace if available from API
-    const imageUrl = metaImage || "/favicon.ico";
     ogImg.setAttribute("content", imageUrl);
 
-    // Ensure Twitter meta tags
+    // Twitter meta tags
     let twTitle = document.querySelector("meta[name='twitter:title']");
     if (!twTitle) {
       twTitle = document.createElement("meta");
       twTitle.setAttribute("name", "twitter:title");
       document.head.appendChild(twTitle);
     }
-    twTitle.setAttribute("content", metaTitle || "Caravan Listings");
+    twTitle.setAttribute("content", metaTitle || "");
 
     let twDesc = document.querySelector("meta[name='twitter:description']");
     if (!twDesc) {
@@ -432,10 +428,7 @@ export default function ListingsPage({ category, condition, location }: Props) {
       twDesc.setAttribute("name", "twitter:description");
       document.head.appendChild(twDesc);
     }
-    twDesc.setAttribute(
-      "content",
-      metaDescription || "Browse caravans for sale"
-    );
+    twDesc.setAttribute("content", metaDescription || "");
 
     let twImg = document.querySelector("meta[name='twitter:image']");
     if (!twImg) {
@@ -443,8 +436,9 @@ export default function ListingsPage({ category, condition, location }: Props) {
       twImg.setAttribute("name", "twitter:image");
       document.head.appendChild(twImg);
     }
-    twImg.setAttribute("content", imageUrl); // Fallback image if not provided
-  }, [metaTitle, metaDescription, metaImage]);
+    twImg.setAttribute("content", imageUrl); // Fallback if no image provided
+  }, [metaTitle, metaDescription, metaImage]); // Trigger whenever these values change
+  // Run when any of these values change
 
   const updateURLWithFilters = (page: number) => {
     console.log("✅ updateURLWithFilters CALLED with page:", page);
