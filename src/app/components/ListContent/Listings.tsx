@@ -203,11 +203,11 @@ export default function ListingsPage({ category, condition, location }: Props) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams, pagination, filtersReady]);
   console.log(location);
+
   const loadListings = useCallback(
     async (page = 1, appliedFilters: Filters = filters) => {
       setIsLoading(true);
       window.scrollTo({ top: 0, behavior: "smooth" });
-      console.log("Sending Filters to API", appliedFilters);
 
       try {
         const response = await fetchListings({
@@ -236,11 +236,52 @@ export default function ListingsPage({ category, condition, location }: Props) {
           setMakes(response.data.make_options);
           setStateOptions(response.data.states ?? []);
           setModels(response.data.model_options ?? []);
-          setPageTitle(response.title ?? "");
+          setPageTitle(response.title ?? "Caravan Listings");
           setPagination(response.pagination);
-          setMetaTitle(response.seo?.metatitle ?? "");
-          setMetaDescription(response.seo?.metadescription ?? "");
-          setMetaImage(response.seo?.metadescription ?? "/public/favicon.ico");
+
+          // Dynamically build the meta title and description using all filters
+          let filtersDescription = [];
+
+          if (appliedFilters.category) {
+            filtersDescription.push(`${appliedFilters.category} Caravans`);
+          }
+          if (appliedFilters.make) {
+            filtersDescription.push(`Make: ${appliedFilters.make}`);
+          }
+          if (appliedFilters.model) {
+            filtersDescription.push(`Model: ${appliedFilters.model}`);
+          }
+          if (appliedFilters.condition) {
+            filtersDescription.push(`Condition: ${appliedFilters.condition}`);
+          }
+          if (appliedFilters.sleeps) {
+            filtersDescription.push(`Sleeps: ${appliedFilters.sleeps}`);
+          }
+          if (appliedFilters.from_price && appliedFilters.to_price) {
+            filtersDescription.push(
+              `Price: $${appliedFilters.from_price} - $${appliedFilters.to_price}`
+            );
+          }
+          if (appliedFilters.minKg && appliedFilters.maxKg) {
+            filtersDescription.push(
+              `Weight: ${appliedFilters.minKg} - ${appliedFilters.maxKg} kg`
+            );
+          }
+          if (appliedFilters.from_year && appliedFilters.to_year) {
+            filtersDescription.push(
+              `Year: ${appliedFilters.from_year} - ${appliedFilters.to_year}`
+            );
+          }
+
+          // Join the filters into a descriptive meta title and description
+          const metaTitle = `${filtersDescription.join(" | ")} for Sale`;
+          const metaDescription = `Browse ${filtersDescription.join(
+            ", "
+          )} for sale in Australia.`;
+
+          setMetaTitle(metaTitle);
+          setMetaDescription(metaDescription);
+          setMetaImage(response.seo?.metaimage || "/favicon.ico");
         } else {
           setProducts([]);
           setPagination({
@@ -259,6 +300,7 @@ export default function ListingsPage({ category, condition, location }: Props) {
     },
     [filters, pagination.per_page]
   );
+
   // useEffect(() => {
   //   if (
   //     hasSearched ||
@@ -438,6 +480,8 @@ export default function ListingsPage({ category, condition, location }: Props) {
     }
     twImg.setAttribute("content", imageUrl); // Fallback image if not provided
   }, [metaTitle, metaDescription, metaImage]); // Ensure useEffect triggers on metaImage changes
+
+  // Ensure useEffect triggers on metaImage changes
   // Trigger whenever these values change
   // Run when any of these values change
 
@@ -506,11 +550,14 @@ export default function ListingsPage({ category, condition, location }: Props) {
   return (
     <>
       <Head>
-        <title>{metaTitle || "Listings"}</title>
-        <meta
-          name="description"
-          content={metaDescription || "Explore caravans for sale"}
-        />
+        <title>{metaTitle}</title>
+        <meta name="description" content={metaDescription} />
+        <meta property="og:title" content={metaTitle} />
+        <meta property="og:description" content={metaDescription} />
+        <meta name="twitter:title" content={metaTitle} />
+        <meta name="twitter:description" content={metaDescription} />
+        <meta property="og:image" content={metaImage} />
+        <meta name="twitter:image" content={metaImage} />
       </Head>
       <section className="services section-padding pb-30 style-1">
         <div className="container">
