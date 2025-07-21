@@ -3,7 +3,7 @@ import Home from "./home";
 import { Metadata } from "next";
 
 export async function generateMetadata(): Promise<Metadata> {
-  const metaTitle = "Caravan For sale";
+  const metaTitle = "Caravan ";
   const metaDescription = "Browse all available caravans across Australia.";
 
   return {
