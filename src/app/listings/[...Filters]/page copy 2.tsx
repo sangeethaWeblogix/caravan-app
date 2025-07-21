@@ -6,27 +6,8 @@ import { headers } from "next/headers";
 // ✅ Generate SEO metadata for social previews
 export async function generateMetadata(): Promise<Metadata> {
   const headersList = await headers();
-  const referer = headersList.get("referer");
-
-  if (!referer) {
-    console.warn("⚠️ Missing referer. Cannot generate metadata.");
-    return {
-      title: "Caravans for Sale",
-      description: "Explore caravans in Australia",
-    };
-  }
-
-  let url: URL;
-  try {
-    url = new URL(referer);
-  } catch (error) {
-    console.error("❌ Invalid referer URL:", referer);
-    return {
-      title: "Caravans for Sale",
-      description: "Explore caravans in Australia",
-    };
-  }
-
+  const referer = headersList.get("referer") || "";
+  const url = new URL(referer);
   const searchParams = url.searchParams;
   const pathParts = url.pathname.split("/listings/")[1]?.split("/") || [];
 
@@ -89,6 +70,7 @@ export async function generateMetadata(): Promise<Metadata> {
     };
   }
 
+  console.log("✅ SEO meta", res.seo.metatitle, res.seo.metadescription);
   return {
     title: res.seo.metatitle || "Caravans for Sale",
     description: res.seo.metadescription || "Explore caravans in Australia",

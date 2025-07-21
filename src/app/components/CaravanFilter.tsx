@@ -13,6 +13,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useSearchParams } from "next/navigation";
 import { fetchProductList } from "@/api/productList/api";
 import { fetchModelsByMake } from "@/api/model/api";
+import "./filter.css";
 
 type LocationSuggestion = {
   key: string;
@@ -600,7 +601,7 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
     // ✅ Trigger filter after all values are set
     setTimeout(() => {
       onFilterChange({
-        category: categoryMatch?.slug,
+        category: selectedCategory || undefined,
         location: selectedStateName || undefined,
         make: selectedMake || undefined,
         condition: selectedConditionName || undefined,
@@ -725,7 +726,11 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
       if (selectedConditionName)
         slugParts.push(`${selectedConditionName.toLowerCase()}-condition`);
 
-      if (selectedCategory) slugParts.push(`${selectedCategory}-category`);
+      const effectiveCategory = selectedCategory || currentFilters.category;
+      if (effectiveCategory) {
+        slugParts.push(`${effectiveCategory}-category`);
+      }
+
       if (selectedSuburbName) slugParts.push(`${selectedSuburbName}-suburb`);
 
       if (selectedStateName)
@@ -755,9 +760,9 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
       else if (lengthTo) slugParts.push(`under-${lengthTo}-length-in-feet`);
 
       // ✅ FIX: Move this up before the URL is formed
-      if (selectedMake) slugParts.push(selectedMake);
-
-      if (selectedModel) slugParts.push(selectedModel); // ✅ add model to URL slug
+      // 🥇 Push MAKE and MODEL FIRST
+      // insert model after make
+      // ✅ add model to URL slug
 
       // ✅ Then generate URL
       let slugifiedURL = `/listings/${slugParts.join("/")}`
@@ -855,17 +860,44 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
           className="filter-accordion"
           onClick={() => toggle(setCategoryOpen)}
         >
-          <h5 className="cfs-filter-label">
-            Category
-            {selectedCategoryName && (
-              <span className="filter-accordion-items">
-                : {selectedCategoryName}
-              </span>
-            )}
-          </h5>
+          <h5 className="cfs-filter-label">Category</h5>
           <BiChevronDown />
         </div>
 
+        {/* ✅ Selected Category Chip */}
+        {selectedCategoryName && (
+          <div className="filter-chip">
+            <span>{selectedCategoryName}</span>
+            <span
+              className="filter-chip-close"
+              onClick={() => {
+                setSelectedCategory(null);
+                setSelectedCategoryName(null);
+
+                const updatedFilters: Filters = {
+                  ...currentFilters,
+                  category: undefined,
+                };
+
+                setFilters(updatedFilters);
+                onFilterChange(updatedFilters);
+
+                const segments = pathname.split("/").filter(Boolean);
+                const newSegments = segments.filter(
+                  (s) => !s.endsWith("-category")
+                );
+                const newPath = `/${newSegments.join("/")}`;
+                router.push(
+                  newPath + (searchParams.toString() ? `?${searchParams}` : "")
+                );
+              }}
+            >
+              ×
+            </span>
+          </div>
+        )}
+
+        {/* ✅ Dropdown menu */}
         {categoryOpen && (
           <div className="filter-accordion-items">
             {Array.isArray(categories) &&
@@ -887,6 +919,7 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
           </div>
         )}
       </div>
+
       {/* Location Accordion */}
       <div className="cs-full_width_section">
         <div className="filter-accordion" onClick={() => toggle(setStateOpen)}>
@@ -1107,11 +1140,19 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
                   }`}
                   onClick={() => {
                     setSelectedMake(make.slug);
-                    setSelectedMakeName(make.name); // Show name near label
+                    setSelectedMakeName(make.name);
                     setMakeOpen(false);
                     setSelectedModel(null);
                     setSelectedModelName(null);
-                    setModel([]); // Reset model list
+                    setModel([]);
+
+                    const updatedFilters = {
+                      ...currentFilters, // important to keep previous category, condition, etc.
+                      make: make.slug,
+                      model: undefined,
+                    };
+                    setFilters(updatedFilters);
+                    onFilterChange(updatedFilters); // 🚀 go to ListingsPage
                   }}
                 >
                   {make.name}
