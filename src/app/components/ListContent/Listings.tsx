@@ -82,17 +82,11 @@ interface Props {
   category?: string;
   condition?: string;
   location?: string;
-  metaTitle: string;
-  metaDescription: string;
+  metaTitle?: string;
+  metaDescription?: string;
 }
 
-export default function ListingsPage({
-  category,
-  condition,
-  location,
-  metaTitle,
-  metaDescription,
-}: Props) {
+export default function ListingsPage({ category, condition, location }: Props) {
   const pathname =
     typeof window !== "undefined" ? window.location.pathname : "";
 
@@ -136,8 +130,8 @@ export default function ListingsPage({
   const [categories, setCategories] = useState<Category[]>([]);
   const [makes, setMakes] = useState<MakeOption[]>([]);
   const [models, setModels] = useState<MakeOption[]>([]);
-  const [dynamicMetaTitle, setDynamicMetaTitle] = useState("");
-  const [dynamicMetaDescription, setDynamicMetaDescription] = useState("");
+  const [metaTitle, setMetaTitle] = useState("");
+  const [metaDescription, setMetaDescription] = useState("");
   const [metaImage, setMetaImage] = useState("/favicon.ico"); // Default fallback image
 
   const [stateOptions, setStateOptions] = useState<StateOption[]>([]);
@@ -207,9 +201,9 @@ export default function ListingsPage({
           setModels(response.data.model_options ?? []);
           setPageTitle(response.title ?? "Caravan Listings");
           setPagination(response.pagination);
-          setDynamicMetaDescription(response.seo?.metadescription);
-          setDynamicMetaTitle(response.seo?.metatitle);
-          console.log("my", dynamicMetaTitle);
+          setMetaDescription(response.seo?.metadescription);
+          setMetaTitle(response.seo?.metatitle);
+          console.log("my", metaTitle);
 
           // Dynamically build the meta title and description using all filters
           setMetaImage(response.seo?.metaimage || "/favicon.ico");
@@ -362,16 +356,16 @@ export default function ListingsPage({
 
   // ✨ Add this useEffect at the bottom of your component
   useEffect(() => {
-    console.log("Updating meta tags", dynamicMetaTitle);
-    console.log("Updating meta des", dynamicMetaDescription);
+    console.log("Updating meta tags", metaTitle);
+    console.log("Updating meta des", metaDescription);
     console.log(
       "Updating meta image",
 
       metaImage
     );
 
-    if (dynamicMetaTitle) {
-      document.title = dynamicMetaTitle; // Update the page title dynamically
+    if (metaTitle) {
+      document.title = metaTitle; // Update the page title dynamically
     }
 
     // Update description meta tag
@@ -383,7 +377,7 @@ export default function ListingsPage({
     }
     descTag.setAttribute(
       "content",
-      dynamicMetaDescription || "Browse caravans for sale"
+      metaDescription || "Browse caravans for sale"
     );
 
     // Update Open Graph meta tags
@@ -393,7 +387,7 @@ export default function ListingsPage({
       ogTitle.setAttribute("property", "og:title");
       document.head.appendChild(ogTitle);
     }
-    ogTitle.setAttribute("content", dynamicMetaTitle || "");
+    ogTitle.setAttribute("content", metaTitle || "");
 
     let ogDesc = document.querySelector("meta[property='og:description']");
     if (!ogDesc) {
@@ -401,7 +395,7 @@ export default function ListingsPage({
       ogDesc.setAttribute("property", "og:description");
       document.head.appendChild(ogDesc);
     }
-    ogDesc.setAttribute("content", dynamicMetaDescription || "");
+    ogDesc.setAttribute("content", metaDescription || "");
 
     // For og:image and twitter:image, use the current metaImage (fallback to /favicon.ico if not set)
     const imageUrl = metaImage || "/favicon.ico"; // This points to the favicon.ico in the public folder
@@ -420,7 +414,7 @@ export default function ListingsPage({
       document.head.appendChild(twImg);
     }
     twImg.setAttribute("content", imageUrl); // Fallback image if not provided
-  }, [dynamicMetaTitle, dynamicMetaDescription, metaImage]); // Trigger this useEffect whenever any of these values change
+  }, [metaTitle, metaDescription, metaImage]); // Trigger this useEffect whenever any of these values change
 
   const updateURLWithFilters = (page: number) => {
     console.log("✅ updateURLWithFilters CALLED with page:", page);
@@ -460,35 +454,25 @@ export default function ListingsPage({
     }
   };
 
+  console.log("metaaa", metaTitle);
   return (
     <>
       <Head>
-        <title>{dynamicMetaTitle || metaTitle || "Default Title"}</title>
+        <title>{metaTitle || "Default Title"}</title>
+
         <meta
           name="description"
-          content={
-            dynamicMetaDescription || metaDescription || "Default Description"
-          }
+          content={metaDescription || "Default Description"}
         />
-        <meta
-          property="og:title"
-          content={dynamicMetaTitle || metaTitle || "Default Title"}
-        />
+        <meta property="og:title" content={metaTitle || "Default Title"} />
         <meta
           property="og:description"
-          content={
-            dynamicMetaDescription || metaDescription || "Default Description"
-          }
+          content={metaDescription || "Default Description"}
         />
-        <meta
-          name="twitter:title"
-          content={dynamicMetaTitle || metaTitle || "Default Title"}
-        />
+        <meta name="twitter:title" content={metaTitle || "Default Title"} />
         <meta
           name="twitter:description"
-          content={
-            dynamicMetaDescription || metaDescription || "Default Description"
-          }
+          content={metaDescription || "Default Description"}
         />
       </Head>
 
@@ -528,8 +512,8 @@ export default function ListingsPage({
                   pagination={pagination}
                   onNext={handleNextPage}
                   onPrev={handlePrevPage}
-                  metaDescription={dynamicMetaDescription || metaDescription}
-                  metaTitle={dynamicMetaTitle || metaTitle}
+                  metaDescription={metaDescription}
+                  metaTitle={metaTitle}
                 />
               )}
 

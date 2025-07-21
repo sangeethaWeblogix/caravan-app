@@ -3,6 +3,7 @@ import React, { Suspense } from "react";
 import Listing from "../components/ListContent/Listings"; // Path to your Listing component
 import { fetchListings } from "@/api/listings/api";
 import { Metadata } from "next";
+import Head from "next/head";
 
 // This function will run server-side to dynamically generate metadata
 export async function generateMetadata(): Promise<Metadata> {
@@ -55,10 +56,21 @@ const ListingsPage = ({
   metaTitle: string;
   metaDescription: string;
 }) => {
+  console.log(
+    "Generating metadata for listings page",
+    metaTitle,
+    metaDescription
+  );
   return (
-    <Suspense fallback={<div>Loading listings...</div>}>
-      <Listing metaTitle={metaTitle} metaDescription={metaDescription} />
-    </Suspense>
+    <>
+      <Head>
+        <title>{metaTitle}</title>
+        <meta name="description" content={metaDescription} />
+      </Head>
+      <Suspense fallback={<div>Loading listings...</div>}>
+        <Listing metaTitle={metaTitle} metaDescription={metaDescription} />
+      </Suspense>
+    </>
   );
 };
 
