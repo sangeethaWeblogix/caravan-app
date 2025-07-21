@@ -455,45 +455,24 @@ export default function ListingsPage({ category, condition, location }: Props) {
 
   const updateURLWithFilters = (page: number) => {
     console.log("✅ updateURLWithFilters CALLED with page:", page);
-    const current = new URLSearchParams(searchParams.toString());
-    current.set("paged", page.toString());
-    console.log(
-      "🧭 New URL will be:",
-      `${buildSlugPath()}?${current.toString()}`
-    );
 
+    const current = new URLSearchParams(searchParams.toString());
+    current.set("paged", page.toString()); // Set the page number in the query params
+
+    // Add other filters but exclude 'category' since it's in the path
     Object.entries(filters).forEach(([key, value]) => {
-      if (
-        value &&
-        ![
-          "category",
-          "location",
-          "minKg",
-          "maxKg",
-          "from_price",
-          "to_price",
-          "sleeps",
-          "condition",
-          "from_year",
-          "to_year",
-          "from_length",
-          "to_length",
-          "make",
-          "model",
-          "state",
-          "region",
-          "suburb",
-        ].includes(key)
-      ) {
+      if (value && key !== "category" && value !== "") {
         current.set(key, value.toString());
       } else {
         current.delete(key);
       }
     });
 
+    // Construct the final URL
     const finalUrl = `${buildSlugPath()}?${current.toString()}`;
     console.log("🚀 Updating URL to:", finalUrl);
-    // 👇 Only update the URL. Let useEffect trigger the API
+
+    // Update the URL without shallow option
     router.push(finalUrl);
   };
 
@@ -514,6 +493,24 @@ export default function ListingsPage({ category, condition, location }: Props) {
 
   return (
     <>
+      <Head>
+        <title>{metaTitle || "Default Title"}</title>
+        <meta
+          name="description"
+          content={metaDescription || "Default Description"}
+        />
+        <meta property="og:title" content={metaTitle || "Default Title"} />
+        <meta
+          property="og:description"
+          content={metaDescription || "Default Description"}
+        />
+        <meta name="twitter:title" content={metaTitle || "Default Title"} />
+        <meta
+          name="twitter:description"
+          content={metaDescription || "Default Description"}
+        />
+      </Head>
+
       <section className="services section-padding pb-30 style-1">
         <div className="container">
           <div className="content">
