@@ -514,24 +514,6 @@ export default function ListingsPage({ category, condition, location }: Props) {
 
   return (
     <>
-      <Head>
-        <title>{metaTitle || "Default Title"}</title>
-        <meta
-          name="description"
-          content={metaDescription || "Default Description"}
-        />
-        <meta property="og:title" content={metaTitle || "Default Title"} />
-        <meta
-          property="og:description"
-          content={metaDescription || "Default Description"}
-        />
-        <meta name="twitter:title" content={metaTitle || "Default Title"} />
-        <meta
-          name="twitter:description"
-          content={metaDescription || "Default Description"}
-        />
-      </Head>
-
       <section className="services section-padding pb-30 style-1">
         <div className="container">
           <div className="content">
