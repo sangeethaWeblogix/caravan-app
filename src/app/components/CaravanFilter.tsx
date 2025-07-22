@@ -897,9 +897,9 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
       if (
         !isModalOpen &&
         filtersInitialized.current &&
-        suburbClickedRef.current
+        (suburbClickedRef.current || atmFrom || atmTo)
       ) {
-        suburbClickedRef.current = false; // ✅ reset guard
+        suburbClickedRef.current = false;
         router.push(slugifiedURL);
       } else {
         filtersInitialized.current = true;
@@ -1734,9 +1734,11 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
             <select
               className="cfs-select-input"
               value={minPrice?.toString() || ""}
-              onChange={(e) =>
-                setMinPrice(e.target.value ? parseInt(e.target.value) : null)
-              }
+              onChange={(e) => {
+                const val = e.target.value ? parseInt(e.target.value) : null;
+                setMinPrice(val);
+                suburbClickedRef.current = true; // ✅ Trigger URL update
+              }}
             >
               <option value="">Min</option>
               {price.map((value, idx) => (
@@ -1751,9 +1753,11 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
             <select
               className="cfs-select-input"
               value={maxPrice?.toString() || ""}
-              onChange={(e) =>
-                setMaxPrice(e.target.value ? parseInt(e.target.value) : null)
-              }
+              onChange={(e) => {
+                const val = e.target.value ? parseInt(e.target.value) : null;
+                setMaxPrice(val);
+                suburbClickedRef.current = true; // ✅ Trigger URL update
+              }}
             >
               <option value="">Max</option>
               {price.map((value, idx) => (
@@ -1867,6 +1871,7 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
                 onClick={() => {
                   setSelectedConditionName(condition);
                   setConditionOpen(false);
+                  suburbClickedRef.current = true;
                 }}
               >
                 {condition}
@@ -1929,6 +1934,7 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
                 onClick={() => {
                   setSelectedSleepName(String(sleepValue));
                   setSleepsOpen(false);
+                  suburbClickedRef.current = true;
                 }}
               >
                 {sleepValue} People
@@ -1946,9 +1952,11 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
             <select
               className="cfs-select-input"
               value={yearFrom?.toString() || ""}
-              onChange={(e) =>
-                setYearFrom(e.target.value ? parseInt(e.target.value) : null)
-              }
+              onChange={(e) => {
+                const val = e.target.value ? parseInt(e.target.value) : null;
+                setYearFrom(val);
+                suburbClickedRef.current = true; // ✅ Trigger URL update
+              }}
             >
               <option value="">Min</option>
               {years.map((value) => (
@@ -1963,9 +1971,11 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
             <select
               className="cfs-select-input"
               value={yearTo?.toString() || ""}
-              onChange={(e) =>
-                setYearTo(e.target.value ? parseInt(e.target.value) : null)
-              }
+              onChange={(e) => {
+                const val = e.target.value ? parseInt(e.target.value) : null;
+                setYearTo(val);
+                suburbClickedRef.current = true; // ✅ Trigger URL update
+              }}
             >
               <option value="">Max</option>
               {years.map((value) => (
@@ -2027,6 +2037,8 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
               onChange={(e) => {
                 const val = e.target.value ? parseInt(e.target.value) : null;
                 setLengthFrom(val);
+                suburbClickedRef.current = true; // ✅ Trigger URL update
+
                 onFilterChange({
                   ...filters,
                   from_length: val ?? undefined,
@@ -2048,9 +2060,11 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
             <select
               className="cfs-select-input"
               value={lengthTo?.toString() || ""}
-              onChange={(e) =>
-                setLengthTo(e.target.value ? parseInt(e.target.value) : null)
-              }
+              onChange={(e) => {
+                const val = e.target.value ? parseInt(e.target.value) : null;
+                setLengthTo(val);
+                suburbClickedRef.current = true; // ✅ Trigger URL update
+              }}
             >
               <option value="">Max</option>
               {length.map((value, idx) => (
