@@ -203,6 +203,23 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
     };
     loadFilters();
   }, []);
+
+  useEffect(() => {
+    const slug = pathname.split("/listings/")[1];
+    const segments = slug?.split("/") || [];
+
+    const categorySegment = segments.find((s) => s.endsWith("-category"));
+
+    if (categorySegment) {
+      const categorySlug = categorySegment.replace("-category", "");
+      const match = categories.find((c) => c.slug === categorySlug);
+      if (match) {
+        setSelectedCategory(categorySlug);
+        setSelectedCategoryName(match.name);
+      }
+    }
+  }, [pathname, categories]);
+
   useEffect(() => {
     if (selectedRegion && selectedState) {
       const slugifiedState = selectedState.toLowerCase().replace(/\s+/g, "-");
@@ -1441,29 +1458,36 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
                     setSelectedModelName(null);
                     setModel([]);
 
-                    // ✅ Preserve category if already present
-                    const preservedCategory =
-                      selectedCategory || currentFilters.category;
+                    // ✅ Re-fetch preserved category safely
+                    const preservedCategorySlug =
+                      selectedCategory || currentFilters.category || "";
 
-                    const updatedFilters = {
+                    const categoryObj = categories.find(
+                      (cat) => cat.slug === preservedCategorySlug
+                    );
+
+                    if (preservedCategorySlug) {
+                      setSelectedCategory(preservedCategorySlug);
+                    }
+                    if (categoryObj) {
+                      setSelectedCategoryName(categoryObj.name);
+                    }
+
+                    const updatedFilters: Filters = {
                       ...currentFilters,
                       make: make.slug,
-                      category: preservedCategory, // ✅ Safe fallback
+                      category: preservedCategorySlug || undefined,
                       model: undefined,
                     };
 
                     setFilters(updatedFilters);
                     onFilterChange(updatedFilters);
 
+                    // ✅ Update URL with make + category
                     const slugParts = [];
-
-                    // ✅ Add make
                     if (make.slug) slugParts.push(make.slug);
-
-                    // ✅ Add category only if it exists
-                    if (preservedCategory) {
-                      slugParts.push(`${preservedCategory}-category`);
-                    }
+                    if (preservedCategorySlug)
+                      slugParts.push(`${preservedCategorySlug}-category`);
 
                     const url = `/listings/${slugParts.join("/")}`;
                     router.push(url);
@@ -1617,7 +1641,7 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
         </div>
       </div>
       {/* 8883944599
-   9524163042 */}
+    9524163042 */}
       {/* Condition Accordion */}
       <div className="cs-full_width_section">
         <div
