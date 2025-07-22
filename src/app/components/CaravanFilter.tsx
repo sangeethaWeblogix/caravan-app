@@ -657,7 +657,6 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
       let stateSlug = "";
       let postcode = "";
 
-      // Handle both 3-part and 4-part URIs
       if (parts.length === 4) {
         [suburbSlug, regionSlug, stateSlug, postcode] = parts;
       } else if (parts.length === 3) {
@@ -671,7 +670,7 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
         postcode,
       });
 
-      // Match state by value or from region name
+      // Match state from slug or region
       const matchedState = states.find((state) => {
         const normalized = state.name.toLowerCase().replace(/\s+/g, "-");
         return (
@@ -691,7 +690,7 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
       console.log(
         "✅ Matched state:",
         matchedState.name,
-        +"→",
+        "→",
         matchedState.value
       );
 
@@ -700,24 +699,25 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
         (region) => region.value.toLowerCase() === regionSlug.toLowerCase()
       );
 
-      // Fallback: use all suburbs from all regions under this state
       if (!regionMatch) {
-        console.warn("⚠️ No matching region found — using all state suburbs");
-
-        const allSuburbs =
-          matchedState.regions?.flatMap((region) => region.suburbs || []) ?? [];
-
+        console.warn("⚠️ No matching region found — skipping region");
         regionMatch = {
-          name: matchedState.name,
-          value: matchedState.value,
-          suburbs: allSuburbs,
+          name: "",
+          value: "",
+          suburbs: [],
         };
-
-        console.log("📦 Fallback suburbs from state:", allSuburbs);
       }
 
-      // Match suburb by postcode
-      const suburbMatch = regionMatch.suburbs?.find((sub) =>
+      // Fallback: search in all suburbs under the state
+      const allStateSuburbs =
+        matchedState.regions?.flatMap((r) => r.suburbs || []) ?? [];
+
+      const availableSuburbs =
+        Array.isArray(regionMatch.suburbs) && regionMatch.suburbs.length > 0
+          ? regionMatch.suburbs
+          : allStateSuburbs;
+
+      const suburbMatch = availableSuburbs.find((sub) =>
         sub.value.includes(postcode)
       );
 
@@ -726,27 +726,25 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
         return;
       }
 
-      // ✅ Set selected fields
+      // ✅ Set values
       setSelectedState(matchedState.value);
       setSelectedStateName(matchedState.name);
-      setSelectedRegionName(regionMatch.name);
+      setSelectedRegionName(regionMatch.name || "");
       setSelectedSuburbName(suburbMatch.name);
       setSelectedPostcode(postcode);
       setLocationInput(`${suburbMatch.name} ${postcode}`);
 
-      // ✅ Update filters and trigger change
       const updatedFilters = {
         ...filters,
         suburb: suburbMatch.name.toLowerCase(),
         postcode,
-        region: regionMatch.name,
+        region: regionMatch.name || "",
         state: matchedState.name,
       };
 
       setFilters(updatedFilters);
       onFilterChange(updatedFilters);
 
-      // ✅ Cleanup flags
       suburbClickedRef.current = true;
       filtersInitialized.current = true;
       setIsModalOpen(false);
@@ -848,8 +846,6 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
 
       if (selectedRegionName) slugParts.push(`${selectedRegionName}-region`);
       if (selectedPostcode) slugParts.push(selectedPostcode);
-      const match = locationInput.match(/\b\d{4}\b/);
-      if (match) slugParts.push(match[0]);
 
       if (minPrice && maxPrice)
         slugParts.push(`between-${minPrice}-${maxPrice}`);
@@ -1070,6 +1066,17 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
       console.log("select:", selectedStateName);
     }
   }, [selectedSuburbName, selectedRegionName, selectedStateName]);
+  const hasCategoryBeenSetRef = useRef(false);
+
+  useEffect(() => {
+    if (!hasCategoryBeenSetRef.current && selectedCategory) {
+      hasCategoryBeenSetRef.current = true;
+      onFilterChange({
+        ...filters,
+        category: selectedCategory,
+      });
+    }
+  }, [selectedCategory]);
 
   // useEffect(() => {
   //   const timeout = setTimeout(() => {
