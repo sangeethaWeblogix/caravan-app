@@ -90,6 +90,7 @@ export default function ListingsPage({ category, condition, location }: Props) {
   const pathname =
     typeof window !== "undefined" ? window.location.pathname : "";
 
+  // ✅ FIX: Add suburb/postcode extraction to initialFilters
   const initialFilters: Filters = useMemo(() => {
     const parsedCategory = category?.replace("-category", "") || undefined;
     const parsedCondition = condition?.replace("-condition", "") || undefined;
@@ -99,11 +100,20 @@ export default function ListingsPage({ category, condition, location }: Props) {
     const slugParts = pathname.split("/listings/")[1]?.split("/") || [];
 
     const statePart = slugParts.find((part) => part.endsWith("-state"));
+    const regionPart = slugParts.find((part) => part.endsWith("-region"));
+    const suburbPart = slugParts.find((part) => part.endsWith("-suburb"));
+    const postcodePart = slugParts.find((part) => /^\\d{4}$/.test(part));
     const categoryPart = slugParts.find((part) => part.includes("-category"));
     const conditionPart = slugParts.find((part) => part.includes("-condition"));
 
-    const knownSlugs = [statePart, categoryPart, conditionPart].filter(Boolean);
-
+    const knownSlugs = [
+      statePart,
+      regionPart,
+      suburbPart,
+      postcodePart,
+      categoryPart,
+      conditionPart,
+    ].filter(Boolean);
     const unknownSlugs = slugParts.filter((slug) => !knownSlugs.includes(slug));
 
     const make = unknownSlugs[0];
@@ -117,6 +127,15 @@ export default function ListingsPage({ category, condition, location }: Props) {
       ...(parsedSleep && { sleeps: parsedSleep }),
       ...(statePart && {
         state: statePart.replace("-state", "").replace(/-/g, " "),
+      }),
+      ...(regionPart && {
+        region: regionPart.replace("-region", "").replace(/-/g, " "),
+      }),
+      ...(suburbPart && {
+        suburb: suburbPart?.replace("-suburb", "").replace(/-/g, " "),
+      }),
+      ...(postcodePart && {
+        postcode: postcodePart,
       }),
     };
   }, [category, condition, pathname]);
@@ -257,7 +276,7 @@ export default function ListingsPage({ category, condition, location }: Props) {
   }, [filtersReady, hasSearched, initialFilters, initialPage, loadListings]);
   // Handle filter changes and update the page
   const handleFilterChange = useCallback((newFilters: Filters) => {
-    console.log("🚚 got from CaravanFilter →", newFilters); // 👈 should contain sleeps
+    console.log("🚚 got from CaravanFilter →", categories); // 👈 should contain sleeps
     const mergedFilters = {
       ...filtersRef.current,
       ...newFilters,
