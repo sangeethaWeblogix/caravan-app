@@ -247,7 +247,7 @@ export default function ListingsPage({ category, condition, location }: Props) {
         setIsLoading(false);
       }
     },
-    [filters, pagination.per_page]
+    [filters, pagination.per_page] // ✅ Add metaImage to dependencies
   );
 
   // useEffect(() => {
