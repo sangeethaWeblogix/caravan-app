@@ -1,147 +1,23 @@
-import ListingsPage from "../../components/ListContent/Listings";
-import { fetchListings } from "@/api/listings/api";
-import { Metadata } from "next";
-import { headers } from "next/headers";
+// app/listings/[...slug]/page.tsx or listings.tsx
+"use client";
+import { usePathname } from "next/navigation";
+import ListingsPage from "@/app/components/ListContent/Listings";
 
-// ✅ Generate SEO metadata for social previews
-export async function generateMetadata(): Promise<Metadata> {
-  const headersList = await headers();
-  const referer = headersList.get("referer");
+const Listings = () => {
+  const pathname = usePathname();
 
-  if (!referer) {
-    console.warn("⚠️ Missing referer. Cannot generate metadata.");
-    return {
-      title: "Caravans for Sale",
-      description: "Explore caravans in Australia",
-    };
-  }
+  const pathParts = pathname?.split("/").filter(Boolean);
+  const slug1 = pathParts?.[1];
+  const slug2 = pathParts?.[2];
 
-  let url: URL;
-  try {
-    url = new URL(referer);
-  } catch (error) {
-    console.error("❌ Invalid referer URL:", referer);
-    return {
-      title: "Caravans for Sale",
-      description: "Explore caravans in Australia",
-    };
-  }
+  const category = slug1?.endsWith("-category")
+    ? slug1.replace("-category", "")
+    : undefined;
+  const location = (slug2 ?? (slug1?.endsWith("-state") ? slug1 : undefined))
+    ?.replace("-state", "")
+    ?.replace(/-/g, " ");
 
-  const searchParams = url.searchParams;
-  const pathParts = url.pathname.split("/listings/")[1]?.split("/") || [];
+  return <ListingsPage category={category} location={location} />;
+};
 
-  const categorySlug = pathParts.find((p) => p.includes("category"));
-  const conditionSlug = pathParts.find((p) => p.includes("condition"));
-  const stateSlug = pathParts.find((p) => p.endsWith("-state"));
-
-  const category = categorySlug?.replace("-category", "");
-  const condition = conditionSlug?.replace("-condition", "");
-  const state = stateSlug?.replace("-state", "");
-
-  const first = pathParts[0];
-  const second = pathParts[1];
-
-  const make =
-    first !== categorySlug && first !== conditionSlug && first !== stateSlug
-      ? first
-      : undefined;
-
-  const model =
-    make &&
-    second !== categorySlug &&
-    second !== conditionSlug &&
-    second !== stateSlug
-      ? second
-      : undefined;
-
-  const filters = {
-    make,
-    model,
-    category,
-    condition,
-    state,
-    sleeps: searchParams.get("sleeps") || undefined,
-    minKg: searchParams.get("minKg") || undefined,
-    maxKg: searchParams.get("maxKg") || undefined,
-    from_price: searchParams.get("from_price") || undefined,
-    to_price: searchParams.get("to_price") || undefined,
-    from_year: searchParams.get("acustom_fromyears") || undefined,
-    to_year: searchParams.get("acustom_toyears") || undefined,
-    from_length: searchParams.get("from_length") || undefined,
-    to_length: searchParams.get("to_length") || undefined,
-    suburb: searchParams.get("suburb") || undefined,
-    region: searchParams.get("region") || undefined,
-    postcode: searchParams.get("postcode") || undefined,
-  };
-
-  console.log("🧠 Generating metadata for listings page with filters", filters);
-
-  const res = await fetchListings({ ...filters, page: 1 });
-
-  if (!res || res.success === false || !res.seo) {
-    console.warn(
-      "❌ Metadata fetch failed or seo object missing",
-      res?.message
-    );
-    return {
-      title: "Caravans for Sale",
-      description: "Explore caravans in Australia",
-    };
-  }
-
-  return {
-    title: res.seo.metatitle || "Caravans for Sale",
-    description: res.seo.metadescription || "Explore caravans in Australia",
-    openGraph: {
-      title: res.seo.metatitle || "",
-      description: res.seo.metadescription || "",
-      images: res.seo.metaimage ? [{ url: res.seo.metaimage }] : [],
-    },
-    twitter: {
-      title: res.seo.metatitle || "",
-      description: res.seo.metadescription || "",
-      images: res.seo.metaimage ? [res.seo.metaimage] : [],
-    },
-  };
-}
-
-// ✅ Main listings page component with dynamic filters
-export default function Page({
-  params,
-  searchParams,
-}: {
-  params: { filters?: string[] };
-  searchParams: { [key: string]: string };
-}) {
-  const filters = params.filters || [];
-
-  const category = filters
-    .find((p) => p.includes("category"))
-    ?.replace("-category", "");
-  const condition = filters
-    .find((p) => p.includes("condition"))
-    ?.replace("-condition", "");
-  const state = filters
-    .find((p) => p.endsWith("-state"))
-    ?.replace("-state", "");
-
-  const knownSlugs = filters.filter(
-    (p) =>
-      p.includes("category") || p.includes("condition") || p.endsWith("-state")
-  );
-  const remainingSlugs = filters.filter((p) => !knownSlugs.includes(p));
-
-  const make = remainingSlugs[0];
-  const model = remainingSlugs[1];
-
-  return (
-    <ListingsPage
-      category={category}
-      condition={condition}
-      location={state}
-      make={make}
-      model={model}
-      searchParams={searchParams} // if needed
-    />
-  );
-}
+export default Listings;

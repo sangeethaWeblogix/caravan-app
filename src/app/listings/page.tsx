@@ -1,13 +1,13 @@
-// app/listings/page.tsx
+// src/app/listings/page.tsx
+
 import React, { Suspense } from "react";
-import Listing from "../components/ListContent/Listings"; // Path to your Listing component
+import Listing from "../components/ListContent/Listings"; // Adjust path as needed
 import { fetchListings } from "@/api/listings/api";
 import { Metadata } from "next";
-import Head from "next/head";
 
-// This function will run server-side to dynamically generate metadata
+// ✅ Server-side metadata generation
 export async function generateMetadata(): Promise<Metadata> {
-  const imageUrl = "public/favicon.ico";
+  const imageUrl = "/favicon.ico"; // ✅ public/ is auto-mapped
 
   const response = await fetchListings({});
 
@@ -24,10 +24,10 @@ export async function generateMetadata(): Promise<Metadata> {
       description: metaDescription,
       images: [
         {
-          url: imageUrl, // Add image URL inside an array
-          width: 1200, // Optional: specify the image width
-          height: 630, // Optional: specify the image height
-          alt: "Caravan Listings", // Optional: specify alt text
+          url: imageUrl,
+          width: 1200,
+          height: 630,
+          alt: "Caravan Listings",
         },
       ],
     },
@@ -37,41 +37,21 @@ export async function generateMetadata(): Promise<Metadata> {
       description: metaDescription,
       images: [
         {
-          url: imageUrl, // Add image URL inside an array
-          width: 1200, // Optional: specify the image width
-          height: 630, // Optional: specify the image height
-          alt: "Caravan Listings", // Optional: specify alt text
+          url: imageUrl,
+          width: 1200,
+          height: 630,
+          alt: "Caravan Listings",
         },
       ],
     },
   };
 }
 
-// Main component to render the page content
-
-const ListingsPage = ({
-  metaTitle,
-  metaDescription,
-}: {
-  metaTitle: string;
-  metaDescription: string;
-}) => {
-  console.log(
-    "Generating metadata for listings page",
-    metaTitle,
-    metaDescription
-  );
+// ✅ No props here — App Router handles metadata separately
+export default function ListingsPage() {
   return (
-    <>
-      <Head>
-        <title>{metaTitle}</title>
-        <meta name="description" content={metaDescription} />
-      </Head>
-      <Suspense fallback={<div>Loading listings...</div>}>
-        <Listing metaTitle={metaTitle} metaDescription={metaDescription} />
-      </Suspense>
-    </>
+    <Suspense fallback={<div>Loading listings...</div>}>
+      <Listing />
+    </Suspense>
   );
-};
-
-export default ListingsPage;
+}
