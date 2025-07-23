@@ -238,7 +238,7 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
 
       router.push(slug);
     }
-  }, [selectedRegion, selectedState, searchParams]);
+  }, [selectedRegion, selectedState, searchParams, router]);
   // resend use effect
   useEffect(() => {
     if (selectedRegion && selectedState) {
@@ -253,7 +253,7 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
 
       router.push(slug);
     }
-  }, [selectedRegion, selectedState, searchParams]);
+  }, [selectedRegion, selectedState, searchParams, router]);
 
   useEffect(() => {
     if (!selectedMake) {
@@ -415,7 +415,7 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
         return; // ✅ skip model detection if it's region
       }
     });
-  }, [pathname]);
+  }, [pathname, states, makes, model]);
 
   const accordionStyle = (highlight: boolean) => ({
     display: "flex",
@@ -692,6 +692,8 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
     pathname,
     categories,
     makes,
+    model,
+    selectedCategory,
     states,
     searchParams,
     onFilterChange,
@@ -829,7 +831,7 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
     ) {
       setLocationInput(`${filters.suburb} ${filters.postcode}`);
     }
-  }, [filters.suburb, filters.postcode]);
+  }, [filters.suburb, filters.postcode, locationInput]);
 
   useEffect(() => {
     const slug = pathname.split("/listings/")[1];
@@ -1039,7 +1041,16 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
     if (currentFilters.region && !selectedRegionName) {
       setSelectedRegionName(currentFilters.region);
     }
-  }, []);
+  }, [
+    currentFilters.suburb,
+    currentFilters.postcode,
+    currentFilters.state,
+    currentFilters.region,
+    selectedSuburbName,
+    selectedPostcode,
+    selectedStateName,
+    selectedRegionName,
+  ]);
 
   useEffect(() => {
     // Auto-load suburbs when state and region are already selected
@@ -1128,11 +1139,6 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
         .replace(/\s+/g, "-");
 
       if (!slugifiedState) return;
-
-      const query = searchParams.toString();
-      const slug = `/listings/${slugifiedState}-state${
-        query ? `?${query}` : ""
-      }`;
     }
   }, [
     selectedState,
@@ -1170,7 +1176,13 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
         setSelectedStateName(state.name);
       }
     }
-  }, [selectedSuburbName, selectedRegionName, selectedState]);
+  }, [
+    selectedSuburbName,
+    selectedRegionName,
+    selectedState,
+    selectedStateName,
+    states,
+  ]);
 
   useEffect(() => {
     if (selectedSuburbName || selectedRegionName || selectedStateName) {
