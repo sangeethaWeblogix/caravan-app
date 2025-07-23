@@ -285,16 +285,16 @@ export default function ListingsPage({ category, condition, location }: Props) {
     setHasSearched(true);
     setFilters(mergedFilters);
     filtersRef.current = mergedFilters;
-
+    const pageFromURL = parseInt(searchParams.get("paged") || "1", 10);
     setPagination({
-      current_page: 1,
+      current_page: pageFromURL,
       total_pages: 1,
       total_items: 0,
       per_page: 12,
       total_products: 0,
     });
     setFiltersReady(true);
-    loadListings(1, mergedFilters);
+    loadListings(pageFromURL, mergedFilters);
     console.log("🔗 calling updateURLWithFilters");
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
