@@ -454,6 +454,17 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
     backgroundColor: isSelected ? "#e8f0fe" : "transparent",
   });
 
+  useEffect(() => {
+    const stateSlug = pathname.split("/").find((s) => s.endsWith("-state"));
+    if (!stateSlug) {
+      // ✅ No state present in URL → reset state UI
+      setSelectedState(null);
+      setSelectedStateName(null);
+      setFilteredRegions([]);
+      setFilteredSuburbs([]);
+    }
+  }, [pathname]);
+
   const resetStateFilters = () => {
     console.log("❌ State Reset Triggered");
 
@@ -469,7 +480,7 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
     const updatedFilters: Filters = {
       ...currentFilters,
       state: undefined,
-      location: undefined, // ✅ FIX: reset this too!
+      location: undefined,
       region: undefined,
       suburb: undefined,
       postcode: undefined,
@@ -478,6 +489,7 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
     setFilters(updatedFilters);
     onFilterChange(updatedFilters);
 
+    // ✅ Remove state-related segments from URL
     const segments = pathname.split("/").filter(Boolean);
     const filteredSegments = segments.filter(
       (s) =>
@@ -487,10 +499,15 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
         !/^\d{4}$/.test(s)
     );
 
-    const cleanedPath = `/${filteredSegments.join("/")}`;
-    router.push(
-      cleanedPath + (searchParams.toString() ? `?${searchParams}` : "")
-    );
+    const newPath = `/${filteredSegments.join("/")}`;
+    const query = searchParams.toString();
+    router.push(newPath + (query ? `?${query}` : ""));
+
+    // ✅ Forcefully reset value in case useEffect doesn't catch it
+    filtersInitialized.current = false;
+    hasCategoryBeenSetRef.current = false;
+    suburbClickedRef.current = false;
+    urlJustUpdatedRef.current = true;
   };
 
   const resetRegionFilters = () => {
@@ -1209,6 +1226,15 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
       setYearTo(parseInt(toYearParam));
     }
   }, [searchParams]);
+  useEffect(() => {
+    if (
+      currentFilters.state &&
+      !selectedStateName &&
+      filtersInitialized.current
+    ) {
+      setSelectedStateName(currentFilters.state);
+    }
+  }, [currentFilters.state, selectedStateName, filtersInitialized.current]);
 
   useEffect(() => {
     if (selectedSuburbName || selectedRegionName || selectedStateName) {
@@ -1371,20 +1397,18 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
             >
               {selectedStateName}
             </span>
-            {selectedStateName && !selectedRegionName && (
-              <div style={iconRowStyle}>
-                <span onClick={resetStateFilters} style={closeIconStyle}>
-                  ×
-                </span>
-                <BiChevronDown
-                  onClick={(e) => {
-                    e.stopPropagation(); // prevent parent click from firing
-                    setStateOpen((prev) => !prev);
-                  }}
-                  style={arrowStyle(stateOpen)}
-                />
-              </div>
-            )}
+            <div style={iconRowStyle}>
+              <span onClick={resetStateFilters} style={closeIconStyle}>
+                ×
+              </span>
+              <BiChevronDown
+                onClick={(e) => {
+                  e.stopPropagation(); // prevent parent click from firing
+                  setStateOpen((prev) => !prev);
+                }}
+                style={arrowStyle(stateOpen)}
+              />
+            </div>
           </div>
         )}
 
