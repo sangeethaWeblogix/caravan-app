@@ -121,7 +121,6 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
   const [sleepsOpen, setSleepsOpen] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [locationInput, setLocationInput] = useState("");
-  const setSelectedLocation = useState<string>("")[1];
   const [selectedMake, setSelectedMake] = useState<string | null>(null);
   const [selectedModel, setSelectedModel] = useState<string | null>(null);
   const [selectedPostcode, setSelectedPostcode] = useState<string | null>(null);
