@@ -103,6 +103,7 @@ export default function ListingsPage({ category, condition, location }: Props) {
     const suburbPart = slugParts.find((part) => part.endsWith("-suburb"));
     const postcodePart = slugParts.find((part) => /^\\d{4}$/.test(part));
     const categoryPart = slugParts.find((part) => part.includes("-category"));
+
     const conditionPart = slugParts.find((part) => part.includes("-condition"));
 
     const knownSlugs = [
@@ -183,9 +184,15 @@ export default function ListingsPage({ category, condition, location }: Props) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams, pagination, filtersReady]);
   console.log(location);
+  console.log("✅ Filters about to be applied:", filtersRef.current);
 
   const loadListings = useCallback(
     async (page = 1, appliedFilters: Filters = filters) => {
+      if (!appliedFilters || Object.keys(appliedFilters).length === 0) {
+        console.warn("⛔ Skipping load: filters are empty.");
+        setIsLoading(false);
+        return;
+      }
       setIsLoading(true);
       window.scrollTo({ top: 0, behavior: "smooth" });
 
@@ -270,6 +277,7 @@ export default function ListingsPage({ category, condition, location }: Props) {
       Object.keys(initialFilters).length > 0
     ) {
       filtersRef.current = initialFilters;
+      setFilters(initialFilters); // ✅ ADD THIS LINE to sync state
       loadListings(initialPage, initialFilters);
     }
   }, [filtersReady, hasSearched, initialFilters, initialPage, loadListings]);
