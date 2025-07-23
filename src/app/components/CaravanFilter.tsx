@@ -454,6 +454,17 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
     backgroundColor: isSelected ? "#e8f0fe" : "transparent",
   });
 
+  useEffect(() => {
+    const stateSlug = pathname.split("/").find((s) => s.endsWith("-state"));
+    if (!stateSlug) {
+      // ✅ No state present in URL → reset state UI
+      setSelectedState(null);
+      setSelectedStateName(null);
+      setFilteredRegions([]);
+      setFilteredSuburbs([]);
+    }
+  }, [pathname]);
+
   const resetStateFilters = () => {
     console.log("❌ State Reset Triggered");
 
@@ -469,7 +480,7 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
     const updatedFilters: Filters = {
       ...currentFilters,
       state: undefined,
-      location: undefined, // ✅ FIX: reset this too!
+      location: undefined,
       region: undefined,
       suburb: undefined,
       postcode: undefined,
@@ -478,6 +489,7 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
     setFilters(updatedFilters);
     onFilterChange(updatedFilters);
 
+    // ✅ Remove state-related segments from URL
     const segments = pathname.split("/").filter(Boolean);
     const filteredSegments = segments.filter(
       (s) =>
@@ -487,10 +499,15 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
         !/^\d{4}$/.test(s)
     );
 
-    const cleanedPath = `/${filteredSegments.join("/")}`;
-    router.push(
-      cleanedPath + (searchParams.toString() ? `?${searchParams}` : "")
-    );
+    const newPath = `/${filteredSegments.join("/")}`;
+    const query = searchParams.toString();
+    router.push(newPath + (query ? `?${query}` : ""));
+
+    // ✅ Forcefully reset value in case useEffect doesn't catch it
+    filtersInitialized.current = false;
+    hasCategoryBeenSetRef.current = false;
+    suburbClickedRef.current = false;
+    urlJustUpdatedRef.current = true;
   };
 
   const resetRegionFilters = () => {
@@ -999,6 +1016,20 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
     setSelectedPostcode(null);
     setFilteredRegions([]);
     setFilteredSuburbs([]);
+    setSelectedConditionName(null);
+    setSelectedSleepName("");
+    setSelectedMakeName(null);
+    setSelectedModelName(null);
+    setLocationInput("");
+    setLocationSuggestions([]);
+    setAtmFrom(null);
+    setAtmTo(null);
+    setMinPrice(null);
+    setMaxPrice(null);
+    setYearFrom(null);
+    setYearTo(null);
+    setLengthFrom(null);
+    setLengthTo(null);
 
     // ✅ Clear filter object
     const resetFilters: Filters = {
@@ -1183,6 +1214,27 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
     selectedStateName,
     states,
   ]);
+  // adaa
+  useEffect(() => {
+    const fromYearParam = searchParams.get("acustom_fromyears");
+    const toYearParam = searchParams.get("acustom_toyears");
+
+    if (fromYearParam) {
+      setYearFrom(parseInt(fromYearParam));
+    }
+    if (toYearParam) {
+      setYearTo(parseInt(toYearParam));
+    }
+  }, [searchParams]);
+  useEffect(() => {
+    if (
+      currentFilters.state &&
+      !selectedStateName &&
+      filtersInitialized.current
+    ) {
+      setSelectedStateName(currentFilters.state);
+    }
+  }, [currentFilters.state, selectedStateName, filtersInitialized.current]);
 
   useEffect(() => {
     if (selectedSuburbName || selectedRegionName || selectedStateName) {
@@ -1345,20 +1397,18 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
             >
               {selectedStateName}
             </span>
-            {selectedStateName && !selectedRegionName && (
-              <div style={iconRowStyle}>
-                <span onClick={resetStateFilters} style={closeIconStyle}>
-                  ×
-                </span>
-                <BiChevronDown
-                  onClick={(e) => {
-                    e.stopPropagation(); // prevent parent click from firing
-                    setStateOpen((prev) => !prev);
-                  }}
-                  style={arrowStyle(stateOpen)}
-                />
-              </div>
-            )}
+            <div style={iconRowStyle}>
+              <span onClick={resetStateFilters} style={closeIconStyle}>
+                ×
+              </span>
+              <BiChevronDown
+                onClick={(e) => {
+                  e.stopPropagation(); // prevent parent click from firing
+                  setStateOpen((prev) => !prev);
+                }}
+                style={arrowStyle(stateOpen)}
+              />
+            </div>
           </div>
         )}
 
@@ -1516,8 +1566,10 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
                   setFilteredSuburbs([]);
                   setStateOpen(true);
 
-                  const preservedMake = selectedMake || currentFilters.make;
-                  const preservedModel = selectedModel || currentFilters.model;
+                  const preservedMake =
+                    selectedMake || filters.make || currentFilters.make;
+                  const preservedModel =
+                    selectedModel || filters.model || currentFilters.model;
                   let preservedCategory =
                     selectedCategory || currentFilters.category;
 
@@ -1557,8 +1609,9 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
                     to_price: currentFilters.to_price,
                     minKg: currentFilters.minKg,
                     maxKg: currentFilters.maxKg,
-                    from_year: currentFilters.from_year,
-                    to_year: currentFilters.to_year,
+                    from_year: yearFrom ?? currentFilters.from_year,
+                    to_year: yearTo ?? currentFilters.to_year,
+
                     from_length: currentFilters.from_length,
                     to_length: currentFilters.to_length,
                   };
