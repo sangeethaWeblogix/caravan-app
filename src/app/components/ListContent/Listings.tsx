@@ -16,7 +16,6 @@ import Footer from "../Footer";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import Head from "next/head";
-import { Metadata } from "next";
 interface Product {
   id: number;
   name: string;
@@ -90,6 +89,7 @@ export default function ListingsPage({ category, condition, location }: Props) {
   const pathname =
     typeof window !== "undefined" ? window.location.pathname : "";
 
+  // ✅ FIX: Add suburb/postcode extraction to initialFilters
   const initialFilters: Filters = useMemo(() => {
     const parsedCategory = category?.replace("-category", "") || undefined;
     const parsedCondition = condition?.replace("-condition", "") || undefined;
@@ -98,19 +98,25 @@ export default function ListingsPage({ category, condition, location }: Props) {
 
     const slugParts = pathname.split("/listings/")[1]?.split("/") || [];
 
-    // ✅ safely extract state
     const statePart = slugParts.find((part) => part.endsWith("-state"));
-    const parsedState = statePart
-      ? statePart.replace(/-state$/, "").replace(/-/g, " ")
-      : undefined;
+    const regionPart = slugParts.find((part) => part.endsWith("-region"));
+    const suburbPart = slugParts.find((part) => part.endsWith("-suburb"));
+    const postcodePart = slugParts.find((part) => /^\\d{4}$/.test(part));
+    const categoryPart = slugParts.find((part) => part.includes("-category"));
+    const conditionPart = slugParts.find((part) => part.includes("-condition"));
 
-    // ✅ ignore state slug from being treated as make
-    const filteredSlugParts = slugParts.filter(
-      (part) => part !== statePart // remove state part from slug array
-    );
+    const knownSlugs = [
+      statePart,
+      regionPart,
+      suburbPart,
+      postcodePart,
+      categoryPart,
+      conditionPart,
+    ].filter(Boolean);
+    const unknownSlugs = slugParts.filter((slug) => !knownSlugs.includes(slug));
 
-    const make = filteredSlugParts[0];
-    const model = filteredSlugParts[1];
+    const make = unknownSlugs[0];
+    const model = unknownSlugs[1];
 
     return {
       ...(make && { make }),
@@ -118,7 +124,18 @@ export default function ListingsPage({ category, condition, location }: Props) {
       ...(parsedCategory && { category: parsedCategory }),
       ...(parsedCondition && { condition: parsedCondition }),
       ...(parsedSleep && { sleeps: parsedSleep }),
-      ...(parsedState && { state: parsedState }), // ✅ now passed safely
+      ...(statePart && {
+        state: statePart.replace("-state", "").replace(/-/g, " "),
+      }),
+      ...(regionPart && {
+        region: regionPart.replace("-region", "").replace(/-/g, " "),
+      }),
+      ...(suburbPart && {
+        suburb: suburbPart?.replace("-suburb", "").replace(/-/g, " "),
+      }),
+      ...(postcodePart && {
+        postcode: postcodePart,
+      }),
     };
   }, [category, condition, pathname]);
 
@@ -258,10 +275,16 @@ export default function ListingsPage({ category, condition, location }: Props) {
   }, [filtersReady, hasSearched, initialFilters, initialPage, loadListings]);
   // Handle filter changes and update the page
   const handleFilterChange = useCallback((newFilters: Filters) => {
-    console.log("🚚 got from CaravanFilter →", newFilters); // 👈 should contain sleeps
+    console.log("🚚 got from CaravanFilter →", categories); // 👈 should contain sleeps
+    const mergedFilters = {
+      ...filtersRef.current,
+      ...newFilters,
+      category: newFilters.category || filtersRef.current.category, // Fallback
+    };
+    console.log("🔗 Merging filters", mergedFilters);
     setHasSearched(true);
-    setFilters(newFilters);
-    filtersRef.current = newFilters;
+    setFilters(mergedFilters);
+    filtersRef.current = mergedFilters;
 
     setPagination({
       current_page: 1,
@@ -271,16 +294,18 @@ export default function ListingsPage({ category, condition, location }: Props) {
       total_products: 0,
     });
     setFiltersReady(true);
-    loadListings(1, newFilters);
+    loadListings(1, mergedFilters);
     console.log("🔗 calling updateURLWithFilters");
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const buildSlugPath = () => {
     const slugParts: string[] = [];
-    if (filters.make) slugParts.push(filters.make); // ✅ ADD THIS LINE
-    if (filters.model && filters.model !== filters.make) {
-      slugParts.push(filters.model);
+    if (filters.make) {
+      slugParts.push(filters.make);
+      if (filters.model && filters.model !== filters.make) {
+        slugParts.push(filters.model);
+      }
     }
     if (filters.category) slugParts.push(`${filters.category}-category`);
     if (filters.condition)
@@ -418,24 +443,45 @@ export default function ListingsPage({ category, condition, location }: Props) {
 
   const updateURLWithFilters = (page: number) => {
     console.log("✅ updateURLWithFilters CALLED with page:", page);
-
     const current = new URLSearchParams(searchParams.toString());
-    current.set("paged", page.toString()); // Set the page number in the query params
+    current.set("paged", page.toString());
+    console.log(
+      "🧭 New URL will be:",
+      `${buildSlugPath()}?${current.toString()}`
+    );
 
-    // Add other filters but exclude 'category' since it's in the path
     Object.entries(filters).forEach(([key, value]) => {
-      if (value && key !== "category" && value !== "") {
+      if (
+        value &&
+        ![
+          "category",
+          "location",
+          "minKg",
+          "maxKg",
+          "from_price",
+          "to_price",
+          "sleeps",
+          "condition",
+          "from_year",
+          "to_year",
+          "from_length",
+          "to_length",
+          "make",
+          "model",
+          "state",
+          "region",
+          "suburb",
+        ].includes(key)
+      ) {
         current.set(key, value.toString());
       } else {
         current.delete(key);
       }
     });
 
-    // Construct the final URL
     const finalUrl = `${buildSlugPath()}?${current.toString()}`;
     console.log("🚀 Updating URL to:", finalUrl);
-
-    // Update the URL without shallow option
+    // 👇 Only update the URL. Let useEffect trigger the API
     router.push(finalUrl);
   };
 

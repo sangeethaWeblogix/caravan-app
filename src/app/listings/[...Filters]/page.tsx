@@ -6,8 +6,27 @@ import { headers } from "next/headers";
 // ✅ Generate SEO metadata for social previews
 export async function generateMetadata(): Promise<Metadata> {
   const headersList = await headers();
-  const referer = headersList.get("referer") || "";
-  const url = new URL(referer);
+  const referer = headersList.get("referer");
+
+  if (!referer) {
+    console.warn("⚠️ Missing referer. Cannot generate metadata.");
+    return {
+      title: "Caravans for Sale",
+      description: "Explore caravans in Australia",
+    };
+  }
+
+  let url: URL;
+  try {
+    url = new URL(referer);
+  } catch (error) {
+    console.error("❌ Invalid referer URL:", referer);
+    return {
+      title: "Caravans for Sale",
+      description: "Explore caravans in Australia",
+    };
+  }
+
   const searchParams = url.searchParams;
   const pathParts = url.pathname.split("/listings/")[1]?.split("/") || [];
 
@@ -70,7 +89,6 @@ export async function generateMetadata(): Promise<Metadata> {
     };
   }
 
-  console.log("✅ SEO meta", res.seo.metatitle, res.seo.metadescription);
   return {
     title: res.seo.metatitle || "Caravans for Sale",
     description: res.seo.metadescription || "Explore caravans in Australia",
@@ -103,15 +121,27 @@ export default function Page({
   const condition = filters
     .find((p) => p.includes("condition"))
     ?.replace("-condition", "");
-  const location = filters
+  const state = filters
     .find((p) => p.endsWith("-state"))
     ?.replace("-state", "");
+
+  const knownSlugs = filters.filter(
+    (p) =>
+      p.includes("category") || p.includes("condition") || p.endsWith("-state")
+  );
+  const remainingSlugs = filters.filter((p) => !knownSlugs.includes(p));
+
+  const make = remainingSlugs[0];
+  const model = remainingSlugs[1];
 
   return (
     <ListingsPage
       category={category}
       condition={condition}
-      location={location}
+      location={state}
+      make={make}
+      model={model}
+      searchParams={searchParams} // if needed
     />
   );
 }
