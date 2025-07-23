@@ -16,7 +16,6 @@ import Footer from "../Footer";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import Head from "next/head";
-import { Metadata } from "next";
 interface Product {
   id: number;
   name: string;
