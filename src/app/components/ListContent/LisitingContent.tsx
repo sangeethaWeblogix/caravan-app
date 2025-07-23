@@ -182,11 +182,13 @@ export default function ListingContent({
                       </li>
                     )}
 
-                    {(product.categories || []).map((tag, i) => (
-                      <li key={i}>
-                        <span className="attribute3">{tag}</span>
+                    {product.categories && product.categories.length > 0 && (
+                      <li className="attribute3_list">
+                        <span className="attribute3">
+                          {product.categories.join(", ")}
+                        </span>
                       </li>
-                    ))}
+                    )}
 
                     {product.length && (
                       <li>
