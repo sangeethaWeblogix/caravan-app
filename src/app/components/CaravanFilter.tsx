@@ -1133,8 +1133,6 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
       const slug = `/listings/${slugifiedState}-state${
         query ? `?${query}` : ""
       }`;
-
-      router.push(slug);
     }
   }, [
     selectedState,
@@ -1530,6 +1528,7 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
                       }
                     }
                   }
+
                   const updatedFilters: Filters = {
                     ...currentFilters,
                     make: preservedMake,
@@ -1539,13 +1538,23 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
                     region: undefined,
                     suburb: undefined,
                     postcode: undefined,
+                    // ✅ Preserve other filters
+                    condition: currentFilters.condition,
+                    sleeps: currentFilters.sleeps,
+                    from_price: currentFilters.from_price,
+                    to_price: currentFilters.to_price,
+                    minKg: currentFilters.minKg,
+                    maxKg: currentFilters.maxKg,
+                    from_year: currentFilters.from_year,
+                    to_year: currentFilters.to_year,
+                    from_length: currentFilters.from_length,
+                    to_length: currentFilters.to_length,
                   };
 
                   setFilters(updatedFilters);
                   onFilterChange(updatedFilters);
 
                   const slugParts: string[] = [];
-
                   if (preservedMake) slugParts.push(preservedMake);
                   if (preservedModel) slugParts.push(preservedModel);
                   if (preservedCategory)
