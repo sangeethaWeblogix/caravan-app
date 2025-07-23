@@ -999,6 +999,20 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
     setSelectedPostcode(null);
     setFilteredRegions([]);
     setFilteredSuburbs([]);
+    setSelectedConditionName(null);
+    setSelectedSleepName("");
+    setSelectedMakeName(null);
+    setSelectedModelName(null);
+    setLocationInput("");
+    setLocationSuggestions([]);
+    setAtmFrom(null);
+    setAtmTo(null);
+    setMinPrice(null);
+    setMaxPrice(null);
+    setYearFrom(null);
+    setYearTo(null);
+    setLengthFrom(null);
+    setLengthTo(null);
 
     // ✅ Clear filter object
     const resetFilters: Filters = {
@@ -1183,6 +1197,18 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
     selectedStateName,
     states,
   ]);
+  // adaa
+  useEffect(() => {
+    const fromYearParam = searchParams.get("acustom_fromyears");
+    const toYearParam = searchParams.get("acustom_toyears");
+
+    if (fromYearParam) {
+      setYearFrom(parseInt(fromYearParam));
+    }
+    if (toYearParam) {
+      setYearTo(parseInt(toYearParam));
+    }
+  }, [searchParams]);
 
   useEffect(() => {
     if (selectedSuburbName || selectedRegionName || selectedStateName) {
@@ -1559,8 +1585,9 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
                     to_price: currentFilters.to_price,
                     minKg: currentFilters.minKg,
                     maxKg: currentFilters.maxKg,
-                    from_year: currentFilters.from_year,
-                    to_year: currentFilters.to_year,
+                    from_year: yearFrom ?? currentFilters.from_year,
+                    to_year: yearTo ?? currentFilters.to_year,
+
                     from_length: currentFilters.from_length,
                     to_length: currentFilters.to_length,
                   };
