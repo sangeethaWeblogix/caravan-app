@@ -909,8 +909,9 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
       if (selectedSuburbName) slugParts.push(`${selectedSuburbName}-suburb`);
 
       if (selectedStateName)
-        slugParts.push(`${selectedStateName.toLowerCase()}-state`);
-
+        slugParts.push(
+          `${selectedStateName?.toLowerCase().replace(/\s+/g, "-")}-state`
+        );
       if (selectedRegionName) slugParts.push(`${selectedRegionName}-region`);
       if (selectedPostcode) slugParts.push(selectedPostcode);
 
@@ -946,7 +947,12 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
 
       if (!isModalOpen && filtersInitialized.current) {
         suburbClickedRef.current = false;
-        router.push(slugifiedURL);
+
+        const currentURL =
+          pathname + (searchParams.toString() ? `?${searchParams}` : "");
+        if (currentURL !== slugifiedURL) {
+          router.push(slugifiedURL);
+        }
       } else {
         filtersInitialized.current = true;
       }
@@ -1117,7 +1123,10 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
   // newww
   useEffect(() => {
     if (selectedState && !selectedRegionName && !selectedSuburbName) {
-      const slugifiedState = selectedStateName;
+      const slugifiedState = selectedStateName
+        ?.toLowerCase()
+        .replace(/\s+/g, "-");
+
       if (!slugifiedState) return;
 
       const query = searchParams.toString();
