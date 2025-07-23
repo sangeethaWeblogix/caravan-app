@@ -1516,8 +1516,10 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
                   setFilteredSuburbs([]);
                   setStateOpen(true);
 
-                  const preservedMake = selectedMake || currentFilters.make;
-                  const preservedModel = selectedModel || currentFilters.model;
+                  const preservedMake =
+                    selectedMake || filters.make || currentFilters.make;
+                  const preservedModel =
+                    selectedModel || filters.model || currentFilters.model;
                   let preservedCategory =
                     selectedCategory || currentFilters.category;
 
