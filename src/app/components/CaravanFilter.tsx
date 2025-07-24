@@ -733,18 +733,23 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
       return;
 
     try {
-      const parts = selectedSuggestion.uri.split("/");
+      const uriParts = selectedSuggestion.uri.split("/");
 
       let suburbSlug = "";
       let regionSlug = "";
       let stateSlug = "";
       let postcode = "";
 
-      if (parts.length === 4) {
-        [suburbSlug, regionSlug, stateSlug, postcode] = parts;
-      } else if (parts.length === 3) {
-        [suburbSlug, regionSlug, postcode] = parts;
-      }
+      // Extract data from the key
+      const keyParts = selectedSuggestion.key.split("-");
+
+      // Extract values from the key (key format: suburb-region-state)
+      suburbSlug = keyParts[0];
+      regionSlug = keyParts[1];
+      stateSlug = keyParts[2];
+
+      // Extract postcode from URI (uri format: suburb/region/state/postcode)
+      postcode = uriParts[uriParts.length - 1]; // Last part is the postcode
 
       console.log("🧩 Extracted:", {
         suburbSlug,
@@ -753,7 +758,7 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
         postcode,
       });
 
-      // Match state from slug or region
+      // Match state from the key (stateSlug)
       const matchedState = states.find((state) => {
         const normalized = state.name.toLowerCase().replace(/\s+/g, "-");
         return (
@@ -777,29 +782,27 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
         matchedState.value
       );
 
-      // Try to match region
+      // Try to match region under the matched state
       let regionMatch = matchedState.regions?.find(
         (region) => region.value.toLowerCase() === regionSlug.toLowerCase()
       );
 
       if (!regionMatch) {
         console.warn("⚠️ No matching region found — skipping region");
-        regionMatch = {
-          name: "",
-          value: "",
-          suburbs: [],
-        };
+        regionMatch = { name: "", value: "", suburbs: [] }; // Set empty values for fallback
       }
 
-      // Fallback: search in all suburbs under the state
+      // Fallback: If no region found, get suburbs from all regions under the matched state
       const allStateSuburbs =
         matchedState.regions?.flatMap((r) => r.suburbs || []) ?? [];
 
+      // Use fallback to ensure `regionMatch.suburbs` is not undefined
       const availableSuburbs =
-        Array.isArray(regionMatch.suburbs) && regionMatch.suburbs.length > 0
-          ? regionMatch.suburbs
+        (regionMatch.suburbs ?? []).length > 0
+          ? regionMatch.suburbs ?? []
           : allStateSuburbs;
 
+      // Find the matching suburb based on the postcode
       const suburbMatch = availableSuburbs.find((sub) =>
         sub.value.includes(postcode)
       );
@@ -809,7 +812,7 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
         return;
       }
 
-      // ✅ Set values
+      // ✅ Set selected values to update the UI and filters
       setSelectedState(matchedState.value);
       setSelectedStateName(matchedState.name);
       setSelectedRegionName(regionMatch.name || "");
@@ -817,6 +820,7 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
       setSelectedPostcode(postcode);
       setLocationInput(`${suburbMatch.name} ${postcode}`);
 
+      // Update the filters
       const updatedFilters = {
         ...filters,
         suburb: suburbMatch.name.toLowerCase(),
@@ -830,7 +834,7 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
 
       suburbClickedRef.current = true;
       filtersInitialized.current = true;
-      setIsModalOpen(false);
+      setIsModalOpen(false); // Close the modal after selection
     } catch (err) {
       console.error("❌ handleModalSearchClick error:", err);
     }
@@ -1196,11 +1200,14 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
     pathname,
     searchParams,
   ]);
-
   useEffect(() => {
     const delayDebounce = setTimeout(() => {
       if (locationInput.length >= 2) {
-        fetchLocations(locationInput)
+        // Extract only the suburb name (assuming it's the first word in the input)
+        const suburbName = locationInput.split(" ")[0]; // Takes only the first word
+
+        // Call the API with just the suburb
+        fetchLocations(suburbName)
           .then((data) => {
             setLocationSuggestions(data); // ← keep full object
           })
@@ -2448,7 +2455,7 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
                         suburbClickedRef.current = true;
                       }}
                     >
-                      {item.short_address}
+                      {item.address}
                     </li>
                   ))}
                 </ul>
