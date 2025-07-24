@@ -1589,7 +1589,7 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
                   const preservedModel =
                     selectedModel || filters.model || currentFilters.model;
 
-                  let preservedCategory =
+                  const preservedCategory =
                     selectedCategory ||
                     currentFilters.category ||
                     (() => {
