@@ -1317,9 +1317,9 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
                 onFilterChange(updatedFilters);
 
                 const segments = pathname.split("/").filter(Boolean);
-                const newSegments = segments.filter(
-                  (s) => !s.endsWith("-category")
-                );
+                const newSegments = segments
+                  .filter((s) => !s.endsWith("-category"))
+                  .map((s) => s.toLowerCase().replace(/\s+/g, "-")); // ✅ slugify each segme
                 const newPath = `/${newSegments.join("/")}`;
                 router.push(
                   newPath + (searchParams.toString() ? `?${searchParams}` : "")
@@ -1588,28 +1588,28 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
                     selectedMake || filters.make || currentFilters.make;
                   const preservedModel =
                     selectedModel || filters.model || currentFilters.model;
-                  let preservedCategory =
-                    selectedCategory || currentFilters.category;
 
-                  if (!preservedCategory) {
-                    const segments = pathname.split("/").filter(Boolean);
-                    const categorySegment = segments.find((s) =>
-                      s.endsWith("-category")
-                    );
-                    if (categorySegment) {
-                      preservedCategory = categorySegment.replace(
-                        "-category",
-                        ""
+                  let preservedCategory =
+                    selectedCategory ||
+                    currentFilters.category ||
+                    (() => {
+                      const segments = pathname.split("/").filter(Boolean);
+                      const categorySegment = segments.find((s) =>
+                        s.endsWith("-category")
                       );
-                      const matchedCategory = categories.find(
-                        (cat) => cat.slug === preservedCategory
-                      );
-                      if (matchedCategory) {
-                        setSelectedCategory(matchedCategory.slug);
-                        setSelectedCategoryName(matchedCategory.name);
+                      if (categorySegment) {
+                        const slug = categorySegment.replace("-category", "");
+                        const matchedCategory = categories.find(
+                          (cat) => cat.slug === slug
+                        );
+                        if (matchedCategory) {
+                          setSelectedCategory(matchedCategory.slug);
+                          setSelectedCategoryName(matchedCategory.name);
+                          return matchedCategory.slug;
+                        }
                       }
-                    }
-                  }
+                      return "";
+                    })();
 
                   const updatedFilters: Filters = {
                     ...currentFilters,
