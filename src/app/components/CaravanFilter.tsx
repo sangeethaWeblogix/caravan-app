@@ -272,8 +272,6 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
   useEffect(() => {
     const slug = pathname.split("/listings/")[1];
     const segments = slug?.split("/") || [];
-    const slugify = (value: string | null | undefined) =>
-      value?.toLowerCase().replace(/\s+/g, "-").trim() || "";
 
     setSelectedState(null);
     setSelectedStateName(null);
