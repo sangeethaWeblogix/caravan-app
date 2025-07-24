@@ -1317,9 +1317,9 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
                 onFilterChange(updatedFilters);
 
                 const segments = pathname.split("/").filter(Boolean);
-                const newSegments = segments.filter(
-                  (s) => !s.endsWith("-category")
-                );
+                const newSegments = segments
+                  .filter((s) => !s.endsWith("-category"))
+                  .map((s) => s.toLowerCase().replace(/\s+/g, "-")); // ✅ slugify each segme
                 const newPath = `/${newSegments.join("/")}`;
                 router.push(
                   newPath + (searchParams.toString() ? `?${searchParams}` : "")
