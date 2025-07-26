@@ -247,45 +247,108 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
     }
   }, [pathname]);
 
+  // useEffect(() => {
+  //   if (selectedState) {
+  //     const slugifiedState = selectedState.toLowerCase().replace(/\s+/g, "-");
+  //     const query = searchParams.toString();
+
+  //     // Update the URL with selected state and region (if available)
+  //     const slug = `/listings/${slugifiedState}-state${
+  //       selectedRegion
+  //         ? `/${selectedRegion.toLowerCase().replace(/\s+/g, "-")}-region`
+  //         : ""
+  //     }${query ? `?${query}` : ""}`;
+
+  //     router.push(slug);
+
+  //     // Trigger the fetch for listings based on the updated filters
+  //     setFilters((prevFilters) => ({
+  //       ...prevFilters,
+  //       state: selectedState,
+  //     }));
+  //   }
+  // }, [selectedState, selectedRegion, searchParams, router]);
   useEffect(() => {
-    if (selectedState) {
-      const slugifiedState = selectedState.toLowerCase().replace(/\s+/g, "-");
-      const query = searchParams.toString();
+    const timeout = setTimeout(() => {
+      if (!selectedMake && !selectedState) return;
 
-      // Update the URL with selected state and region (if available)
-      const slug = `/listings/${slugifiedState}-state${
-        selectedRegion
-          ? `/${selectedRegion.toLowerCase().replace(/\s+/g, "-")}-region`
-          : ""
-      }${query ? `?${query}` : ""}`;
+      const slugParts: string[] = [];
 
-      router.push(slug);
+      if (selectedMake) slugParts.push(selectedMake);
+      if (selectedModel) slugParts.push(selectedModel);
+      if (selectedCategory) slugParts.push(`${selectedCategory}-category`);
+      if (selectedStateName)
+        slugParts.push(`${slugify(selectedStateName)}-state`);
+      if (selectedRegionName)
+        slugParts.push(`${slugify(selectedRegionName)}-region`);
+      if (selectedSuburbName)
+        slugParts.push(`${slugify(selectedSuburbName)}-suburb`);
+      if (selectedPostcode) slugParts.push(selectedPostcode);
 
-      // Trigger the fetch for listings based on the updated filters
-      setFilters((prevFilters) => ({
-        ...prevFilters,
-        state: selectedState,
-      }));
-    }
-  }, [selectedState, selectedRegion, searchParams, router]);
+      const query: Record<string, string> = {};
+      if (yearFrom) query.acustom_fromyears = yearFrom.toString();
+      if (yearTo) query.acustom_toyears = yearTo.toString();
+      const queryString = new URLSearchParams(query).toString();
+
+      const newURL = `/listings/${slugParts.join("/")}${
+        queryString ? `?${queryString}` : ""
+      }`;
+
+      // Avoid unnecessary router.push
+      const currentURL =
+        pathname + (searchParams.toString() ? `?${searchParams}` : "");
+      if (newURL !== currentURL) {
+        router.push(newURL);
+      }
+    }, 300); // debounce 300ms
+
+    return () => clearTimeout(timeout);
+  }, [
+    selectedMake,
+    selectedModel,
+    selectedStateName,
+    selectedCategory,
+    selectedRegionName,
+    selectedSuburbName,
+    selectedPostcode,
+    yearFrom,
+    yearTo,
+  ]);
+
+  const isModelFetchCompleteRef = useRef(false); // ADD THIS
 
   useEffect(() => {
     if (!selectedMake) {
-      // nothing selected – clear everything
       setModel([]);
       setSelectedModel(null);
       setSelectedModelName(null);
       return;
     }
 
-    /* 👇 clear old model BEFORE fetching the new list */
+    // Clear previous model selection
     setSelectedModel(null);
     setSelectedModelName(null);
+    isModelFetchCompleteRef.current = false;
 
     fetchModelsByMake(selectedMake)
-      .then(setModel) // model list for the new make
+      .then((models) => {
+        setModel(models || []);
+        isModelFetchCompleteRef.current = true;
+      })
       .catch(console.error);
   }, [selectedMake]);
+  useEffect(() => {
+    if (selectedMake && isModelFetchCompleteRef.current) {
+      const updatedFilters = {
+        ...filters,
+        make: selectedMake,
+        model: undefined,
+      };
+
+      setFilters(updatedFilters);
+      onFilterChange(updatedFilters);
+    }
+  }, [selectedMake, model.length]); // model.length is updated only after fetch
 
   console.log("filters", filters);
   console.log(setSelectedRegion, filteredRegions);
@@ -425,6 +488,7 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
         setSelectedMake(makeMatch.slug);
         setSelectedMakeName(makeMatch.name);
       }
+
       const modelMatch = model.find((m) => m.slug === part);
       if (modelMatch) {
         setSelectedModel(modelMatch.slug);
@@ -731,22 +795,22 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
     selectedRegion,
   });
   // add newwwwww 1
-  useEffect(() => {
-    if (selectedMake) {
-      const updatedFilters: Filters = {
-        ...currentFilters,
-        make: selectedMake,
-        model: selectedModel || currentFilters.model, // Ensure the model is preserved
-      };
+  // useEffect(() => {
+  //   if (selectedMake) {
+  //     const updatedFilters: Filters = {
+  //       ...currentFilters,
+  //       make: selectedMake,
+  //       model: selectedModel || currentFilters.model, // Ensure the model is preserved
+  //     };
 
-      // Update URL to reflect the filters
-      const slugParts = [selectedMake];
-      if (selectedModel) slugParts.push(selectedModel);
+  //     // Update URL to reflect the filters
+  //     const slugParts = [selectedMake];
+  //     if (selectedModel) slugParts.push(selectedModel);
 
-      const url = `/listings/${slugParts.join("/")}`;
-      router.push(url);
-    }
-  }, [selectedMake, selectedModel]);
+  //     const url = `/listings/${slugParts.join("/")}`;
+  //     router.push(url);
+  //   }
+  // }, [selectedMake, selectedModel]);
 
   useEffect(() => {
     if (
@@ -809,6 +873,7 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
 
     // ✅ Continue other filters here...
   }, [pathname, states, makes, models]);
+
   const slugify = (value: string | null | undefined) =>
     value?.toLowerCase().replace(/\s+/g, "-").trim() || "";
   useEffect(() => {
@@ -1174,6 +1239,19 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
       setSelectedStateName(currentFilters.state);
     }
   }, [currentFilters.state, selectedStateName, filtersInitialized.current]);
+  useEffect(() => {
+    if (selectedModel && model.length > 0 && !selectedModelName) {
+      const match = model.find((m) => m.slug === selectedModel);
+      if (match) {
+        setSelectedModelName(match.name);
+      }
+    }
+  }, [selectedModel, model]);
+  useEffect(() => {
+    if (selectedMake && !filters.make) {
+      onFilterChange({ ...filters, make: selectedMake });
+    }
+  }, [selectedMake]);
 
   useEffect(() => {
     if (selectedSuburbName || selectedRegionName || selectedStateName) {
@@ -1270,7 +1348,7 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
                     const updatedFilters: Filters = {
                       ...currentFilters,
                       make: selectedMake || currentFilters.make,
-                      model: selectedModel || currentFilters.model, // ✅ Preserve model!
+                      model: selectedModel || currentFilters.model,
                       category: cat.slug,
                       state: selectedStateName || currentFilters.state,
                       region: selectedRegionName || currentFilters.region,
@@ -1279,26 +1357,8 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
                     };
 
                     setFilters(updatedFilters);
+                    suburbClickedRef.current = true; // ✅ Trigger URL
                     onFilterChange(updatedFilters);
-
-                    // 🔁 Update URL with make, model, category, location
-                    const slugParts: string[] = [];
-
-                    if (selectedMake) slugParts.push(selectedMake);
-                    if (selectedModel) slugParts.push(selectedModel);
-                    slugParts.push(`${cat.slug}-category`);
-                    if (selectedSuburbName)
-                      slugParts.push(`${selectedSuburbName}-suburb`);
-                    if (selectedStateName)
-                      slugParts.push(
-                        `${selectedStateName.toLowerCase()}-state`
-                      );
-                    if (selectedRegionName)
-                      slugParts.push(`${selectedRegionName}-region`);
-                    if (selectedPostcode) slugParts.push(selectedPostcode);
-
-                    const url = `/listings/${slugParts.join("/")}`;
-                    router.push(url);
                   }}
                 >
                   {cat.name}
@@ -1694,44 +1754,35 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
                   onClick={() => {
                     setSelectedMake(make.slug);
                     setSelectedMakeName(make.name);
-                    setMakeOpen(false);
-                    setSelectedModel(null);
-                    setSelectedModelName(null);
-                    setModel([]);
+                    setSelectedModel(null); // ❌ Clear model
+                    setSelectedModelName(null); // ❌ Clear model name
+                    setModel([]); // ❌ Clear model list
 
-                    // ✅ Re-fetch preserved category safely
-                    const preservedCategorySlug =
-                      selectedCategory || currentFilters.category || "";
-
-                    const categoryObj = categories.find(
-                      (cat) => cat.slug === preservedCategorySlug
-                    );
-
-                    if (preservedCategorySlug) {
-                      setSelectedCategory(preservedCategorySlug);
-                    }
-                    if (categoryObj) {
-                      setSelectedCategoryName(categoryObj.name);
-                    }
+                    fetchModelsByMake(make.slug).then((models) => {
+                      setModel(models || []); // ✅ Fetch new model list only
+                    });
 
                     const updatedFilters: Filters = {
-                      ...currentFilters,
+                      ...filters,
                       make: make.slug,
-                      category: preservedCategorySlug || undefined,
-                      model: model.length > 0 ? model[0].slug : undefined,
+                      model: undefined,
                     };
 
                     setFilters(updatedFilters);
-                    onFilterChange(updatedFilters);
+                    onFilterChange(updatedFilters); // ✅ Trigger API call
 
-                    // ✅ Update URL with make + category
-                    const slugParts = [];
-                    if (make.slug) slugParts.push(make.slug);
-                    if (preservedCategorySlug)
-                      slugParts.push(`${preservedCategorySlug}-category`);
+                    // ✅ Update URL with just make
+                    const slugParts = [make.slug];
+                    if (selectedCategory)
+                      slugParts.push(`${selectedCategory}-category`);
+                    if (selectedStateName)
+                      slugParts.push(`${slugify(selectedStateName)}-state`);
 
-                    const url = `/listings/${slugParts.join("/")}`;
-                    router.push(url);
+                    const newPath = `/listings/${slugParts.join("/")}`;
+                    router.push(
+                      newPath +
+                        (searchParams.toString() ? `?${searchParams}` : "")
+                    );
                   }}
                 >
                   {make.name}
@@ -1808,44 +1859,19 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
                     selectedModel === mod.slug ? "selected" : ""
                   }`}
                   onClick={() => {
-                    setSelectedModel(mod.slug);
-                    setSelectedModelName(mod.name);
+                    setSelectedModel(mod.slug); // ✅ Set slug
+                    setSelectedModelName(mod.name); // ✅ Set display name
                     setModelOpen(false);
 
                     const updatedFilters = {
-                      ...currentFilters,
+                      ...filters,
                       make: selectedMake,
                       model: mod.slug,
                     };
+
                     setFilters(updatedFilters);
+                    suburbClickedRef.current = true; // ✅ Force filter+URL update
                     onFilterChange(updatedFilters);
-                    const slugParts: string[] = [];
-
-                    if (selectedMake) slugParts.push(selectedMake);
-                    if (mod.slug) slugParts.push(mod.slug); // 👈 FIXED: Ensure model gets pushed
-
-                    if (selectedCategory)
-                      slugParts.push(`${selectedCategory}-category`);
-
-                    if (selectedState)
-                      slugParts.push(
-                        `${selectedState
-                          .toLowerCase()
-                          .replace(/\s+/g, "-")}-state`
-                      );
-                    if (selectedRegion)
-                      slugParts.push(`${selectedRegion}-region`);
-                    if (selectedState) slugParts.push(`${selectedState}-state`);
-
-                    if (selectedSuburbName)
-                      slugParts.push(`${selectedSuburbName}-suburb`);
-                    const newPath = `/listings/${slugParts.join("/")}`;
-                    console.log("🚀 Updated URL:", newPath); // ✅ Debug log
-
-                    router.push(
-                      newPath +
-                        (searchParams.toString() ? `?${searchParams}` : "")
-                    );
                   }}
                 >
                   {mod.name}

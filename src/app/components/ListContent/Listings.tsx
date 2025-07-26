@@ -184,22 +184,18 @@ export default function ListingsPage({ category, condition, location }: Props) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams, pagination, filtersReady]);
   console.log(location);
+
   console.log("✅ Filters about to be applied:", filtersRef.current);
 
   const loadListings = useCallback(
     async (page = 1, appliedFilters: Filters = filters) => {
-      if (!appliedFilters || Object.keys(appliedFilters).length === 0) {
-        console.warn("⛔ Skipping load: filters are empty.");
-        setIsLoading(false);
-        return;
-      }
       setIsLoading(true);
       window.scrollTo({ top: 0, behavior: "smooth" });
 
       try {
         const response = await fetchListings({
           ...appliedFilters,
-          page, // Current page number
+          page,
           condition: appliedFilters.condition,
           minKg: appliedFilters.minKg?.toString(),
           maxKg: appliedFilters.maxKg?.toString(),
@@ -217,7 +213,13 @@ export default function ListingsPage({ category, condition, location }: Props) {
           suburb: appliedFilters.suburb,
         });
 
-        if (response?.data?.products && response?.pagination) {
+        const hasFilters = Object.values(appliedFilters).some(
+          (val) => val !== undefined && val !== null && val !== ""
+        );
+
+        const productsFound = response?.data?.products?.length > 0;
+
+        if (productsFound && response?.pagination) {
           setProducts(response.data.products);
           setCategories(response.data.all_categories);
           setMakes(response.data.make_options);
@@ -227,11 +229,34 @@ export default function ListingsPage({ category, condition, location }: Props) {
           setPagination(response.pagination);
           setMetaDescription(response.seo?.metadescription);
           setMetaTitle(response.seo?.metatitle);
-          console.log("my", metaTitle);
-
-          // Dynamically build the meta title and description using all filters
           setMetaImage(response.seo?.metaimage || "/favicon.ico");
+        } else if (hasFilters) {
+          console.warn(
+            "⚠️ No results found with filters. Loading default listings."
+          );
+
+          // 🌀 Try again with empty filters
+          const fallbackResponse = await fetchListings({ page: 1 });
+
+          setProducts(fallbackResponse?.data?.products || []);
+          setPagination(
+            fallbackResponse?.pagination || {
+              current_page: 1,
+              total_pages: 1,
+              per_page: pagination.per_page,
+              total_products: 0,
+            }
+          );
+          setCategories(fallbackResponse?.data?.all_categories || []);
+          setMakes(fallbackResponse?.data?.make_options || []);
+          setModels(fallbackResponse?.data?.model_options || []);
+          setStateOptions(fallbackResponse?.data?.states || []);
+          setPageTitle(fallbackResponse?.title ?? "Caravan Listings");
+          setMetaTitle(fallbackResponse?.seo?.metatitle ?? "");
+          setMetaDescription(fallbackResponse?.seo?.metadescription ?? "");
+          setMetaImage(fallbackResponse?.seo?.metaimage || "/favicon.ico");
         } else {
+          // 🧾 No filters, but no data either
           setProducts([]);
           setPagination({
             current_page: 1,
@@ -247,7 +272,7 @@ export default function ListingsPage({ category, condition, location }: Props) {
         setIsLoading(false);
       }
     },
-    [filters, pagination.per_page] // ✅ Add metaImage to dependencies
+    [filters, pagination.per_page]
   );
 
   useEffect(() => {
