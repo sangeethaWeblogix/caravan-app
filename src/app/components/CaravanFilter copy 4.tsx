@@ -238,7 +238,6 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
       }
     }
   }, [pathname, categories]);
-
   useEffect(() => {
     if (!selectedMake) return;
 
@@ -329,8 +328,7 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
   //   const timeout = setTimeout(() => {
   //     if (!selectedMake && !selectedState) return;
 
-  //     const slugParts:
-  //  string[] = [];
+  //     const slugParts: string[] = [];
 
   //     if (selectedMake) slugParts.push(selectedMake);
   //     if (selectedModel) slugParts.push(selectedModel);
@@ -426,162 +424,143 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
 
     setSelectedState(null);
     setSelectedStateName(null);
-    // Do not reset make/model here, that's handled separately
+    // setSelectedMake(null);
+    // setSelectedMakeName(null);
     setSelectedModel(null);
     setSelectedModelName(null);
     setSelectedRegionName(null);
     setSelectedSuburbName(null);
     setSelectedCategory(null);
     setSelectedCategoryName(null);
-
     segments.forEach((part) => {
-      // ATM patterns
-      const isATM =
-        /^over-\d+-kg-atm$/.test(part) ||
-        /^under-\d+-kg-atm$/.test(part) ||
-        /^between-\d+-kg-\d+-kg-atm$/.test(part);
-
-      // Price patterns
-      const isPrice =
-        /^over-\d+$/.test(part) ||
-        /^under-\d+$/.test(part) ||
-        /^between-\d+-\d+$/.test(part);
-
-      const isYear =
-        /^from-\d+-year-range$/.test(part) ||
-        /^to-\d+-year-range$/.test(part) ||
-        /^between-\d+-and-\d+-year-range$/.test(part);
-
-      const isLength =
-        /^over-\d+-length-in-feet$/.test(part) ||
-        /^under-\d+-length-in-feet$/.test(part) ||
-        /^between-\d+-\d+-length-in-feet$/.test(part);
-
-      const isSleeps = /-people-sleeping-capacity$/.test(part);
-      const isCondition = /-condition$/.test(part);
-      const isPostcode = /^\d{4}$/.test(part);
-
-      // ✅ Set ATM
-      if (/^over-(\d+)-kg-atm$/.test(part)) {
-        setAtmFrom(parseInt(part.match(/^over-(\d+)-kg-atm$/)?.[1] || "0"));
-        setAtmTo(null);
-      } else if (/^under-(\d+)-kg-atm$/.test(part)) {
-        setAtmFrom(null);
-        setAtmTo(parseInt(part.match(/^under-(\d+)-kg-atm$/)?.[1] || "0"));
-      } else if (/^between-(\d+)-kg-(\d+)-kg-atm$/.test(part)) {
-        const [, from, to] =
-          part.match(/^between-(\d+)-kg-(\d+)-kg-atm$/) || [];
-        setAtmFrom(parseInt(from));
-        setAtmTo(parseInt(to));
-      }
-
-      // ✅ Set Price
-      if (/^over-(\d+)$/.test(part)) {
-        setMinPrice(parseInt(part.replace("over-", "")));
-        setMaxPrice(null);
-      } else if (/^under-(\d+)$/.test(part)) {
-        setMinPrice(null);
-        setMaxPrice(parseInt(part.replace("under-", "")));
-      } else if (/^between-(\d+)-(\d+)$/.test(part)) {
-        const [, from, to] = part.match(/^between-(\d+)-(\d+)$/) || [];
-        setMinPrice(parseInt(from));
-        setMaxPrice(parseInt(to));
-      }
-
-      // ✅ Set State
+      // 👇 Match something like "queensland-state"
       const stateMatch = states.find(
         (state) =>
           part === `${state.name.toLowerCase().replace(/\s+/g, "-")}-state`
       );
+
       if (stateMatch) {
-        setSelectedState(stateMatch.value);
-        setSelectedStateName(stateMatch.name);
+        setSelectedState(stateMatch.value); // e.g., "QLD"
+        setSelectedStateName(stateMatch.name); // e.g., "Queensland"
       }
 
-      // ✅ Set Region
-      if (part.endsWith("-region")) {
-        const regionName = part.replace("-region", "").replace(/-/g, " ");
-        setSelectedRegionName(regionName);
+      // ATM: over
+      const overAtmMatch = part.match(/^over-(\d+)-kg-atm$/);
+      if (overAtmMatch) {
+        setAtmFrom(parseInt(overAtmMatch[1]));
+        setAtmTo(null);
       }
 
-      // ✅ Set Suburb
-      if (part.endsWith("-suburb")) {
-        const suburbName = part.replace("-suburb", "").replace(/-/g, " ");
-        setSelectedSuburbName(suburbName);
+      // ATM: under
+      const underAtmMatch = part.match(/^under-(\d+)-kg-atm$/);
+      if (underAtmMatch) {
+        setAtmFrom(null);
+        setAtmTo(parseInt(underAtmMatch[1]));
       }
 
-      // ✅ Make (must exclude other filter types)
-      const isPureMake = makes.find(
-        (m) =>
-          m.slug === part &&
-          !isATM &&
-          !isPrice &&
-          !isCondition &&
-          !isSleeps &&
-          !isYear &&
-          !isLength &&
-          !isPostcode &&
-          !part.includes("kg") &&
-          !part.includes("people") &&
-          !part.includes("length") &&
-          !part.includes("year") &&
-          !/^\d{4}$/.test(part)
+      // ATM: between
+      const betweenAtmMatch = part.match(/^between-(\d+)-kg-(\d+)-kg-atm$/);
+      if (betweenAtmMatch) {
+        setAtmFrom(parseInt(betweenAtmMatch[1]));
+        setAtmTo(parseInt(betweenAtmMatch[2]));
+      }
+
+      // Price: over
+      const overPriceMatch = part.match(/^over-(\d+)$/);
+      if (overPriceMatch) {
+        setMinPrice(parseInt(overPriceMatch[1]));
+        setMaxPrice(null);
+      }
+
+      // Price: under
+      const underPriceMatch = part.match(/^under-(\d+)$/);
+      if (underPriceMatch) {
+        setMinPrice(null);
+        setMaxPrice(parseInt(underPriceMatch[1]));
+      }
+
+      // Price: between
+      const betweenPriceMatch = part.match(/^between-(\d+)-(\d+)$/);
+      if (betweenPriceMatch) {
+        setMinPrice(parseInt(betweenPriceMatch[1]));
+        setMaxPrice(parseInt(betweenPriceMatch[2]));
+      }
+
+      // Condition
+      const conditionMatch = part.match(/(near-new|new|used)-condition/);
+      if (conditionMatch) {
+        const formatted = conditionMatch[1]
+          .split("-")
+          .map((word) => word[0].toUpperCase() + word.slice(1))
+          .join(" ");
+        setSelectedConditionName(formatted);
+      }
+
+      // Sleeps
+      const sleepMatch = part.match(/^over-(\d+)-people-sleeping-capacity$/);
+      if (sleepMatch) {
+        setSelectedSleepName(sleepMatch[1]);
+      }
+
+      const yearRangeMatch = part.match(/^between-(\d+)-and-(\d+)-year-range$/);
+      if (yearRangeMatch) {
+        setYearFrom(parseInt(yearRangeMatch[1]));
+        setYearTo(parseInt(yearRangeMatch[2]));
+      }
+      const fromYearMatch = part.match(/^from-(\d+)-year-range$/);
+      if (fromYearMatch) {
+        setYearFrom(parseInt(fromYearMatch[1]));
+        setYearTo(null);
+      }
+      const toYearMatch = part.match(/^to-(\d+)-year-range$/);
+      if (toYearMatch) {
+        setYearTo(parseInt(toYearMatch[1]));
+        setYearFrom(null);
+      }
+
+      // Length Slug: between-X-Y-length-in-feet
+      const betweenLenMatch = part.match(
+        /^between-(\d+)-(\d+)-length-in-feet$/
       );
-
-      if (isPureMake) {
-        setSelectedMake(isPureMake.slug);
-        setSelectedMakeName(isPureMake.name);
+      if (betweenLenMatch) {
+        setLengthFrom(parseInt(betweenLenMatch[1]));
+        setLengthTo(parseInt(betweenLenMatch[2]));
       }
 
-      // ✅ Model
+      // over-X-length-in-feet
+      const overLenMatch = part.match(/^over-(\d+)-length-in-feet$/);
+      if (overLenMatch) {
+        setLengthFrom(parseInt(overLenMatch[1]));
+        setLengthTo(null);
+      }
+
+      // under-X-length-in-feet
+      const underLenMatch = part.match(/^under-(\d+)-length-in-feet$/);
+      if (underLenMatch) {
+        setLengthFrom(null);
+        setLengthTo(parseInt(underLenMatch[1]));
+      }
+
+      if (!part.includes("-kg") && !part.includes("-atm")) {
+        const matchedMake = makes.find((m) => m.slug === part);
+        if (matchedMake) {
+          setSelectedMake(matchedMake.slug);
+          setSelectedMakeName(matchedMake.name);
+        }
+      }
+
       const modelMatch = model.find((m) => m.slug === part);
       if (modelMatch) {
         setSelectedModel(modelMatch.slug);
         setSelectedModelName(modelMatch.name);
       }
 
-      // ✅ Condition
-      if (isCondition) {
-        const formatted = part
-          .replace("-condition", "")
-          .split("-")
-          .map((w) => w[0].toUpperCase() + w.slice(1))
-          .join(" ");
-        setSelectedConditionName(formatted);
-      }
+      const isRegionSlug = part.endsWith("-region");
 
-      // ✅ Sleeps
-      if (isSleeps) {
-        const match = part.match(/^over-(\d+)-people-sleeping-capacity$/);
-        if (match) setSelectedSleepName(match[1]);
-      }
-
-      // ✅ Years
-      if (/^from-(\d+)-year-range$/.test(part)) {
-        const match = part.match(/^from-(\d+)-year-range$/);
-        if (match) setYearFrom(parseInt(match[1]));
-      } else if (/^to-(\d+)-year-range$/.test(part)) {
-        const match = part.match(/^to-(\d+)-year-range$/);
-        if (match) setYearTo(parseInt(match[1]));
-      } else if (/^between-(\d+)-and-(\d+)-year-range$/.test(part)) {
-        const [, from, to] =
-          part.match(/^between-(\d+)-and-(\d+)-year-range$/) || [];
-        setYearFrom(parseInt(from));
-        setYearTo(parseInt(to));
-      }
-
-      // ✅ Length
-      if (/^over-(\d+)-length-in-feet$/.test(part)) {
-        const match = part.match(/^over-(\d+)-length-in-feet$/);
-        if (match) setLengthFrom(parseInt(match[1]));
-      } else if (/^under-(\d+)-length-in-feet$/.test(part)) {
-        const match = part.match(/^under-(\d+)-length-in-feet$/);
-        if (match) setLengthTo(parseInt(match[1]));
-      } else if (/^between-(\d+)-(\d+)-length-in-feet$/.test(part)) {
-        const [, from, to] =
-          part.match(/^between-(\d+)-(\d+)-length-in-feet$/) || [];
-        setLengthFrom(parseInt(from));
-        setLengthTo(parseInt(to));
+      if (isRegionSlug) {
+        const regionName = part.replace("-region", "").replace(/-/g, " ");
+        setSelectedRegionName(regionName);
+        return; // ✅ skip model detection if it's region
       }
     });
   }, [pathname, states, makes, model]);
@@ -714,113 +693,112 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
   // ⬇️ Place this inside your component top-level
   useEffect(() => {}, [filteredSuburbs]);
 
-  // useEffect(() => {
-  //   const pathParts = pathname.split("/").filter(Boolean); // ex: ["listings", "queensland-state"]
-  //   const slug1 = pathParts[1]; // could be category or state
-  //   alert("enter 2");
-  //   let categoryMatch: Option | undefined;
+  useEffect(() => {
+    const pathParts = pathname.split("/").filter(Boolean); // ex: ["listings", "queensland-state"]
+    const slug1 = pathParts[1]; // could be category or state
 
-  //   if (slug1?.endsWith("-category")) {
-  //     const categorySlug = slug1.replace(/-category$/, "");
-  //     categoryMatch = categories.find((cat) => cat.slug === categorySlug);
-  //   }
+    let categoryMatch: Option | undefined;
 
-  //   if (categoryMatch) {
-  //     setSelectedCategory(categoryMatch.slug);
-  //     setSelectedCategoryName(categoryMatch.name);
-  //   }
+    if (slug1?.endsWith("-category")) {
+      const categorySlug = slug1.replace(/-category$/, "");
+      categoryMatch = categories.find((cat) => cat.slug === categorySlug);
+    }
 
-  //   const slug = pathname.split("/listings/")[1];
-  //   const segments = slug?.split("/") || [];
-  //   const isKnownFilter = (s: string) =>
-  //     s.endsWith("-state") ||
-  //     s.endsWith("-category") ||
-  //     s.endsWith("-region") ||
-  //     s.endsWith("-suburb") ||
-  //     s.includes("-kg") ||
-  //     s.includes("-people") ||
-  //     s.includes("between-") ||
-  //     s.includes("over-") ||
-  //     s.includes("under-") ||
-  //     s.endsWith("-condition") ||
-  //     /^\d{4}$/.test(s); // postcode
+    if (categoryMatch) {
+      setSelectedCategory(categoryMatch.slug);
+      setSelectedCategoryName(categoryMatch.name);
+    }
 
-  //   const filteredSegments = segments.filter((s) => !isKnownFilter(s));
+    const slug = pathname.split("/listings/")[1];
+    const segments = slug?.split("/") || [];
+    const isKnownFilter = (s: string) =>
+      s.endsWith("-state") ||
+      s.endsWith("-category") ||
+      s.endsWith("-region") ||
+      s.endsWith("-suburb") ||
+      s.includes("-kg") ||
+      s.includes("-people") ||
+      s.includes("between-") ||
+      s.includes("over-") ||
+      s.includes("under-") ||
+      s.endsWith("-condition") ||
+      /^\d{4}$/.test(s); // postcode
 
-  //   const makeSlug = filteredSegments[0];
-  //   const modelSlug = filteredSegments[1];
+    const filteredSegments = segments.filter((s) => !isKnownFilter(s));
 
-  //   if (modelSlug && modelSlug !== makeSlug) {
-  //     const filteredModels = models.filter(
-  //       (m) => m.slug === selectedMake // if you're using make_slug
-  //     );
+    const makeSlug = filteredSegments[0];
+    const modelSlug = filteredSegments[1];
 
-  //     const modelMatch = filteredModels.find((m) => m.slug === modelSlug);
+    if (modelSlug && modelSlug !== makeSlug) {
+      const filteredModels = models.filter(
+        (m) => m.slug === selectedMake // if you're using make_slug
+      );
 
-  //     if (modelMatch) {
-  //       setSelectedModel(modelMatch.slug);
-  //       setSelectedModelName(modelMatch.name);
-  //     }
-  //   }
+      const modelMatch = filteredModels.find((m) => m.slug === modelSlug);
 
-  //   const condition = searchParams.get("condition");
-  //   if (condition && !selectedConditionName)
-  //     setSelectedConditionName(condition);
-  //   const sleeps = searchParams.get("sleeps");
-  //   if (sleeps) setSelectedSleepName(sleeps);
+      if (modelMatch) {
+        setSelectedModel(modelMatch.slug);
+        setSelectedModelName(modelMatch.name);
+      }
+    }
 
-  //   // ✅ Trigger filter after all values are set
-  //   setTimeout(() => {
-  //     onFilterChange({
-  //       make: selectedMake || currentFilters.make,
-  //       model: selectedModel || currentFilters.model,
-  //       category: selectedCategory || currentFilters.category,
-  //       state: selectedStateName || currentFilters.state,
-  //       region: selectedRegionName || currentFilters.region,
-  //       suburb: selectedSuburbName || currentFilters.suburb,
-  //       postcode: selectedPostcode || currentFilters.postcode,
-  //       condition: selectedConditionName || currentFilters.condition,
-  //       sleeps: selectedSleepName
-  //         ? `${selectedSleepName}-people`
-  //         : currentFilters.sleeps,
-  //       from_price: minPrice ?? currentFilters.from_price,
-  //       to_price: maxPrice ?? currentFilters.to_price,
-  //       minKg: atmFrom ?? currentFilters.minKg,
-  //       maxKg: atmTo ?? currentFilters.maxKg,
-  //       from_year: yearFrom ?? currentFilters.from_year,
-  //       to_year: yearTo ?? currentFilters.to_year,
-  //       from_length: lengthFrom ?? currentFilters.from_length,
-  //       to_length: lengthTo ?? currentFilters.to_length,
-  //       location: selectedStateName || currentFilters.location,
-  //     });
-  //   }, 0);
-  // }, [
-  //   pathname,
-  //   categories,
-  //   makes,
-  //   model,
-  //   selectedCategory,
-  //   states,
-  //   searchParams,
-  //   onFilterChange,
-  //   atmFrom,
-  //   atmTo,
-  //   minPrice,
-  //   maxPrice,
-  //   selectedConditionName,
-  //   selectedSleepName,
-  //   yearFrom,
-  //   yearTo,
-  //   lengthFrom,
-  //   lengthTo,
-  //   selectedStateName,
-  //   selectedState,
-  //   selectedMake,
-  //   selectedModel,
-  //   selectedRegionName,
-  //   selectedSuburbName,
-  // ]);
+    const condition = searchParams.get("condition");
+    if (condition && !selectedConditionName)
+      setSelectedConditionName(condition);
+    const sleeps = searchParams.get("sleeps");
+    if (sleeps) setSelectedSleepName(sleeps);
 
+    // ✅ Trigger filter after all values are set
+    setTimeout(() => {
+      onFilterChange({
+        make: selectedMake || currentFilters.make,
+        model: selectedModel || currentFilters.model,
+        category: selectedCategory || currentFilters.category,
+        state: selectedStateName || currentFilters.state,
+        region: selectedRegionName || currentFilters.region,
+        suburb: selectedSuburbName || currentFilters.suburb,
+        postcode: selectedPostcode || currentFilters.postcode,
+        condition: selectedConditionName || currentFilters.condition,
+        sleeps: selectedSleepName
+          ? `${selectedSleepName}-people`
+          : currentFilters.sleeps,
+        from_price: minPrice ?? currentFilters.from_price,
+        to_price: maxPrice ?? currentFilters.to_price,
+        minKg: atmFrom ?? currentFilters.minKg,
+        maxKg: atmTo ?? currentFilters.maxKg,
+        from_year: yearFrom ?? currentFilters.from_year,
+        to_year: yearTo ?? currentFilters.to_year,
+        from_length: lengthFrom ?? currentFilters.from_length,
+        to_length: lengthTo ?? currentFilters.to_length,
+        location: selectedStateName || currentFilters.location,
+      });
+    }, 0);
+  }, [
+    pathname,
+    categories,
+    makes,
+    model,
+    selectedCategory,
+    states,
+    searchParams,
+    onFilterChange,
+    atmFrom,
+    atmTo,
+    minPrice,
+    maxPrice,
+    selectedConditionName,
+    selectedSleepName,
+    yearFrom,
+    yearTo,
+    lengthFrom,
+    lengthTo,
+    selectedStateName,
+    selectedState,
+    selectedMake,
+    selectedModel,
+    selectedRegionName,
+    selectedSuburbName,
+  ]);
   const handleSearchClick = () => {
     const input = locationInput.trim();
     if (!suburbClickedRef.current || input === "") return;
@@ -890,8 +868,159 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
     }
   }, [filters.suburb, filters.postcode, locationInput]);
 
+  useEffect(() => {
+    const slug = pathname.split("/listings/")[1];
+    const segments = slug?.split("/") || [];
+
+    const stateSlug = segments.find((s) => s.endsWith("-state"));
+    const makeSlug = segments.find(
+      (s) =>
+        !s.endsWith("-state") &&
+        !s.endsWith("-region") &&
+        !s.endsWith("-suburb")
+    );
+    let modelSlug: string | undefined;
+
+    // If there's a makeSlug, model might be next
+    if (makeSlug) {
+      const makeIndex = segments.indexOf(makeSlug);
+      modelSlug = segments[makeIndex + 1];
+    }
+
+    // ✅ Set STATE
+    if (stateSlug) {
+      const stateName = stateSlug.replace("-state", "").replace(/-/g, " ");
+      const matchedState = states.find(
+        (s) => s.name.toLowerCase() === stateName.toLowerCase()
+      );
+      if (matchedState) {
+        setSelectedState(matchedState.value);
+        setSelectedStateName(matchedState.name);
+      }
+    }
+
+    // ✅ Set MAKE
+    if (makeSlug) {
+      const makeMatch = makes.find((m) => m.slug === makeSlug);
+      if (makeMatch) {
+        setSelectedMake(makeMatch.slug);
+        setSelectedMakeName(makeMatch.name);
+      }
+    }
+
+    // ✅ Set MODEL
+    if (modelSlug) {
+      const modelMatch = models.find((m) => m.slug === modelSlug);
+      if (modelMatch) {
+        setSelectedModel(modelMatch.slug);
+        setSelectedModelName(modelMatch.name);
+      }
+    }
+
+    // ✅ Continue other filters here...
+  }, [pathname, states, makes, models]);
+
   const slugify = (value: string | null | undefined) =>
     value?.toLowerCase().replace(/\s+/g, "-").trim() || "";
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      if (justSelectedStateRef.current) {
+        justSelectedStateRef.current = false;
+        return;
+      }
+
+      const slugParts: string[] = [];
+      if (selectedMake) {
+        slugParts.push(selectedMake);
+      }
+
+      if (selectedModel) {
+        slugParts.push(selectedModel);
+      }
+
+      if (selectedConditionName)
+        slugParts.push(`${selectedConditionName.toLowerCase()}-condition`);
+
+      const categorySlug = selectedCategory || currentFilters.category;
+      if (categorySlug && !slugParts.includes(`${categorySlug}-category`)) {
+        slugParts.push(`${categorySlug}-category`);
+      }
+      if (selectedSuburbName) slugParts.push(`${selectedSuburbName}-suburb`);
+
+      if (selectedStateName)
+        slugParts.push(`${slugify(selectedStateName)}-state`);
+
+      if (selectedRegionName) slugParts.push(`${selectedRegionName}-region`);
+      if (selectedPostcode) slugParts.push(selectedPostcode);
+
+      if (minPrice && maxPrice)
+        slugParts.push(`between-${minPrice}-${maxPrice}`);
+      else if (minPrice) slugParts.push(`over-${minPrice}`);
+      else if (maxPrice) slugParts.push(`under-${maxPrice}`);
+
+      if (atmFrom && atmTo)
+        slugParts.push(`between-${atmFrom}-kg-${atmTo}-kg-atm`);
+      else if (atmFrom) slugParts.push(`over-${atmFrom}-kg-atm`);
+      else if (atmTo) slugParts.push(`under-${atmTo}-kg-atm`);
+
+      if (selectedSleepName)
+        slugParts.push(`over-${selectedSleepName}-people-sleeping-capacity`);
+
+      if (lengthFrom && lengthTo)
+        slugParts.push(`between-${lengthFrom}-${lengthTo}-length-in-feet`);
+      else if (lengthFrom) slugParts.push(`over-${lengthFrom}-length-in-feet`);
+      else if (lengthTo) slugParts.push(`under-${lengthTo}-length-in-feet`);
+
+      let slugifiedURL = `/listings/${slugParts.join("/")}`
+        .replace(/\s+/g, "-")
+        .replace(/-+/g, "-")
+        .toLowerCase();
+
+      const query: Record<string, string> = {};
+      if (yearFrom) query.acustom_fromyears = yearFrom.toString();
+      if (yearTo) query.acustom_toyears = yearTo.toString();
+
+      const queryString = new URLSearchParams(query).toString();
+      if (queryString) slugifiedURL += `?${queryString}`;
+
+      if (!isModalOpen && filtersInitialized.current) {
+        suburbClickedRef.current = false;
+
+        const currentURL =
+          pathname + (searchParams.toString() ? `?${searchParams}` : "");
+        if (currentURL !== slugifiedURL) {
+          router.push(slugifiedURL);
+        }
+      } else {
+        filtersInitialized.current = true;
+      }
+    }, 300);
+
+    return () => clearTimeout(timeout);
+  }, [
+    selectedCategory,
+    selectedMake,
+    selectedModel,
+    selectedConditionName,
+    selectedSleepName,
+    selectedState,
+    selectedSuburbName,
+    selectedStateName,
+    locationInput,
+    atmFrom,
+    atmTo,
+    minPrice,
+    maxPrice,
+    onFilterChange,
+    router,
+    yearFrom,
+    yearTo,
+    lengthFrom,
+    lengthTo,
+    selectedPostcode,
+    selectedRegionName,
+    filteredRegions,
+  ]);
 
   const resetFilters = () => {
     // ✅ Clear all UI selections
@@ -1156,7 +1285,6 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
       setSelectedStateName(currentFilters.state);
     }
   }, [currentFilters.state, selectedStateName, filtersInitialized.current]);
-
   useEffect(() => {
     if (selectedModel && model.length > 0 && !selectedModelName) {
       const match = model.find((m) => m.slug === selectedModel);
@@ -1186,57 +1314,35 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
       hasCategoryBeenSetRef.current = true;
     }
   }, [selectedCategory]);
-  // router issue
+
   const lastPushedURLRef = useRef<string>("");
   useEffect(() => {
     const timeout = setTimeout(() => {
       const slugParts: string[] = [];
-      if (!filtersInitialized.current) {
-        return;
-      }
 
       if (selectedMake) slugParts.push(selectedMake);
       if (selectedModel) slugParts.push(selectedModel);
       if (selectedCategory) slugParts.push(`${selectedCategory}-category`);
-      if (selectedConditionName)
-        slugParts.push(`${selectedConditionName.toLowerCase()}-condition`);
-      if (selectedSuburbName)
-        slugParts.push(`${slugify(selectedSuburbName)}-suburb`);
       if (selectedStateName)
         slugParts.push(`${slugify(selectedStateName)}-state`);
       if (selectedRegionName)
         slugParts.push(`${slugify(selectedRegionName)}-region`);
+      if (selectedSuburbName)
+        slugParts.push(`${slugify(selectedSuburbName)}-suburb`);
       if (selectedPostcode) slugParts.push(selectedPostcode);
-
-      if (minPrice && maxPrice)
-        slugParts.push(`between-${minPrice}-${maxPrice}`);
-      else if (minPrice) slugParts.push(`over-${minPrice}`);
-      else if (maxPrice) slugParts.push(`under-${maxPrice}`);
-
-      if (atmFrom && atmTo)
-        slugParts.push(`between-${atmFrom}-kg-${atmTo}-kg-atm`);
-      else if (atmFrom) slugParts.push(`over-${atmFrom}-kg-atm`);
-      else if (atmTo) slugParts.push(`under-${atmTo}-kg-atm`);
-
-      if (selectedSleepName)
-        slugParts.push(`over-${selectedSleepName}-people-sleeping-capacity`);
-
-      if (lengthFrom && lengthTo)
-        slugParts.push(`between-${lengthFrom}-${lengthTo}-length-in-feet`);
-      else if (lengthFrom) slugParts.push(`over-${lengthFrom}-length-in-feet`);
-      else if (lengthTo) slugParts.push(`under-${lengthTo}-length-in-feet`);
 
       const query: Record<string, string> = {};
       if (yearFrom) query.acustom_fromyears = yearFrom.toString();
       if (yearTo) query.acustom_toyears = yearTo.toString();
 
       const queryString = new URLSearchParams(query).toString();
-      const slugPath = `/listings/${slugParts.join("/")}`;
-      const fullURL = queryString ? `${slugPath}?${queryString}` : slugPath;
+      const fullURL = `/listings/${slugParts.join("/")}${
+        queryString ? `?${queryString}` : ""
+      }`;
 
       if (lastPushedURLRef.current !== fullURL) {
         lastPushedURLRef.current = fullURL;
-        router.push(fullURL);
+        router.push(fullURL); // ✅ 1 push
 
         const updatedFilters: Filters = {
           ...filters,
@@ -1249,42 +1355,24 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
           postcode: selectedPostcode || undefined,
           from_year: yearFrom || undefined,
           to_year: yearTo || undefined,
-          minKg: atmFrom || undefined,
-          maxKg: atmTo || undefined,
-          from_price: minPrice || undefined,
-          to_price: maxPrice || undefined,
-          from_length: lengthFrom || undefined,
-          to_length: lengthTo || undefined,
-          condition: selectedConditionName || currentFilters.condition,
-          sleeps: selectedSleepName
-            ? `${selectedSleepName}-people`
-            : currentFilters.sleeps,
         };
 
         setFilters(updatedFilters);
-        onFilterChange(updatedFilters);
+        onFilterChange(updatedFilters); // ✅ 1 API call
       }
-    }, 300);
+    }, 300); // debounce
 
     return () => clearTimeout(timeout);
   }, [
     selectedMake,
     selectedModel,
     selectedCategory,
-    selectedConditionName,
-    selectedSleepName,
     selectedStateName,
     selectedRegionName,
     selectedSuburbName,
     selectedPostcode,
     yearFrom,
     yearTo,
-    atmFrom,
-    atmTo,
-    minPrice,
-    maxPrice,
-    lengthFrom,
-    lengthTo,
   ]);
 
   useEffect(() => {
@@ -1370,7 +1458,7 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
                     setSelectedCategory(cat.slug);
                     setSelectedCategoryName(cat.name);
                     setCategoryOpen(false);
-                    filtersInitialized.current = true;
+
                     const updatedFilters: Filters = {
                       ...filters, // ✅ live state
                       category: cat.slug,
@@ -1912,8 +2000,6 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
               onChange={(e) => {
                 const val = e.target.value ? parseInt(e.target.value) : null;
                 setAtmFrom(val);
-                suburbClickedRef.current = true;
-                filtersInitialized.current = true;
 
                 const updatedFilters: Filters = {
                   ...filters,
@@ -2083,7 +2169,7 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
         )}
       </div>
       {/* 8883944599
-            9524163042 */}
+        9524163042 */}
       {/* Condition Accordion */}
       <div className="cs-full_width_section">
         <div

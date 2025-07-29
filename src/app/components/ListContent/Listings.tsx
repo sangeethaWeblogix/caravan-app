@@ -274,19 +274,32 @@ export default function ListingsPage({ category, condition, location }: Props) {
     },
     [filters, pagination.per_page]
   );
-
   useEffect(() => {
-    if (
-      !hasSearched &&
-      filtersReady &&
-      Object.keys(initialFilters).length > 0
-    ) {
+    if (!hasSearched && filtersReady) {
       filtersRef.current = initialFilters;
-      setFilters(initialFilters); // ✅ ADD THIS LINE to sync state
-      loadListings(initialPage, initialFilters);
+      setFilters(initialFilters); // ✅ sync filter state
+      loadListings(initialPage, initialFilters); // ✅ call even if no filters
+      setHasSearched(true); // ✅ avoid re-fetching
     }
   }, [filtersReady, hasSearched, initialFilters, initialPage, loadListings]);
+  useEffect(() => {
+    // ✅ Force ready on first render
+    setFiltersReady(true);
+  }, []);
+
+  // useEffect(() => {
+  //   if (
+  //     !hasSearched &&
+  //     filtersReady &&
+  //     Object.keys(initialFilters).length > 0
+  //   ) {
+  //     filtersRef.current = initialFilters;
+  //     setFilters(initialFilters); // ✅ ADD THIS LINE to sync state
+  //     loadListings(initialPage, initialFilters);
+  //   }
+  // }, [filtersReady, hasSearched, initialFilters, initialPage, loadListings]);
   // Handle filter changes and update the page
+
   const handleFilterChange = useCallback((newFilters: Filters) => {
     console.log("🚚 got from CaravanFilter →", categories); // 👈 should contain sleeps
     const mergedFilters = {
@@ -388,6 +401,47 @@ export default function ListingsPage({ category, condition, location }: Props) {
     // Combine filters into the URL
     return `/listings/${slugParts.join("/")}`;
   };
+  useEffect(() => {
+    const slugFilters: Filters = {};
+
+    const slug = pathname.split("/listings/")[1];
+    const segments = slug?.split("/") || [];
+
+    // Parse slug segments
+    segments.forEach((part) => {
+      if (/^over-(\d+)$/.test(part)) {
+        slugFilters.from_price = parseInt(part.replace("over-", ""));
+      } else if (/^under-(\d+)$/.test(part)) {
+        slugFilters.to_price = parseInt(part.replace("under-", ""));
+      } else if (/^between-(\d+)-(\d+)$/.test(part)) {
+        const [, from, to] = part.match(/^between-(\d+)-(\d+)$/) || [];
+        slugFilters.from_price = parseInt(from);
+        slugFilters.to_price = parseInt(to);
+      }
+
+      if (/^over-(\d+)-kg-atm$/.test(part)) {
+        slugFilters.minKg = parseInt(
+          part.replace("over-", "").replace("-kg-atm", "")
+        );
+      } else if (/^under-(\d+)-kg-atm$/.test(part)) {
+        slugFilters.maxKg = parseInt(
+          part.replace("under-", "").replace("-kg-atm", "")
+        );
+      } else if (/^between-(\d+)-kg-(\d+)-kg-atm$/.test(part)) {
+        const [, from, to] =
+          part.match(/^between-(\d+)-kg-(\d+)-kg-atm$/) || [];
+        slugFilters.minKg = parseInt(from);
+        slugFilters.maxKg = parseInt(to);
+      }
+    });
+
+    if (Object.keys(slugFilters).length > 0) {
+      const mergedFilters = { ...filtersRef.current, ...slugFilters };
+      filtersRef.current = mergedFilters;
+      setFilters(mergedFilters);
+      loadListings(1, mergedFilters); // fetch based on updated slug filters
+    }
+  }, [pathname]);
 
   // ✨ Add this useEffect at the bottom of your component
   useEffect(() => {
