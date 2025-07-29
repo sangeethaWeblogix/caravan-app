@@ -1557,15 +1557,10 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
     if (filters.condition) slugParts.push(`${filters.condition}-condition`);
 
     if (filters.category) slugParts.push(`${filters.category}-category`);
-    // ✅ LOCATION LOGIC
-    if (filters.suburb) {
-      slugParts.push(`${slugify(filters.suburb)}-suburb`);
-      if (filters.state) slugParts.push(`${slugify(filters.state)}-state`);
-      if (filters.postcode) slugParts.push(filters.postcode);
-    } else {
-      if (filters.state) slugParts.push(`${slugify(filters.state)}-state`);
-      if (filters.region) slugParts.push(`${slugify(filters.region)}-region`);
-    }
+    if (filters.state) slugParts.push(`${slugify(filters.state)}-state`);
+    if (filters.region) slugParts.push(`${slugify(filters.region)}-region`);
+    if (filters.suburb) slugParts.push(`${slugify(filters.suburb)}-suburb`);
+    if (filters.postcode) slugParts.push(filters.postcode);
 
     if (filters.minKg && filters.maxKg) {
       slugParts.push(`between-${filters.minKg}-kg-${filters.maxKg}-kg-atm`);
@@ -1859,43 +1854,6 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
       updateAllFiltersAndURL();
     });
   }, [pathname, searchParams]);
-  console.log("name", states);
-  console.log("state-selectedState:", selectedState);
-  console.log(
-    "state-matchedState:",
-    states.find((s) => s.value == slugify(selectedState))
-  );
-  console.log("valuee state", selectedState);
-
-  useEffect(() => {
-    // Find the selected state from the states array
-    const selectedStateData = states.find(
-      (s) =>
-        selectedState &&
-        s.name.toLowerCase().startsWith(selectedState.toLowerCase())
-    );
-    console.log("valuee sub", selectedStateData);
-
-    // Check if selectedStateData exists and has regions
-    if (selectedStateData && Array.isArray(selectedStateData.regions)) {
-      const selectedRegion = selectedStateData.regions.find(
-        (region) =>
-          selectedRegionName &&
-          region.name.toLowerCase() === selectedRegionName.toLowerCase() // Case-insensitive match for region
-      );
-
-      // If selectedRegion exists, update the suburbs, otherwise, fallback to empty array
-      if (selectedRegion) {
-        setFilteredSuburbs(selectedRegion.suburbs || []);
-      } else {
-        setFilteredSuburbs([]); // No suburbs for this region
-      }
-    } else {
-      setFilteredSuburbs([]); // If selectedStateData doesn't exist or has no regions, fallback to empty array
-    }
-  }, [selectedState, selectedRegionName, states]);
-
-  // Trigger this when selectedState, selectedRegionName, or states change
 
   return (
     <div className="filter-card mobile-search">
@@ -2000,6 +1958,7 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
             }}
           />{" "}
         </div>
+
         {/* STATE */}
         {selectedStateName && (
           <div
@@ -2026,6 +1985,7 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
             </div>
           </div>
         )}
+
         {/* REGION */}
         {selectedRegionName && (
           <div
@@ -2074,6 +2034,7 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
             )}
           </div>
         )}
+
         {/* SUBURB */}
         {selectedSuburbName && (
           <div className="filter-accordion-item" style={accordionStyle(true)}>
@@ -2083,13 +2044,12 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
             </span>
           </div>
         )}
+
         {/* 🔽 REGION LIST */}
         {stateOpen && selectedState && !selectedRegionName && (
           <div className="filter-accordion-items">
             {states
-              .find((s) =>
-                s.name.toLowerCase().startsWith(selectedState.toLowerCase())
-              ) // ✅ match the start of state
+              .find((s) => s.value === selectedState)
               ?.regions?.map((region, idx) => (
                 <div
                   key={idx}
@@ -2108,6 +2068,7 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
               ))}
           </div>
         )}
+
         {/* 🔽 SUBURB LIST */}
         {stateOpen &&
           selectedState &&
@@ -2115,46 +2076,49 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
           !selectedSuburbName && (
             <div className="filter-accordion-items">
               {Array.isArray(filteredSuburbs) &&
-              filteredSuburbs.length === 0 ? (
-                <>
-                  {console.log("🚨 suburbs data:", filteredSuburbs)}{" "}
-                  {console.log("🚨 suburbs EMPTY at render:", filteredSuburbs)}
-                  <p style={{ marginLeft: 20 }}>❌ No suburbs available</p>
-                </>
-              ) : (
-                filteredSuburbs.map((suburb, idx) => (
-                  <div
-                    key={`${suburb.value}-${idx}`}
-                    className="filter-accordion-item"
-                    style={suburbStyle(suburb.name === selectedSuburbName)}
-                    onClick={() => {
-                      const postcodeMatch = suburb.value?.match(/\d{4}$/);
-                      const postcode = postcodeMatch ? postcodeMatch[0] : null;
-                      suburbClickedRef.current = true;
+                filteredSuburbs.length === 0 && (
+                  <>
+                    {console.log(
+                      "🚨 suburbs EMPTY at render:",
+                      filteredSuburbs
+                    )}
+                    <p style={{ marginLeft: 20 }}>❌ No suburbs available</p>
+                  </>
+                )}
 
-                      setSelectedSuburbName(suburb.name);
-                      setSelectedPostcode(postcode);
-                      setLocationInput(`${suburb.name} ${selectedStateName}`);
-                      setStateOpen(false);
+              {filteredSuburbs.map((suburb, idx) => (
+                <div
+                  key={`${suburb.value}-${idx}`}
+                  className="filter-accordion-item"
+                  style={suburbStyle(suburb.name === selectedSuburbName)}
+                  onClick={() => {
+                    const postcodeMatch = suburb.value?.match(/\d{4}$/);
+                    const postcode = postcodeMatch ? postcodeMatch[0] : null;
+                    suburbClickedRef.current = true;
 
-                      const updatedFilters: Filters = {
-                        ...currentFilters,
-                        suburb: suburb.name,
-                        region: selectedRegionName,
-                        state: selectedStateName || undefined,
-                        postcode: postcode || undefined,
-                      };
+                    setSelectedSuburbName(suburb.name);
+                    setSelectedPostcode(postcode);
+                    setLocationInput(`${suburb.name} ${selectedStateName}`);
+                    setStateOpen(false);
 
-                      setFilters(updatedFilters);
-                      onFilterChange(updatedFilters); // ✅ triggers ListingsPage
-                    }}
-                  >
-                    {suburb.name}
-                  </div>
-                ))
-              )}
+                    const updatedFilters: Filters = {
+                      ...currentFilters,
+                      suburb: suburb.name,
+                      region: selectedRegionName,
+                      state: selectedStateName || undefined,
+                      postcode: postcode || undefined,
+                    };
+
+                    setFilters(updatedFilters);
+                    onFilterChange(updatedFilters); // ✅ this triggers ListingsPage
+                  }}
+                >
+                  {suburb.name}
+                </div>
+              ))}
             </div>
           )}
+
         {/* 🔹 INITIAL STATE LIST */}
         {!selectedState && stateOpen && (
           <div className="filter-accordion-items">
@@ -2167,13 +2131,8 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
                 onClick={() => {
                   preventResetRef.current = true;
                   urlJustUpdatedRef.current = true;
-                  const slugify = (text: string) =>
-                    text
-                      .toLowerCase()
-                      .replace(/\s+/g, "-")
-                      .replace(/[^\w-]+/g, "");
 
-                  setSelectedState(slugify(state.value)); // ✅ now it's "new-south-wales"
+                  setSelectedState(state.value);
                   setSelectedStateName(state.name);
                   setSelectedRegionName(null);
                   setSelectedSuburbName(null);
@@ -2714,7 +2673,7 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
         )}
       </div>
       {/* 8883944599
-                9524163042 */}
+               9524163042 */}
       {/* Condition Accordion */}
       <div className="cs-full_width_section">
         <div
