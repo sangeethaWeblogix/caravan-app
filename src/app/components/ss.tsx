@@ -7,7 +7,6 @@ import React, {
   SetStateAction,
   useEffect,
   useRef,
-  useTransition,
 } from "react";
 import { BiChevronDown } from "react-icons/bi";
 import { usePathname, useRouter } from "next/navigation";
@@ -79,10 +78,7 @@ interface CaravanFilterProps {
   currentFilters: Filters;
   onFilterChange: (filters: Filters) => void;
 }
-type QueryObject = {
-  acustom_fromyears?: string;
-  acustom_toyears?: string;
-};
+
 interface Option {
   name: string;
   slug: string;
@@ -101,22 +97,6 @@ type Suburb = {
   name: string;
   value: string;
 };
-
-function useDebounce<T>(value: T, delay: number): T {
-  const [debouncedValue, setDebouncedValue] = useState<T>(value);
-
-  useEffect(() => {
-    const handler: ReturnType<typeof setTimeout> = setTimeout(() => {
-      setDebouncedValue(value);
-    }, delay);
-
-    return () => {
-      clearTimeout(handler);
-    };
-  }, [value, delay]);
-
-  return debouncedValue;
-}
 
 const CaravanFilter: React.FC<CaravanFilterProps> = ({
   onFilterChange,
@@ -170,7 +150,7 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
   );
   const [selectedSuggestion, setSelectedSuggestion] =
     useState<LocationSuggestion | null>(null);
-
+  console.log(selectedSuggestion);
   const [atmFrom, setAtmFrom] = useState<number | null>(null);
   const [atmTo, setAtmTo] = useState<number | null>(null);
   const [lengthFrom, setLengthFrom] = useState<number | null>(null);
@@ -179,15 +159,14 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
   const conditionDatas = ["Near New", "New", "Used"];
   const [minPrice, setMinPrice] = useState<number | null>(null);
   const [maxPrice, setMaxPrice] = useState<number | null>(null);
-  const [selectedSleepName, setSelectedSleepName] = useState<string | null>(
-    null
+  const [selectedSleepName, setSelectedSleepName] = useState<string>(
+    currentFilters?.sleeps?.replace("-people", "") || ""
   );
   const filtersInitialized = useRef(false);
   const [yearFrom, setYearFrom] = useState<number | null>(null);
   const [yearTo, setYearTo] = useState<number | null>(null);
   const [showAllMakes, setShowAllMakes] = useState(false);
 
-  const debouncedFilters = useDebounce(filters, 500);
   const atm = [
     600, 800, 1000, 1250, 1500, 1750, 2000, 2250, 2500, 2750, 3000, 3500, 4000,
     4500,
@@ -207,15 +186,9 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
   const length = [
     12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28,
   ];
-  console.log(selectedSuggestion);
+
   const sleep = [1, 2, 3, 4, 5, 6, 7];
   const [selectedRegion, setSelectedRegion] = useState<string>();
-  useEffect(() => {
-    if (debouncedFilters) {
-      onFilterChange(debouncedFilters); // Trigger the API call only after debounce
-    }
-  }, []);
-
   useEffect(() => {
     const loadFilters = async () => {
       const res = await fetchProductList();
@@ -297,37 +270,6 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
     }
   }, [pathname, categories]);
 
-  // useEffect(() => {
-  //   if (!selectedMake) return;
-
-  //   const updatedFilters: Filters = {
-  //     ...filters, // ✅ preserves previous filters like ATM, price, year, etc.
-  //     make: selectedMake,
-  //     model: undefined,
-  //     category: selectedCategory || filters.category || currentFilters.category,
-  //     condition:
-  //       selectedConditionName || filters.condition || currentFilters.condition,
-  //     sleeps: selectedSleepName
-  //       ? `${selectedSleepName}-people`
-  //       : filters.sleeps || currentFilters.sleeps,
-  //     state: selectedStateName || filters.state || currentFilters.state,
-  //     region: selectedRegionName || filters.region || currentFilters.region,
-  //     suburb: selectedSuburbName || filters.suburb || currentFilters.suburb,
-  //     postcode: selectedPostcode || filters.postcode || currentFilters.postcode,
-  //     minKg: atmFrom ?? filters.minKg ?? currentFilters.minKg,
-  //     maxKg: atmTo ?? filters.maxKg ?? currentFilters.maxKg,
-  //     from_price: minPrice ?? filters.from_price ?? currentFilters.from_price,
-  //     to_price: maxPrice ?? filters.to_price ?? currentFilters.to_price,
-  //     from_year: yearFrom ?? filters.from_year ?? currentFilters.from_year,
-  //     to_year: yearTo ?? filters.to_year ?? currentFilters.to_year,
-  //     from_length:
-  //       lengthFrom ?? filters.from_length ?? currentFilters.from_length,
-  //     to_length: lengthTo ?? filters.to_length ?? currentFilters.to_length,
-  //   };
-
-  //   setFilters(updatedFilters);
-  //   onFilterChange(updatedFilters);
-  // }, [selectedMake]);
   useEffect(() => {
     if (!selectedMake) return;
 
@@ -391,25 +333,6 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
       setSelectedRegion(regionName); // Set selected region from the URL
     }
   }, [pathname]);
-  // useEffect(() => {
-  //   // Initialize state and region from URL on page load (refresh)
-  //   const slug = pathname.split("/listings/")[1];
-  //   const segments = slug?.split("/") || [];
-
-  //   const stateSlug = segments.find((s) => s.endsWith("-state"));
-  //   const regionSlug = segments.find((s) => s.endsWith("-region"));
-
-  //   if (stateSlug) {
-  //     const stateName = stateSlug.replace("-state", "").replace(/-/g, " ");
-  //     setSelectedStateName(stateName);
-  //     setSelectedState(stateName);
-  //   }
-  //   if (regionSlug) {
-  //     const regionName = regionSlug.replace("-region", "").replace(/-/g, " ");
-  //     setSelectedRegionName(regionName);
-  //     setSelectedRegion(regionName); // Set selected region from the URL
-  //   }
-  // }, [pathname]);
 
   // useEffect(() => {
   //   if (selectedState) {
@@ -480,27 +403,6 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
   //   yearFrom,
   //   yearTo,
   // ]);
-  useEffect(() => {
-    if (selectedState) {
-      const slugifiedState = selectedState.toLowerCase().replace(/\s+/g, "-");
-      const slugifiedRegion = selectedRegionName
-        ? selectedRegionName.toLowerCase().replace(/\s+/g, "-")
-        : "";
-      // Update filters and URL
-      const updatedFilters = {
-        ...filters,
-        state: selectedState,
-        region: selectedRegionName || undefined,
-        suburb: selectedSuburbName || undefined,
-      };
-
-      setFilters(updatedFilters); // Update the state with the new filters
-      onFilterChange(updatedFilters); // Trigger the API call with updated filters
-
-      const newPath = `/listings/${slugifiedState}-state/${slugifiedRegion}-region`;
-      router.push(newPath);
-    }
-  }, [selectedState, selectedRegionName, selectedSuburbName]); // Dependencies to trigger when state/region/suburb change
 
   const isModelFetchCompleteRef = useRef(false); // ADD THIS
 
@@ -524,7 +426,7 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
 
         const updatedFilters: Filters = {
           ...filters,
-          make: selectedMake || currentFilters.make,
+          make: selectedMake,
           model: undefined,
           category: selectedCategory || currentFilters.category,
           state: selectedStateName || currentFilters.state,
@@ -541,7 +443,6 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
 
   console.log("filters", filters);
   console.log(setSelectedRegion, filteredRegions);
-
   const [locationSuggestions, setLocationSuggestions] = useState<
     LocationSuggestion[]
   >([]);
@@ -554,390 +455,169 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
     const slug = pathname.split("/listings/")[1];
     const segments = slug?.split("/") || [];
 
-    const isSlugKnownFilter = (slug: string) => {
-      return (
-        slug.endsWith("-state") ||
-        slug.endsWith("-region") ||
-        slug.endsWith("-suburb") ||
-        slug.endsWith("-category") ||
-        slug.includes("-condition") ||
-        slug.includes("-people-sleeping-capacity") ||
-        slug.includes("-kg-atm") ||
-        slug.includes("length-in-feet") ||
-        slug.includes("year-range") ||
-        /^\d{4}$/.test(slug) || // postcode
-        /^over-\d+$/.test(slug) || // ✅ price: over-30000
-        /^under-\d+$/.test(slug) || // ✅ price: under-200000
-        /^between-\d+-\d+$/.test(slug) || // ✅ price: between-30000-200000
-        /^between-\d+-kg-\d+-kg-atm$/.test(slug) || // ✅ atm
-        /^over-\d+-kg-atm$/.test(slug) ||
-        /^under-\d+-kg-atm$/.test(slug) ||
-        /^length-(\d+)-in-feet$/.test(slug) || // ✅ length filter
-        /^condition-(\w+)$/.test(slug) || // ✅ condition filter
-        /^sleep-(\d+)$/.test(slug)
-      );
-    };
-
-    // setSelectedState(null);
-    // setSelectedStateName(null);
-    // setSelectedModel(null);
-    // setSelectedModelName(null);
-    // setSelectedRegionName(null);
-    // setSelectedSuburbName(null);
-    // setSelectedCategory(null);
-    // setSelectedCategoryName(null);
+    setSelectedState(null);
+    setSelectedStateName(null);
     // setSelectedMake(null);
     // setSelectedMakeName(null);
-    let matchedMakeSlug: string | null = null;
-    let matchedMakeName: string | null = null;
-    let matchedModelSlug: string | null = null;
-    let matchedModelName: string | null = null;
-    let matchedCondition = null;
-    let matchedSleep = null;
-    // ✅ CaravanFilter slug parser fix
-    // 🔁 Replaces your existing segments.forEach logic
+    // Do not reset make/model here, that's handled separately
+    setSelectedModel(null);
+    setSelectedModelName(null);
+    setSelectedRegionName(null);
+    setSelectedSuburbName(null);
+    setSelectedCategory(null);
+    setSelectedCategoryName(null);
+
     segments.forEach((part) => {
-      // ✅ 1. Skip known non-make patterns FIRST
-      if (isSlugKnownFilter(part)) return;
+      // ATM patterns
+      const isATM =
+        /^over-\d+-kg-atm$/.test(part) ||
+        /^under-\d+-kg-atm$/.test(part) ||
+        /^between-\d+-kg-\d+-kg-atm$/.test(part);
 
-      const makeMatch = makes.find((m) => m.slug === part);
-      if (makeMatch) {
-        matchedMakeSlug = makeMatch.slug;
-        matchedMakeName = makeMatch.name;
-        return;
-      }
-      if (matchedMakeSlug && model.length > 0) {
-        const modelMatch = model.find((m) => m.slug === part);
-        if (
-          modelMatch &&
-          !/^over-|^under-|^between-/.test(part) // prevent ATM slugs
-        ) {
-          matchedModelSlug = modelMatch.slug;
-          matchedModelName = modelMatch.name;
-          return;
-        }
-      }
+      // Price patterns
+      const isPrice =
+        /^over-\d+$/.test(part) ||
+        /^under-\d+$/.test(part) ||
+        /^between-\d+-\d+$/.test(part);
 
-      // const matchedMake = makes.find((m) => m.slug === part);
-      // if (matchedMake) {
-      //   setSelectedMake(matchedMake.slug);
-      //   setSelectedMakeName(matchedMake.name);
-      //   return;
-      // } else {
-      //   // ⛔ If part looks like ATM/price and no make matched, skip
-      //   if (/^(under|over|between)-\d+/.test(part)) return;
-      // }
+      const isYear =
+        /^from-\d+-year-range$/.test(part) ||
+        /^to-\d+-year-range$/.test(part) ||
+        /^between-\d+-and-\d+-year-range$/.test(part);
 
-      // // ✅ 3. Match MODEL only if make is already known
-      // if (selectedMake && model.length > 0) {
-      //   const matchedModel = model.find((m) => m.slug === part);
-      //   if (
-      //     matchedModel &&
-      //     !/^over-|^under-|^between-/.test(part) // Prevent ATM strings as model
-      //   ) {
-      //     setSelectedModel(matchedModel.slug);
-      //     setSelectedModelName(matchedModel.name);
-      //   }
-      // }
+      const isLength =
+        /^over-\d+-length-in-feet$/.test(part) ||
+        /^under-\d+-length-in-feet$/.test(part) ||
+        /^between-\d+-\d+-length-in-feet$/.test(part);
 
-      // ✅ 4. Category
-      if (part.endsWith("-category")) {
-        const slug = part.replace("-category", "");
-        const match = categories.find((c) => c.slug === slug);
-        if (match) {
-          setSelectedCategory(slug);
-          setSelectedCategoryName(match.name);
-        }
-        return;
-      }
+      const isSleeps = /-people-sleeping-capacity$/.test(part);
+      const isCondition = /-condition$/.test(part);
+      const isPostcode = /^\d{4}$/.test(part);
 
-      // ✅ 5. ATM Filters
+      // ✅ Set ATM
       if (/^over-(\d+)-kg-atm$/.test(part)) {
         setAtmFrom(parseInt(part.match(/^over-(\d+)-kg-atm$/)?.[1] || "0"));
         setAtmTo(null);
-        return;
       } else if (/^under-(\d+)-kg-atm$/.test(part)) {
         setAtmFrom(null);
         setAtmTo(parseInt(part.match(/^under-(\d+)-kg-atm$/)?.[1] || "0"));
-        return;
       } else if (/^between-(\d+)-kg-(\d+)-kg-atm$/.test(part)) {
         const [, from, to] =
           part.match(/^between-(\d+)-kg-(\d+)-kg-atm$/) || [];
         setAtmFrom(parseInt(from));
         setAtmTo(parseInt(to));
-        return;
       }
 
-      // 4. Handle Length Filter
-
-      if (/^over-(\d+)-in-feet$/.test(part)) {
-        setLengthFrom(parseInt(part.match(/^over-(\d+)-in-feet$/)?.[1] || "0"));
-        setLengthTo(null);
-        return;
-      } else if (/^under-(\d+)-in-feet$/.test(part)) {
-        setLengthFrom(null);
-        setLengthTo(parseInt(part.match(/^under-(\d+)-in-feet$/)?.[1] || "0"));
-        return;
-      } else if (/^between-(\d+)-kg-(\d+)-in-feet$/.test(part)) {
-        const [, from, to] =
-          part.match(/^between-(\d+)-kg-(\d+)-in-feet$/) || [];
-        setLengthFrom(parseInt(from));
-        setLengthTo(parseInt(to));
-        return;
-      }
-
-      // 5. Handle Condition Filter
-      if (/^condition-(\w+)$/.test(part)) {
-        matchedCondition = part.match(/^condition-(\w+)$/)?.[1] || null;
-        return;
-      }
-
-      // 6. Handle Sleep Filter
-      if (/^sleep-(\d+)$/.test(part)) {
-        matchedSleep = parseInt(part.match(/^sleep-(\d+)$/)?.[1] || "0");
-        return;
-      }
-      // ✅ 6. Price
-      // if (/^over-(\d+)$/.test(part)) {
-      //   setMinPrice(parseInt(part.replace("over-", "")));
-      //   setMaxPrice(null);
-      //   return;
-      // } else if (/^under-(\d+)$/.test(part)) {
-      //   setMaxPrice(parseInt(part.replace("under-", "")));
-      //   setMinPrice(null);
-      //   return;
-      // } else if (/^between-(\d+)-(\d+)$/.test(part)) {
-      //   const [, from, to] = part.match(/^between-(\d+)-(\d+)$/) || [];
-      //   setMinPrice(parseInt(from));
-      //   setMaxPrice(parseInt(to));
-      //   return;
-      // }
-      // 7. Handle Price Filters
+      // ✅ Set Price
       if (/^over-(\d+)$/.test(part)) {
-        setMinPrice(parseInt(part.match(/^over-(\d+)$/)?.[1] || "0"));
+        setMinPrice(parseInt(part.replace("over-", "")));
         setMaxPrice(null);
-        return;
       } else if (/^under-(\d+)$/.test(part)) {
         setMinPrice(null);
-        setMaxPrice(parseInt(part.match(/^under-(\d+)$/)?.[1] || "0"));
-        return;
+        setMaxPrice(parseInt(part.replace("under-", "")));
       } else if (/^between-(\d+)-(\d+)$/.test(part)) {
         const [, from, to] = part.match(/^between-(\d+)-(\d+)$/) || [];
         setMinPrice(parseInt(from));
         setMaxPrice(parseInt(to));
-        return;
+      }
+
+      // ✅ Set State
+      const stateMatch = states.find(
+        (state) =>
+          part === `${state.name.toLowerCase().replace(/\s+/g, "-")}-state`
+      );
+      if (stateMatch) {
+        setSelectedState(stateMatch.value);
+        setSelectedStateName(stateMatch.name);
+      }
+
+      // ✅ Set Region
+      if (part.endsWith("-region")) {
+        const regionName = part.replace("-region", "").replace(/-/g, " ");
+        setSelectedRegionName(regionName);
+      }
+
+      // ✅ Set Suburb
+      if (part.endsWith("-suburb")) {
+        const suburbName = part.replace("-suburb", "").replace(/-/g, " ");
+        setSelectedSuburbName(suburbName);
+      }
+
+      // ✅ Make (must exclude other filter types)
+      const isPureMake = makes.find(
+        (m) =>
+          m.slug === part &&
+          !isATM &&
+          !isPrice &&
+          !isCondition &&
+          !isSleeps &&
+          !isYear &&
+          !isLength &&
+          !isPostcode &&
+          !part.includes("kg") &&
+          !part.includes("people") &&
+          !part.includes("length") &&
+          !part.includes("year") &&
+          !/^\d{4}$/.test(part)
+      );
+
+      if (isPureMake) {
+        setSelectedMake(isPureMake.slug);
+        setSelectedMakeName(isPureMake.name);
+      }
+
+      // ✅ Model
+      const modelMatch = model.find((m) => m.slug === part);
+      if (modelMatch) {
+        setSelectedModel(modelMatch.slug);
+        setSelectedModelName(modelMatch.name);
+      }
+
+      // ✅ Condition
+      if (isCondition) {
+        const formatted = part
+          .replace("-condition", "")
+          .split("-")
+          .map((w) => w[0].toUpperCase() + w.slice(1))
+          .join(" ");
+        setSelectedConditionName(formatted);
+      }
+
+      // ✅ Sleeps
+      if (isSleeps) {
+        const match = part.match(/^over-(\d+)-people-sleeping-capacity$/);
+        if (match) setSelectedSleepName(match[1]);
+      }
+
+      // ✅ Years
+      if (/^from-(\d+)-year-range$/.test(part)) {
+        const match = part.match(/^from-(\d+)-year-range$/);
+        if (match) setYearFrom(parseInt(match[1]));
+      } else if (/^to-(\d+)-year-range$/.test(part)) {
+        const match = part.match(/^to-(\d+)-year-range$/);
+        if (match) setYearTo(parseInt(match[1]));
+      } else if (/^between-(\d+)-and-(\d+)-year-range$/.test(part)) {
+        const [, from, to] =
+          part.match(/^between-(\d+)-and-(\d+)-year-range$/) || [];
+        setYearFrom(parseInt(from));
+        setYearTo(parseInt(to));
+      }
+
+      // ✅ Length
+      if (/^over-(\d+)-length-in-feet$/.test(part)) {
+        const match = part.match(/^over-(\d+)-length-in-feet$/);
+        if (match) setLengthFrom(parseInt(match[1]));
+      } else if (/^under-(\d+)-length-in-feet$/.test(part)) {
+        const match = part.match(/^under-(\d+)-length-in-feet$/);
+        if (match) setLengthTo(parseInt(match[1]));
+      } else if (/^between-(\d+)-(\d+)-length-in-feet$/.test(part)) {
+        const [, from, to] =
+          part.match(/^between-(\d+)-(\d+)-length-in-feet$/) || [];
+        setLengthFrom(parseInt(from));
+        setLengthTo(parseInt(to));
       }
     });
-    setSelectedMake(matchedMakeSlug);
-    setSelectedMakeName(matchedMakeName);
-    setSelectedModel(matchedModelSlug);
-    setSelectedModelName(matchedModelName);
-    setSelectedConditionName(matchedCondition);
-    setSelectedSleepName(matchedSleep);
-    if (matchedMakeSlug) {
-      setSelectedMake(matchedMakeSlug);
-      setSelectedMakeName(matchedMakeName);
-      if (matchedModelSlug) {
-        setSelectedModel(matchedModelSlug);
-        setSelectedModelName(matchedModelName);
-      }
-    } else {
-      // 🧼 Clear make/model if no match
-      setSelectedMake(null);
-      setSelectedMakeName(null);
-      setSelectedModel(null);
-      setSelectedModelName(null);
-    }
   }, [pathname, states, makes, model]);
-  // ✅ Unified Filters Update & URL Sync Handler
-  const pendingURLRef = useRef<string | null>(null);
-
-  const updateAllFiltersAndURL = () => {
-    const updated: Filters = {
-      ...filters, // ✅ preserves previous filters like ATM, price, year, etc.
-      category: selectedCategory || undefined,
-      make: selectedMake || undefined,
-      model: selectedModel || undefined,
-      condition: selectedConditionName || undefined,
-      sleeps: selectedSleepName ? `${selectedSleepName}-people` : undefined,
-      state: selectedStateName || undefined,
-      region: selectedRegionName || undefined,
-      suburb: selectedSuburbName || undefined,
-      postcode: selectedPostcode || undefined,
-      minKg: atmFrom || undefined,
-      maxKg: atmTo || undefined,
-      from_price: minPrice || undefined,
-      to_price: maxPrice || undefined,
-      from_year: yearFrom || undefined,
-      to_year: yearTo || undefined,
-      from_length: lengthFrom || undefined,
-      to_length: lengthTo || undefined,
-      location: selectedStateName || undefined,
-    };
-
-    setFilters(updated); // ✅ this will trigger useEffect below
-    startTransition(() => {
-      // 👇 Build URL and save it
-      const slugParts = [];
-      if (selectedMake && !/^over-\d+$/.test(selectedMake)) {
-        updated.make = selectedMake;
-      }
-      if (updated.make) slugParts.push(updated.make);
-      if (updated.model) slugParts.push(updated.model);
-      if (updated.category) slugParts.push(`${updated.category}-category`);
-      if (updated.condition)
-        slugParts.push(`${updated.condition.toLowerCase()}-condition`);
-      if (updated.sleeps)
-        slugParts.push(
-          `over-${updated.sleeps.replace(
-            "-people",
-            ""
-          )}-people-sleeping-capacity`
-        );
-      if (updated.state) slugParts.push(`${slugify(updated.state)}-state`);
-      if (updated.region) slugParts.push(`${slugify(updated.region)}-region`);
-      if (updated.suburb) slugParts.push(`${slugify(updated.suburb)}-suburb`);
-      if (updated.postcode) slugParts.push(updated.postcode);
-
-      // if (updated.minKg && updated.maxKg) {
-      //   slugParts.push(`between-${updated.minKg}-kg-${updated.maxKg}-kg-atm`);
-      // } else if (updated.minKg) {
-      //   slugParts.push(`over-${updated.minKg}-kg-atm`);
-      // } else if (updated.maxKg) {
-      //   slugParts.push(`under-${updated.maxKg}-kg-atm`);
-      // }
-
-      // if (updated.from_price && updated.to_price) {
-      //   slugParts.push(`between-${updated.from_price}-${updated.to_price}`);
-      // } else if (updated.from_price) {
-      //   slugParts.push(`over-${updated.from_price}`);
-      // } else if (updated.to_price) {
-      //   slugParts.push(`under-${updated.to_price}`);
-      // }
-
-      // if (updated.from_length && updated.to_length)
-      //   slugParts.push(
-      //     `between-${updated.from_length}-${updated.to_length}-length-in-feet`
-      //   );
-      // else if (updated.from_length)
-      //   slugParts.push(`over-${updated.from_length}-length-in-feet`);
-      // else if (updated.to_length)
-      //   slugParts.push(`under-${updated.to_length}-length-in-feet`);
-
-      const query: QueryObject = {};
-      if (updated.from_year)
-        query.acustom_fromyears = updated.from_year.toString();
-      if (updated.to_year) query.acustom_toyears = updated.to_year.toString();
-
-      const queryString = new URLSearchParams(query).toString();
-      const newURL = `/listings/${slugParts.join("/")}${
-        queryString ? `?${queryString}` : ""
-      }`;
-      if (newURL !== pathname) {
-        router.push(newURL);
-      }
-      pendingURLRef.current = newURL;
-    }); // ✅ store the next URL for router.push
-  };
-  // ✅ Sync filter values into UI fields (ATM)
-  useEffect(() => {
-    if (filters.minKg !== undefined && filters.minKg !== atmFrom) {
-      setAtmFrom(Number(filters.minKg));
-    }
-    if (filters.maxKg !== undefined && filters.maxKg !== atmTo) {
-      setAtmTo(Number(filters.maxKg));
-    }
-  }, [filters.minKg, filters.maxKg]);
-  useEffect(() => {
-    if (
-      selectedConditionName ||
-      selectedSleepName ||
-      yearFrom ||
-      yearTo ||
-      lengthFrom ||
-      lengthTo
-    ) {
-      updateAllFiltersAndURL(); // Call the function to update URL and filters
-    }
-  }, [
-    selectedConditionName,
-    selectedSleepName,
-    yearFrom,
-    yearTo,
-    lengthFrom,
-    lengthTo,
-  ]);
-
-  // atm function
-  const updateAtmFiltersAndURL = () => {
-    // Update filters state
-    const updatedFilters: Filters = {
-      ...currentFilters,
-      minKg: atmFrom ?? undefined,
-      maxKg: atmTo ?? undefined,
-    };
-
-    setFilters(updatedFilters); // Update filter state
-    onFilterChange(updatedFilters); // Trigger the filter change callback
-
-    // Build the URL with updated ATM filters
-    const queryString = new URLSearchParams({
-      // Ensure minKg and maxKg are strings before passing them to URLSearchParams
-      minKg: atmFrom !== null ? atmFrom.toString() : "",
-      maxKg: atmTo !== null ? atmTo.toString() : "",
-    }).toString();
-
-    const newPath = `/listings/${
-      atmFrom !== null ? `over-${atmFrom}-kg-atm/` : ""
-    }${atmTo !== null ? `under-${atmTo}-kg-atm/` : ""}`;
-    const newURL = newPath + (queryString ? `?${queryString}` : "");
-
-    // Only update the URL if it has changed
-    if (newURL !== pathname) {
-      router.push(newURL); // Update the URL
-    }
-  };
-
-  // Handle ATM 'From' and 'To' changes separately
-  const handleAtmFromChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const value = e.target.value ? parseInt(e.target.value) : null;
-    setAtmFrom(value);
-
-    // Update the ATM filters and the URL
-    updateAtmFiltersAndURL();
-  };
-
-  const handleAtmToChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const value = e.target.value ? parseInt(e.target.value) : null;
-    setAtmTo(value);
-
-    // Update the ATM filters and the URL
-    updateAtmFiltersAndURL();
-  };
-
-  useEffect(() => {
-    if (atmFrom !== null || atmTo !== null) {
-      updateAtmFiltersAndURL(); // Update filters and URL when values change
-    }
-  }, [atmFrom, atmTo]);
-
-  useEffect(() => {
-    if (!filtersInitialized.current || !pendingURLRef.current) return;
-
-    const url = pendingURLRef.current;
-    pendingURLRef.current = null;
-
-    if (url && url !== pathname) {
-      router.push(url);
-    }
-  }, [filters]);
-
-  const [isPending, startTransition] = useTransition();
-  console.log(isPending);
-  // ✅ Replace individual onChange calls with this
-  // Example:
-  // setAtmFrom(val); updateAllFiltersAndURL();
-  // setSelectedCategory(cat.slug); updateAllFiltersAndURL();
 
   const accordionStyle = (highlight: boolean) => ({
     display: "flex",
@@ -975,33 +655,21 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
     borderRadius: "4px",
     backgroundColor: isSelected ? "#e8f0fe" : "transparent",
   });
+
   useEffect(() => {
-    const stateSlug = pathname
-      .split("/")
-      .find((part) => part.endsWith("-state"));
-    if (stateSlug) {
-      const stateName = stateSlug.replace("-state", "").replace(/-/g, " ");
-      setSelectedStateName(stateName);
-      setSelectedState(stateName);
-    } else {
+    const stateSlug = pathname.split("/").find((s) => s.endsWith("-state"));
+    if (!stateSlug) {
+      // ✅ No state present in URL → reset state UI
       setSelectedState(null);
       setSelectedStateName(null);
       setFilteredRegions([]);
       setFilteredSuburbs([]);
     }
-  }, [pathname]); // Ensure this is triggered whenever the URL pathname changes
-
-  const updateFilters = (partial: Partial<Filters>) => {
-    const updated = { ...filters, ...partial };
-    setFilters(updated);
-    onFilterChange(updated);
-    filtersInitialized.current = true;
-  };
+  }, [pathname]);
 
   const resetStateFilters = () => {
     console.log("❌ State Reset Triggered");
 
-    // ⛔️ Reset all location-related values
     setSelectedState(null);
     setSelectedStateName(null);
     setSelectedRegionName(null);
@@ -1011,7 +679,6 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
     setFilteredSuburbs([]);
     setStateOpen(false);
 
-    // ✅ Clear location filters
     const updatedFilters: Filters = {
       ...currentFilters,
       state: undefined,
@@ -1024,29 +691,21 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
     setFilters(updatedFilters);
     onFilterChange(updatedFilters);
 
-    // ✅ Clean URL segments
+    // ✅ Remove state-related segments from URL
     const segments = pathname.split("/").filter(Boolean);
+    const filteredSegments = segments.filter(
+      (s) =>
+        !s.endsWith("-state") &&
+        !s.endsWith("-region") &&
+        !s.endsWith("-suburb") &&
+        !/^\d{4}$/.test(s)
+    );
 
-    const filteredSegments = segments
-      // Remove duplicate 'listings' beyond the first
-      .filter((seg, i) => !(seg === "listings" && i !== 0))
-      // Remove state/region/suburb/postcode
-      .filter(
-        (s) =>
-          !s.endsWith("-state") &&
-          !s.endsWith("-region") &&
-          !s.endsWith("-suburb") &&
-          !/^\d{4}$/.test(s)
-      );
-
-    // ✅ Build clean path
     const newPath = `/${filteredSegments.join("/")}`;
     const query = searchParams.toString();
-    const finalURL = newPath + (query ? `?${query}` : "");
+    router.push(newPath + (query ? `?${query}` : ""));
 
-    router.push(finalURL);
-
-    // ⚠️ Reset internal refs
+    // ✅ Forcefully reset value in case useEffect doesn't catch it
     filtersInitialized.current = false;
     hasCategoryBeenSetRef.current = false;
     suburbClickedRef.current = false;
@@ -1548,7 +1207,7 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
         setSelectedModelName(match.name);
       }
     }
-  }, [selectedModel, model]);
+  }, [selectedModel, model, selectedModelName]);
   useEffect(() => {
     if (selectedMake && !filters.make) {
       onFilterChange({ ...filters, make: selectedMake });
@@ -1573,65 +1232,105 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
 
   // router issue
   const lastPushedURLRef = useRef<string>("");
-
   useEffect(() => {
-    if (!filtersInitialized.current) return;
+    const timeout = setTimeout(() => {
+      const slugParts: string[] = [];
 
-    const slugParts = [];
-    if (filters.make) slugParts.push(filters.make);
-    if (filters.model) slugParts.push(filters.model);
-    if (filters.condition) slugParts.push(`${filters.condition}-condition`);
+      if (!filtersInitialized.current) {
+        return;
+      }
 
-    if (filters.category) slugParts.push(`${filters.category}-category`);
-    // ✅ LOCATION LOGIC
-    if (filters.suburb) {
-      slugParts.push(`${slugify(filters.suburb)}-suburb`);
-      if (filters.state) slugParts.push(`${slugify(filters.state)}-state`);
-      if (filters.postcode) slugParts.push(filters.postcode);
-    } else {
-      if (filters.state) slugParts.push(`${slugify(filters.state)}-state`);
-      if (filters.region) slugParts.push(`${slugify(filters.region)}-region`);
-    }
+      if (selectedMake) slugParts.push(selectedMake);
+      if (selectedModel) slugParts.push(selectedModel);
+      if (selectedCategory) slugParts.push(`${selectedCategory}-category`);
+      if (selectedConditionName)
+        slugParts.push(`${selectedConditionName.toLowerCase()}-condition`);
+      if (selectedSuburbName)
+        slugParts.push(`${slugify(selectedSuburbName)}-suburb`);
+      if (selectedStateName)
+        slugParts.push(`${slugify(selectedStateName)}-state`);
+      if (selectedRegionName)
+        slugParts.push(`${slugify(selectedRegionName)}-region`);
+      if (selectedPostcode) slugParts.push(selectedPostcode);
 
-    if (filters.minKg && filters.maxKg) {
-      slugParts.push(`between-${filters.minKg}-kg-${filters.maxKg}-kg-atm`);
-    } else if (filters.minKg) {
-      slugParts.push(`over-${filters.minKg}-kg-atm`);
-    } else if (filters.maxKg) {
-      slugParts.push(`under-${filters.maxKg}-kg-atm`);
-    }
-    if (filters.from_price && filters.to_price) {
-      slugParts.push(`between-${filters.from_price}-${filters.to_price}`);
-    } else if (filters.from_price) {
-      slugParts.push(`over-${filters.from_price}`);
-    } else if (filters.to_price) {
-      slugParts.push(`under-${filters.to_price}`);
-    }
-    if (filters.from_length && filters.to_length) {
-      slugParts.push(
-        `between-${filters.from_length}-${filters.to_length}-length-in-feet`
-      );
-    } else if (filters.from_length) {
-      slugParts.push(`over-${filters.from_length}-length-in-feet`);
-    } else if (filters.to_length) {
-      slugParts.push(`under-${filters.to_length}-length-in-feet`);
-    }
+      if (minPrice && maxPrice)
+        slugParts.push(`between-${minPrice}-${maxPrice}`);
+      else if (minPrice) slugParts.push(`over-${minPrice}`);
+      else if (maxPrice) slugParts.push(`under-${maxPrice}`);
 
-    const query: Record<string, string> = {};
-    if (filters.from_year)
-      query.acustom_fromyears = filters.from_year.toString();
-    if (filters.to_year) query.acustom_toyears = filters.to_year.toString();
+      if (atmFrom && atmTo)
+        slugParts.push(`between-${atmFrom}-kg-${atmTo}-kg-atm`);
+      else if (atmFrom) slugParts.push(`over-${atmFrom}-kg-atm`);
+      else if (atmTo) slugParts.push(`under-${atmTo}-kg-atm`);
 
-    const queryString = new URLSearchParams(query).toString();
-    const fullSlug = `/listings/${slugParts.join("/")}${
-      queryString ? `?${queryString}` : ""
-    }`;
+      if (selectedSleepName)
+        slugParts.push(`over-${selectedSleepName}-people-sleeping-capacity`);
 
-    if (lastPushedURLRef.current !== fullSlug) {
-      lastPushedURLRef.current = fullSlug;
-      router.push(fullSlug);
-    }
-  }, [filters]); // ✅ react to filters change
+      if (lengthFrom && lengthTo)
+        slugParts.push(`between-${lengthFrom}-${lengthTo}-length-in-feet`);
+      else if (lengthFrom) slugParts.push(`over-${lengthFrom}-length-in-feet`);
+      else if (lengthTo) slugParts.push(`under-${lengthTo}-length-in-feet`);
+
+      const query: Record<string, string> = {};
+      if (yearFrom) query.acustom_fromyears = yearFrom.toString();
+      if (yearTo) query.acustom_toyears = yearTo.toString();
+
+      const queryString = new URLSearchParams(query).toString();
+      const slugPath = `/listings/${slugParts.join("/")}`;
+      const fullURL = queryString ? `${slugPath}?${queryString}` : slugPath;
+
+      if (lastPushedURLRef.current !== fullURL) {
+        lastPushedURLRef.current = fullURL;
+        router.push(fullURL);
+
+        const updatedFilters: Filters = {
+          ...filters,
+          make: selectedMake || undefined,
+          model: selectedModel || undefined,
+          category: selectedCategory || currentFilters.category,
+          state: selectedStateName || undefined,
+          region: selectedRegionName || undefined,
+          suburb: selectedSuburbName || undefined,
+          postcode: selectedPostcode || undefined,
+          from_year: yearFrom || undefined,
+          to_year: yearTo || undefined,
+          minKg: atmFrom || undefined,
+          maxKg: atmTo || undefined,
+          from_price: minPrice || undefined,
+          to_price: maxPrice || undefined,
+          from_length: lengthFrom || undefined,
+          to_length: lengthTo || undefined,
+          condition: selectedConditionName || currentFilters.condition,
+          sleeps: selectedSleepName
+            ? `${selectedSleepName}-people`
+            : currentFilters.sleeps,
+        };
+
+        setFilters(updatedFilters);
+        onFilterChange(updatedFilters);
+      }
+    }, 300);
+
+    return () => clearTimeout(timeout);
+  }, [
+    selectedMake,
+    selectedModel,
+    selectedCategory,
+    selectedConditionName,
+    selectedSleepName,
+    selectedStateName,
+    selectedRegionName,
+    selectedSuburbName,
+    selectedPostcode,
+    yearFrom,
+    yearTo,
+    atmFrom,
+    atmTo,
+    minPrice,
+    maxPrice,
+    lengthFrom,
+    lengthTo,
+  ]);
 
   useEffect(() => {
     if (!selectedModel || model.length === 0) return;
@@ -1652,306 +1351,7 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
         selectedStateName,
       });
     }
-  }, [filters, selectedCategory, selectedMake, selectedStateName]);
-  // ✅ Call this function on Model click
-  const handleModelSelect = (mod: Model) => {
-    setSelectedModel(mod.slug);
-    setSelectedModelName(mod.name);
-    setModelOpen(false);
-
-    const updatedFilters = {
-      ...filters,
-      make: selectedMake || undefined,
-      model: mod.slug || undefined,
-      category: selectedCategory || currentFilters.category,
-      state: selectedStateName || currentFilters.state,
-      region: selectedRegionName || currentFilters.region,
-      suburb: selectedSuburbName || currentFilters.suburb,
-      postcode: selectedPostcode || currentFilters.postcode,
-    };
-
-    setFilters(updatedFilters);
-    onFilterChange(updatedFilters);
-
-    // 🧠 Rebuild URL slug
-    const slugParts = [];
-    if (selectedMake) slugParts.push(selectedMake);
-    if (mod.slug) slugParts.push(mod.slug);
-    if (selectedCategory) slugParts.push(`${selectedCategory}-category`);
-    if (selectedStateName)
-      slugParts.push(
-        `${selectedStateName.toLowerCase().replace(/\s+/g, "-")}-state`
-      );
-    if (selectedRegionName)
-      slugParts.push(
-        `${selectedRegionName.toLowerCase().replace(/\s+/g, "-")}-region`
-      );
-    if (selectedSuburbName)
-      slugParts.push(
-        `${selectedSuburbName.toLowerCase().replace(/\s+/g, "-")}-suburb`
-      );
-    if (selectedPostcode) slugParts.push(selectedPostcode);
-
-    const queryParams = new URLSearchParams(searchParams.toString());
-    if (yearFrom) queryParams.set("acustom_fromyears", yearFrom.toString());
-    if (yearTo) queryParams.set("acustom_toyears", yearTo.toString());
-
-    const url = `/listings/${slugParts.join("/")}${
-      queryParams.toString() ? `?${queryParams}` : ""
-    }`;
-
-    router.push(url);
-  };
-  useEffect(() => {
-    const slug = pathname.split("/listings/")[1];
-    const isSlugKnownFilter = (slug: string) => {
-      return (
-        slug.endsWith("-state") ||
-        slug.endsWith("-region") ||
-        slug.endsWith("-suburb") ||
-        slug.endsWith("-category") ||
-        slug.includes("-condition") ||
-        slug.includes("-people-sleeping-capacity") ||
-        slug.includes("length-in-feet") ||
-        /^\d{4}$/.test(slug) || // postcode
-        /^over-\d+$/.test(slug) ||
-        /^under-\d+$/.test(slug) ||
-        /^between-\d+-\d+$/.test(slug) ||
-        /^between-\d+-kg-\d+-kg-atm$/.test(slug) ||
-        /^over-\d+-kg-atm$/.test(slug) ||
-        /^under-\d+-kg-atm$/.test(slug)
-      );
-    };
-    const segments = slug?.split("/") || [];
-
-    const newFilters: Filters = {
-      ...filters,
-    };
-
-    const categorySegment = segments.find((s) => s.endsWith("-category"));
-    if (categorySegment) {
-      newFilters.category = categorySegment.replace("-category", "");
-    }
-
-    const stateSegment = segments.find((s) => s.endsWith("-state"));
-    if (stateSegment) {
-      newFilters.state = stateSegment.replace("-state", "").replace(/-/g, " ");
-    }
-
-    const regionSegment = segments.find((s) => s.endsWith("-region"));
-    if (regionSegment) {
-      newFilters.region = regionSegment
-        .replace("-region", "")
-        .replace(/-/g, " ");
-    }
-
-    const suburbSegment = segments.find((s) => s.endsWith("-suburb"));
-    if (suburbSegment) {
-      newFilters.suburb = suburbSegment
-        .replace("-suburb", "")
-        .replace(/-/g, " ");
-    }
-
-    const postcodeSegment = segments.find((s) => /^\d{4}$/.test(s));
-    if (postcodeSegment) {
-      newFilters.postcode = postcodeSegment;
-    }
-
-    const makeSegment = segments.find(
-      (s) => !isSlugKnownFilter(s) && makes.find((m) => m.slug === s)
-    );
-
-    if (makeSegment) {
-      newFilters.make = makeSegment;
-    } else {
-      newFilters.make = undefined; // ⛔ clear fake make slugs
-    }
-    const modelSegment = segments.find((s) => model.find((m) => m.slug === s));
-    if (modelSegment) {
-      newFilters.model = makeSegment;
-    } else {
-      newFilters.model = undefined; // ⛔ clear fake make slugs
-    }
-
-    // ATM
-    // ATM - over
-    const atmOverMatch = segments.find((s) => /^over-(\d+)-kg-atm$/.test(s));
-    if (atmOverMatch) {
-      const match = atmOverMatch.match(/^over-(\d+)-kg-atm$/);
-      if (match) {
-        setAtmFrom(parseInt(match[1]));
-        setFilters((prev) => ({
-          ...prev,
-          minKg: parseInt(match[1]),
-          maxKg: undefined,
-        }));
-      }
-    }
-
-    // ATM - under
-    const atmUnderMatch = segments.find((s) => /^under-(\d+)-kg-atm$/.test(s));
-    if (atmUnderMatch) {
-      const match = atmUnderMatch.match(/^under-(\d+)-kg-atm$/);
-      if (match) {
-        setAtmFrom(null);
-        setAtmTo(parseInt(match[1]));
-      }
-    }
-
-    // ATM - between
-    const atmBetweenMatch = segments.find((s) =>
-      /^between-(\d+)-kg-(\d+)-kg-atm$/.test(s)
-    );
-    if (atmBetweenMatch) {
-      const match = atmBetweenMatch.match(/^between-(\d+)-kg-(\d+)-kg-atm$/);
-      if (match) {
-        setAtmFrom(parseInt(match[1]));
-        setAtmTo(parseInt(match[2]));
-      }
-    }
-    // ✅ Price: over-X
-    const priceOver = segments.find((s) => /^over-(\d+)$/.test(s));
-    if (priceOver) {
-      const match = priceOver.match(/^over-(\d+)$/);
-      if (match) {
-        setMinPrice(parseInt(match[1]));
-        setMaxPrice(null);
-      }
-    }
-
-    // ✅ Price: under-X
-    const priceUnder = segments.find((s) => /^under-(\d+)$/.test(s));
-    if (priceUnder) {
-      const match = priceUnder.match(/^under-(\d+)$/);
-      if (match) {
-        setMaxPrice(parseInt(match[1]));
-        setMinPrice(null);
-      }
-    }
-
-    // ✅ Price: between-X-Y
-    const priceBetween = segments.find((s) => /^between-(\d+)-(\d+)$/.test(s));
-    if (priceBetween) {
-      const match = priceBetween.match(/^between-(\d+)-(\d+)$/);
-      if (match) {
-        setMinPrice(parseInt(match[1]));
-        setMaxPrice(parseInt(match[2]));
-      }
-    }
-
-    // ✅ Length: over-X-length
-    const lengthOver = segments.find((s) => /^over-(\d+)-length$/.test(s));
-    if (lengthOver) {
-      const match = lengthOver.match(/^over-(\d+)-length$/);
-      if (match) {
-        setLengthFrom(parseInt(match[1]));
-        setLengthTo(null);
-      }
-    }
-
-    // ✅ Length: under-X-length
-    const lengthUnder = segments.find((s) => /^under-(\d+)-length$/.test(s));
-    if (lengthUnder) {
-      const match = lengthUnder.match(/^under-(\d+)-length$/);
-      if (match) {
-        setLengthTo(parseInt(match[1]));
-        setLengthFrom(null);
-      }
-    }
-
-    // ✅ Length: between-X-Y-length
-    const lengthBetween = segments.find((s) =>
-      /^between-(\d+)-(\d+)-length$/.test(s)
-    );
-    if (lengthBetween) {
-      const match = lengthBetween.match(/^between-(\d+)-(\d+)-length$/);
-      if (match) {
-        setLengthFrom(parseInt(match[1]));
-        setLengthTo(parseInt(match[2]));
-      }
-    }
-
-    // Query Params (Year)
-    const fromYear = searchParams.get("acustom_fromyears");
-    const toYear = searchParams.get("acustom_toyears");
-    if (fromYear) newFilters.from_year = parseInt(fromYear);
-    if (toYear) newFilters.to_year = parseInt(toYear);
-
-    // ✅ Trigger main data load
-    onFilterChange(newFilters);
-    setFilters(newFilters);
-    filtersInitialized.current = true;
-    startTransition(() => {
-      updateAllFiltersAndURL();
-    });
-  }, [pathname, searchParams]);
-  console.log("name", states);
-  console.log("state-selectedState:", selectedState);
-  console.log(
-    "state-matchedState:",
-    states.find((s) => s.value == slugify(selectedState))
-  );
-  console.log("valuee state", selectedState);
-
-  useEffect(() => {
-    // Find the selected state from the states array
-    const selectedStateData = states.find(
-      (s) =>
-        selectedState &&
-        s.name.toLowerCase().startsWith(selectedState.toLowerCase())
-    );
-    console.log("valuee sub", selectedStateData);
-
-    // Check if selectedStateData exists and has regions
-    if (selectedStateData && Array.isArray(selectedStateData.regions)) {
-      const selectedRegion = selectedStateData.regions.find(
-        (region) =>
-          selectedRegionName &&
-          region.name.toLowerCase() === selectedRegionName.toLowerCase() // Case-insensitive match for region
-      );
-
-      // If selectedRegion exists, update the suburbs, otherwise, fallback to empty array
-      if (selectedRegion) {
-        setFilteredSuburbs(selectedRegion.suburbs || []);
-      } else {
-        setFilteredSuburbs([]); // No suburbs for this region
-      }
-    } else {
-      setFilteredSuburbs([]); // If selectedStateData doesn't exist or has no regions, fallback to empty array
-    }
-  }, [selectedState, selectedRegionName, states]);
-
-  // Trigger this when selectedState, selectedRegionName, or states change
-  const updatePriceFilter = (
-    priceType: "min" | "max", // "min" or "max" to identify the price field
-    value: string | null,
-    otherPrice: number | null // minPrice or maxPrice (depending on the field being updated)
-  ) => {
-    const val = value ? parseInt(value) : null;
-
-    // Update the respective price field (minPrice or maxPrice)
-    if (priceType === "min") {
-      setMinPrice(val);
-    } else if (priceType === "max") {
-      setMaxPrice(val);
-    }
-
-    const updatedFilters: Filters = {
-      ...filters,
-      from_price: priceType === "min" ? val ?? undefined : undefined,
-      to_price:
-        priceType === "max" ? val ?? undefined : otherPrice ?? undefined,
-    };
-
-    setFilters(updatedFilters);
-    onFilterChange(updatedFilters);
-
-    filtersInitialized.current = true;
-
-    startTransition(() => {
-      updateAllFiltersAndURL(); // ✅ triggers slug+router.push
-    });
-  };
+  }, [filters, selectedCategory, selectedMake, selectedStateName, pathname]);
 
   return (
     <div className="filter-card mobile-search">
@@ -2015,9 +1415,6 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
                     setSelectedCategory(cat.slug);
                     setSelectedCategoryName(cat.name);
                     setCategoryOpen(false);
-                    updateFilters({ category: cat.slug });
-
-                    updateAllFiltersAndURL(); // ✅ This ensures all values are merged
                     filtersInitialized.current = true;
                     const updatedFilters: Filters = {
                       ...filters, // ✅ live state
@@ -2056,6 +1453,7 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
             }}
           />{" "}
         </div>
+
         {/* STATE */}
         {selectedStateName && (
           <div
@@ -2082,6 +1480,7 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
             </div>
           </div>
         )}
+
         {/* REGION */}
         {selectedRegionName && (
           <div
@@ -2130,6 +1529,7 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
             )}
           </div>
         )}
+
         {/* SUBURB */}
         {selectedSuburbName && (
           <div className="filter-accordion-item" style={accordionStyle(true)}>
@@ -2139,13 +1539,12 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
             </span>
           </div>
         )}
+
         {/* 🔽 REGION LIST */}
         {stateOpen && selectedState && !selectedRegionName && (
           <div className="filter-accordion-items">
             {states
-              .find((s) =>
-                s.name.toLowerCase().startsWith(selectedState.toLowerCase())
-              ) // ✅ match the start of state
+              .find((s) => s.value === selectedState)
               ?.regions?.map((region, idx) => (
                 <div
                   key={idx}
@@ -2164,6 +1563,7 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
               ))}
           </div>
         )}
+
         {/* 🔽 SUBURB LIST */}
         {stateOpen &&
           selectedState &&
@@ -2171,46 +1571,49 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
           !selectedSuburbName && (
             <div className="filter-accordion-items">
               {Array.isArray(filteredSuburbs) &&
-              filteredSuburbs.length === 0 ? (
-                <>
-                  {console.log("🚨 suburbs data:", filteredSuburbs)}{" "}
-                  {console.log("🚨 suburbs EMPTY at render:", filteredSuburbs)}
-                  <p style={{ marginLeft: 20 }}>❌ No suburbs available</p>
-                </>
-              ) : (
-                filteredSuburbs.map((suburb, idx) => (
-                  <div
-                    key={`${suburb.value}-${idx}`}
-                    className="filter-accordion-item"
-                    style={suburbStyle(suburb.name === selectedSuburbName)}
-                    onClick={() => {
-                      const postcodeMatch = suburb.value?.match(/\d{4}$/);
-                      const postcode = postcodeMatch ? postcodeMatch[0] : null;
-                      suburbClickedRef.current = true;
+                filteredSuburbs.length === 0 && (
+                  <>
+                    {console.log(
+                      "🚨 suburbs EMPTY at render:",
+                      filteredSuburbs
+                    )}
+                    <p style={{ marginLeft: 20 }}>❌ No suburbs available</p>
+                  </>
+                )}
 
-                      setSelectedSuburbName(suburb.name);
-                      setSelectedPostcode(postcode);
-                      setLocationInput(`${suburb.name} ${selectedStateName}`);
-                      setStateOpen(false);
+              {filteredSuburbs.map((suburb, idx) => (
+                <div
+                  key={`${suburb.value}-${idx}`}
+                  className="filter-accordion-item"
+                  style={suburbStyle(suburb.name === selectedSuburbName)}
+                  onClick={() => {
+                    const postcodeMatch = suburb.value?.match(/\d{4}$/);
+                    const postcode = postcodeMatch ? postcodeMatch[0] : null;
+                    suburbClickedRef.current = true;
 
-                      const updatedFilters: Filters = {
-                        ...currentFilters,
-                        suburb: suburb.name,
-                        region: selectedRegionName,
-                        state: selectedStateName || undefined,
-                        postcode: postcode || undefined,
-                      };
+                    setSelectedSuburbName(suburb.name);
+                    setSelectedPostcode(postcode);
+                    setLocationInput(`${suburb.name} ${selectedStateName}`);
+                    setStateOpen(false);
 
-                      setFilters(updatedFilters);
-                      onFilterChange(updatedFilters); // ✅ triggers ListingsPage
-                    }}
-                  >
-                    {suburb.name}
-                  </div>
-                ))
-              )}
+                    const updatedFilters: Filters = {
+                      ...currentFilters,
+                      suburb: suburb.name,
+                      region: selectedRegionName,
+                      state: selectedStateName || undefined,
+                      postcode: postcode || undefined,
+                    };
+
+                    setFilters(updatedFilters);
+                    onFilterChange(updatedFilters); // ✅ this triggers ListingsPage
+                  }}
+                >
+                  {suburb.name}
+                </div>
+              ))}
             </div>
           )}
+
         {/* 🔹 INITIAL STATE LIST */}
         {!selectedState && stateOpen && (
           <div className="filter-accordion-items">
@@ -2223,13 +1626,8 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
                 onClick={() => {
                   preventResetRef.current = true;
                   urlJustUpdatedRef.current = true;
-                  const slugify = (text: string) =>
-                    text
-                      .toLowerCase()
-                      .replace(/\s+/g, "-")
-                      .replace(/[^\w-]+/g, "");
 
-                  setSelectedState(slugify(state.value)); // ✅ now it's "new-south-wales"
+                  setSelectedState(state.value);
                   setSelectedStateName(state.name);
                   setSelectedRegionName(null);
                   setSelectedSuburbName(null);
@@ -2424,48 +1822,24 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
                     selectedMake === make.slug ? "selected" : ""
                   }`}
                   onClick={() => {
-                    setSelectedMake(make.slug); // Set selected make in state
-                    setSelectedMakeName(make.name); // Optionally set name as well
-                    setSelectedModel(null); // Reset model when a new make is selected
+                    setSelectedMake(make.slug);
+                    setSelectedMakeName(make.name);
+                    setSelectedModel(null);
                     setSelectedModelName(null);
+                    setModel([]);
 
-                    // Update the filters with the selected make
                     const updatedFilters: Filters = {
-                      ...filters,
+                      ...filters, // ✅ live state
                       make: make.slug,
-                      model: undefined, // Reset model as make is selected
+                      model: undefined,
                       category: selectedCategory || currentFilters.category,
                       state: selectedStateName || currentFilters.state,
                     };
 
-                    setFilters(updatedFilters); // Update filter state
-                    onFilterChange(updatedFilters); // Trigger parent component update
+                    setFilters(updatedFilters);
+                    onFilterChange(updatedFilters);
 
-                    filtersInitialized.current = true;
-
-                    // Build the URL with the updated make
-                    const slugParts: string[] = [];
-                    if (make.slug) slugParts.push(make.slug); // Add make to URL
-                    if (selectedCategory)
-                      slugParts.push(`${selectedCategory}-category`);
-                    if (selectedStateName)
-                      slugParts.push(`${slugify(selectedStateName)}-state`);
-
-                    const query: Record<string, string> = {};
-                    if (yearFrom) query.acustom_fromyears = yearFrom.toString();
-                    if (yearTo) query.acustom_toyears = yearTo.toString();
-
-                    // Build the query string
-                    const queryString = new URLSearchParams(query).toString();
-
-                    // Construct the URL path
-                    const slugPath = `/listings/${slugParts.join("/")}`;
-                    const fullURL = queryString
-                      ? `${slugPath}?${queryString}`
-                      : slugPath;
-
-                    // Push the new URL to the router
-                    router.push(fullURL);
+                    // router.push(...) unchanged
                   }}
                 >
                   {make.name}
@@ -2541,7 +1915,26 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
                   className={`filter-accordion-item ${
                     selectedModel === mod.slug ? "selected" : ""
                   }`}
-                  onClick={() => handleModelSelect(mod)} // ✅ Call here
+                  onClick={() => {
+                    setSelectedModel(mod.slug);
+                    setSelectedModelName(mod.name);
+                    setModelOpen(false);
+
+                    const updatedFilters = {
+                      ...filters,
+                      make: selectedMake, // ✅ correct
+                      model: mod.slug,
+                      category: selectedCategory || currentFilters.category,
+                      state: selectedStateName || currentFilters.state,
+                      region: selectedRegionName || currentFilters.region,
+                      suburb: selectedSuburbName || currentFilters.suburb,
+                      postcode: selectedPostcode || currentFilters.postcode,
+                    };
+
+                    setFilters(updatedFilters);
+                    suburbClickedRef.current = true;
+                    onFilterChange(updatedFilters); // ✅ fire here only
+                  }}
                 >
                   {mod.name}
                 </div>
@@ -2561,24 +1954,21 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
             <select
               className="cfs-select-input"
               value={atmFrom?.toString() || ""}
-              // onChange={(e) => {
-              //   const val = e.target.value ? parseInt(e.target.value) : null;
-              //   setAtmFrom(val);
+              onChange={(e) => {
+                const val = e.target.value ? parseInt(e.target.value) : null;
+                setAtmFrom(val);
+                suburbClickedRef.current = true;
+                filtersInitialized.current = true;
 
-              //   const updated = {
-              //     ...filters, // ✅ Important!
-              //     minKg: val ?? undefined,
-              //     maxKg: atmTo ?? undefined,
-              //   };
+                const updatedFilters: Filters = {
+                  ...filters,
+                  minKg: val ?? undefined,
+                  maxKg: atmTo ?? undefined,
+                };
 
-              //   setFilters(updated);
-              //   onFilterChange(updated);
-              //   filtersInitialized.current = true;
-              //   startTransition(() => {
-              //     updateAllFiltersAndURL();
-              //   });
-              // }}
-              onChange={handleAtmFromChange}
+                setFilters(updatedFilters);
+                onFilterChange(updatedFilters);
+              }}
             >
               <option value="">Min</option>
               {atm.map((val) => (
@@ -2593,25 +1983,20 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
 
             <select
               className="cfs-select-input"
-              value={atmTo?.toString() || ""}
-              // onChange={(e) => {
-              //   const val = e.target.value ? parseInt(e.target.value) : null;
-              //   setAtmTo(val);
+              value={atmFrom?.toString() || ""}
+              onChange={(e) => {
+                const val = e.target.value ? parseInt(e.target.value) : null;
+                setAtmTo(val);
 
-              //   const updated = {
-              //     ...filters,
-              //     minKg: atmFrom ?? undefined,
-              //     maxKg: val ?? undefined, // ✅ FIXED HERE
-              //   };
+                const updatedFilters: Filters = {
+                  ...filters,
+                  minKg: val ?? undefined,
+                  maxKg: atmTo ?? undefined,
+                };
 
-              //   setFilters(updated);
-              //   onFilterChange(updated);
-              //   filtersInitialized.current = true;
-              //   startTransition(() => {
-              //     updateAllFiltersAndURL();
-              //   });
-              // }}
-              onChange={handleAtmToChange}
+                setFilters(updatedFilters);
+                onFilterChange(updatedFilters);
+              }}
             >
               <option value="">Max</option>
               {atm.map((val) => (
@@ -2633,7 +2018,6 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
               onClick={() => {
                 setAtmFrom(null);
                 setAtmTo(null);
-
                 const updatedFilters: Filters = {
                   ...currentFilters,
                   minKg: undefined,
@@ -2669,27 +2053,11 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
             <select
               className="cfs-select-input"
               value={minPrice?.toString() || ""}
-              onChange={(e) =>
-                updatePriceFilter("min", e.target.value, maxPrice)
-              }
-              // onChange={(e) => {
-              //   const val = e.target.value ? parseInt(e.target.value) : null;
-              //   setMinPrice(val);
-
-              //   const updatedFilters: Filters = {
-              //     ...filters,
-              //     from_price: val ?? undefined,
-              //     to_price: maxPrice ?? undefined,
-              //   };
-
-              //   setFilters(updatedFilters);
-              //   onFilterChange(updatedFilters);
-              //   filtersInitialized.current = true;
-
-              //   startTransition(() => {
-              //     updateAllFiltersAndURL(); // ✅ triggers slug+router.push
-              //   });
-              // }}
+              onChange={(e) => {
+                const val = e.target.value ? parseInt(e.target.value) : null;
+                setMinPrice(val);
+                suburbClickedRef.current = true; // ✅ Trigger URL update
+              }}
             >
               <option value="">Min</option>
               {price.map((value, idx) => (
@@ -2704,27 +2072,11 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
             <select
               className="cfs-select-input"
               value={maxPrice?.toString() || ""}
-              onChange={(e) =>
-                updatePriceFilter("max", e.target.value, maxPrice)
-              }
-              // onChange={(e) => {
-              //   const val = e.target.value ? parseInt(e.target.value) : null;
-              //   setMaxPrice(val);
-
-              //   const updatedFilters: Filters = {
-              //     ...filters,
-              //     from_price: minPrice ?? undefined,
-              //     to_price: val ?? undefined,
-              //   };
-
-              //   setFilters(updatedFilters);
-              //   onFilterChange(updatedFilters);
-              //   filtersInitialized.current = true;
-
-              //   startTransition(() => {
-              //     updateAllFiltersAndURL();
-              //   });
-              // }}
+              onChange={(e) => {
+                const val = e.target.value ? parseInt(e.target.value) : null;
+                setMaxPrice(val);
+                suburbClickedRef.current = true; // ✅ Trigger URL update
+              }}
             >
               <option value="">Max</option>
               {price.map((value, idx) => (
@@ -2776,14 +2128,22 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
         )}
       </div>
       {/* 8883944599
-                9524163042 */}
+            9524163042 */}
       {/* Condition Accordion */}
       <div className="cs-full_width_section">
         <div
           className="filter-accordion"
           onClick={() => toggle(setConditionOpen)}
         >
-          <h5 className="cfs-filter-label"> Condition</h5>
+          <h5 className="cfs-filter-label">
+            {" "}
+            Condition
+            {selectedConditionName && (
+              <span className="filter-accordion-items">
+                : {selectedConditionName}
+              </span>
+            )}
+          </h5>
           <BiChevronDown />
         </div>
         {selectedConditionName && (
@@ -2831,15 +2191,6 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
                   setSelectedConditionName(condition);
                   setConditionOpen(false);
                   suburbClickedRef.current = true;
-                  filtersInitialized.current = true;
-                  const updatedFilters: Filters = {
-                    ...filters,
-                    condition,
-                  };
-
-                  setFilters(updatedFilters);
-                  onFilterChange(updatedFilters);
-                  updateAllFiltersAndURL(); // ✅ Force filter effect
                 }}
               >
                 {condition}
@@ -2923,7 +2274,6 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
               onChange={(e) => {
                 const val = e.target.value ? parseInt(e.target.value) : null;
                 setYearFrom(val);
-                filtersInitialized.current = true; // ✅ Force filter effect
                 suburbClickedRef.current = true; // ✅ Trigger URL update
               }}
             >
@@ -2943,7 +2293,6 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
               onChange={(e) => {
                 const val = e.target.value ? parseInt(e.target.value) : null;
                 setYearTo(val);
-                filtersInitialized.current = true; // ✅ Force filter effect
                 suburbClickedRef.current = true; // ✅ Trigger URL update
               }}
             >
@@ -3033,7 +2382,6 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
               onChange={(e) => {
                 const val = e.target.value ? parseInt(e.target.value) : null;
                 setLengthTo(val);
-                filtersInitialized.current = true; // ✅ Force filter effect
                 suburbClickedRef.current = true; // ✅ Trigger URL update
               }}
             >

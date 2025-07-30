@@ -184,22 +184,18 @@ export default function ListingsPage({ category, condition, location }: Props) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams, pagination, filtersReady]);
   console.log(location);
+
   console.log("✅ Filters about to be applied:", filtersRef.current);
 
   const loadListings = useCallback(
     async (page = 1, appliedFilters: Filters = filters) => {
-      if (!appliedFilters || Object.keys(appliedFilters).length === 0) {
-        console.warn("⛔ Skipping load: filters are empty.");
-        setIsLoading(false);
-        return;
-      }
       setIsLoading(true);
       window.scrollTo({ top: 0, behavior: "smooth" });
 
       try {
         const response = await fetchListings({
           ...appliedFilters,
-          page, // Current page number
+          page,
           condition: appliedFilters.condition,
           minKg: appliedFilters.minKg?.toString(),
           maxKg: appliedFilters.maxKg?.toString(),
@@ -217,7 +213,13 @@ export default function ListingsPage({ category, condition, location }: Props) {
           suburb: appliedFilters.suburb,
         });
 
-        if (response?.data?.products && response?.pagination) {
+        const hasFilters = Object.values(appliedFilters).some(
+          (val) => val !== undefined && val !== null && val !== ""
+        );
+
+        const productsFound = response?.data?.products?.length > 0;
+
+        if (productsFound && response?.pagination) {
           setProducts(response.data.products);
           setCategories(response.data.all_categories);
           setMakes(response.data.make_options);
@@ -227,11 +229,34 @@ export default function ListingsPage({ category, condition, location }: Props) {
           setPagination(response.pagination);
           setMetaDescription(response.seo?.metadescription);
           setMetaTitle(response.seo?.metatitle);
-          console.log("my", metaTitle);
-
-          // Dynamically build the meta title and description using all filters
           setMetaImage(response.seo?.metaimage || "/favicon.ico");
+        } else if (hasFilters) {
+          console.warn(
+            "⚠️ No results found with filters. Loading default listings."
+          );
+
+          // 🌀 Try again with empty filters
+          const fallbackResponse = await fetchListings({ page: 1 });
+
+          setProducts(fallbackResponse?.data?.products || []);
+          setPagination(
+            fallbackResponse?.pagination || {
+              current_page: 1,
+              total_pages: 1,
+              per_page: pagination.per_page,
+              total_products: 0,
+            }
+          );
+          setCategories(fallbackResponse?.data?.all_categories || []);
+          setMakes(fallbackResponse?.data?.make_options || []);
+          setModels(fallbackResponse?.data?.model_options || []);
+          setStateOptions(fallbackResponse?.data?.states || []);
+          setPageTitle(fallbackResponse?.title ?? "Caravan Listings");
+          setMetaTitle(fallbackResponse?.seo?.metatitle ?? "");
+          setMetaDescription(fallbackResponse?.seo?.metadescription ?? "");
+          setMetaImage(fallbackResponse?.seo?.metaimage || "/favicon.ico");
         } else {
+          // 🧾 No filters, but no data either
           setProducts([]);
           setPagination({
             current_page: 1,
@@ -247,41 +272,34 @@ export default function ListingsPage({ category, condition, location }: Props) {
         setIsLoading(false);
       }
     },
-    [filters, pagination.per_page] // ✅ Add metaImage to dependencies
+    [filters, pagination.per_page]
   );
+  useEffect(() => {
+    if (!hasSearched && filtersReady) {
+      filtersRef.current = initialFilters;
+      setFilters(initialFilters); // ✅ sync filter state
+      loadListings(initialPage, initialFilters); // ✅ call even if no filters
+      setHasSearched(true); // ✅ avoid re-fetching
+    }
+  }, [filtersReady, hasSearched, initialFilters, initialPage, loadListings]);
+  useEffect(() => {
+    // ✅ Force ready on first render
+    setFiltersReady(true);
+  }, []);
 
   // useEffect(() => {
   //   if (
-  //     hasSearched ||
-  //     !filtersReady ||
-  //     Object.keys(initialFilters).length === 0
-  //   )
-  //     return;
-
-  //   const pageFromURL = parseInt(searchParams.get("paged") || "1", 10);
-
-  //   filtersRef.current = initialFilters;
-
-  //   setPagination((prev) => ({
-  //     ...prev,
-  //     current_page: pageFromURL,
-  //   }));
-
-  //   loadListings(pageFromURL, initialFilters);
-  // }, [filtersReady, hasSearched, initialFilters, loadListings, searchParams]);
-
-  useEffect(() => {
-    if (
-      !hasSearched &&
-      filtersReady &&
-      Object.keys(initialFilters).length > 0
-    ) {
-      filtersRef.current = initialFilters;
-      setFilters(initialFilters); // ✅ ADD THIS LINE to sync state
-      loadListings(initialPage, initialFilters);
-    }
-  }, [filtersReady, hasSearched, initialFilters, initialPage, loadListings]);
+  //     !hasSearched &&
+  //     filtersReady &&
+  //     Object.keys(initialFilters).length > 0
+  //   ) {
+  //     filtersRef.current = initialFilters;
+  //     setFilters(initialFilters); // ✅ ADD THIS LINE to sync state
+  //     loadListings(initialPage, initialFilters);
+  //   }
+  // }, [filtersReady, hasSearched, initialFilters, initialPage, loadListings]);
   // Handle filter changes and update the page
+
   const handleFilterChange = useCallback((newFilters: Filters) => {
     console.log("🚚 got from CaravanFilter →", categories); // 👈 should contain sleeps
     const mergedFilters = {
@@ -309,83 +327,121 @@ export default function ListingsPage({ category, condition, location }: Props) {
 
   const buildSlugPath = () => {
     const slugParts: string[] = [];
+
+    // Make and Model Filters
     if (filters.make) {
       slugParts.push(filters.make);
       if (filters.model && filters.model !== filters.make) {
-        slugParts.push(filters.model);
+        slugParts.push(filters.model); // Ensure model is only added if it is different from make
       }
     }
+
+    // Category and Condition Filters
     if (filters.category) slugParts.push(`${filters.category}-category`);
     if (filters.condition)
       slugParts.push(`${filters.condition.toLowerCase()}-condition`);
 
-    // 3. Build Location: State → Region → Suburb (with rules)
-    if (filters.state && !filters.region && !filters.suburb) {
-      // ✅ Only state
+    // Location Filters: State → Region → Suburb → Postcode
+    if (filters.state) {
       slugParts.push(
         `${filters.state.toLowerCase().replace(/\s+/g, "-")}-state`
       );
-    } else if (filters.state && filters.region && !filters.suburb) {
-      // ✅ State + Region
-      slugParts.push(
-        `${filters.state.toLowerCase().replace(/\s+/g, "-")}-state`
-      );
+    }
+
+    if (filters.region && filters.state) {
       slugParts.push(
         `${filters.region.toLowerCase().replace(/\s+/g, "-")}-region`
       );
-    } else if (filters.state && filters.region && filters.suburb) {
-      // ✅ Full: Suburb + State + Postcode
+    }
+
+    if (filters.suburb) {
       slugParts.push(
         `${filters.suburb.toLowerCase().replace(/\s+/g, "-")}-suburb`
       );
-      slugParts.push(
-        `${filters.state.toLowerCase().replace(/\s+/g, "-")}-state`
-      );
-      if (filters.postcode) slugParts.push(filters.postcode);
+      if (filters.postcode) {
+        slugParts.push(filters.postcode); // Ensure postcode is included in the slug
+      }
     }
 
-    console.log("🌐 Current Filters State:", filters.state);
-
-    const minPrice = filters.from_price;
-    const maxPrice = filters.to_price;
-
-    if (minPrice && maxPrice) {
-      slugParts.push(`between-${minPrice}-${maxPrice}`);
-    } else if (minPrice) {
-      slugParts.push(`over-${minPrice}`);
-    } else if (maxPrice) {
-      slugParts.push(`under-${maxPrice}`);
+    // Price and ATM Filters
+    if (filters.from_price && filters.to_price) {
+      slugParts.push(`between-${filters.from_price}-${filters.to_price}`);
+    } else if (filters.from_price) {
+      slugParts.push(`over-${filters.from_price}`);
+    } else if (filters.to_price) {
+      slugParts.push(`under-${filters.to_price}`);
     }
 
-    const minKg = filters.minKg;
-    const maxKg = filters.maxKg;
-
-    if (minKg && maxKg) {
-      slugParts.push(`between-${minKg}-kg-${maxKg}-kg-atm`);
-    } else if (minKg) {
-      slugParts.push(`over-${minKg}-kg-atm`);
-    } else if (maxKg) {
-      slugParts.push(`under-${maxKg}-kg-atm`);
+    // Weight (ATM) Range Filters
+    if (filters.minKg && filters.maxKg) {
+      slugParts.push(`between-${filters.minKg}-kg-${filters.maxKg}-kg-atm`);
+    } else if (filters.minKg) {
+      slugParts.push(`over-${filters.minKg}-kg-atm`);
+    } else if (filters.maxKg) {
+      slugParts.push(`under-${filters.maxKg}-kg-atm`);
     }
 
+    // Sleeping Capacity Filter
     if (filters.sleeps) {
-      const num = filters.sleeps.split("-")[0];
+      const num = filters.sleeps.split("-")[0]; // Extract number of people
       slugParts.push(`over-${num}-people-sleeping-capacity`);
     }
-    // ✅ Add this for length filtering
-    const minLen = filters.from_length;
-    const maxLen = filters.to_length;
 
-    if (minLen && maxLen) {
-      slugParts.push(`between-${minLen}-${maxLen}-length-in-feet`);
-    } else if (minLen) {
-      slugParts.push(`over-${minLen}-length-in-feet`);
-    } else if (maxLen) {
-      slugParts.push(`under-${maxLen}-length-in-feet`);
+    // Length Filters
+    if (filters.from_length && filters.to_length) {
+      slugParts.push(
+        `between-${filters.from_length}-${filters.to_length}-length-in-feet`
+      );
+    } else if (filters.from_length) {
+      slugParts.push(`over-${filters.from_length}-length-in-feet`);
+    } else if (filters.to_length) {
+      slugParts.push(`under-${filters.to_length}-length-in-feet`);
     }
 
+    // Combine filters into the URL
     return `/listings/${slugParts.join("/")}`;
   };
+  useEffect(() => {
+    const slugFilters: Filters = {};
+
+    const slug = pathname.split("/listings/")[1];
+    const segments = slug?.split("/") || [];
+
+    // Parse slug segments
+    segments.forEach((part) => {
+      if (/^over-(\d+)$/.test(part)) {
+        slugFilters.from_price = parseInt(part.replace("over-", ""));
+      } else if (/^under-(\d+)$/.test(part)) {
+        slugFilters.to_price = parseInt(part.replace("under-", ""));
+      } else if (/^between-(\d+)-(\d+)$/.test(part)) {
+        const [, from, to] = part.match(/^between-(\d+)-(\d+)$/) || [];
+        slugFilters.from_price = parseInt(from);
+        slugFilters.to_price = parseInt(to);
+      }
+
+      if (/^over-(\d+)-kg-atm$/.test(part)) {
+        slugFilters.minKg = parseInt(
+          part.replace("over-", "").replace("-kg-atm", "")
+        );
+      } else if (/^under-(\d+)-kg-atm$/.test(part)) {
+        slugFilters.maxKg = parseInt(
+          part.replace("under-", "").replace("-kg-atm", "")
+        );
+      } else if (/^between-(\d+)-kg-(\d+)-kg-atm$/.test(part)) {
+        const [, from, to] =
+          part.match(/^between-(\d+)-kg-(\d+)-kg-atm$/) || [];
+        slugFilters.minKg = parseInt(from);
+        slugFilters.maxKg = parseInt(to);
+      }
+    });
+
+    if (Object.keys(slugFilters).length > 0) {
+      const mergedFilters = { ...filtersRef.current, ...slugFilters };
+      filtersRef.current = mergedFilters;
+      setFilters(mergedFilters);
+      loadListings(1, mergedFilters); // fetch based on updated slug filters
+    }
+  }, [pathname, loadListings]);
 
   // ✨ Add this useEffect at the bottom of your component
   useEffect(() => {
