@@ -2266,23 +2266,23 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
             <select
               className="cfs-select-input"
               value={atmFrom?.toString() || ""}
-              onChange={(e) => {
-                const val = e.target.value ? parseInt(e.target.value) : null;
-                setAtmFrom(val);
+              // onChange={(e) => {
+              //   const val = e.target.value ? parseInt(e.target.value) : null;
+              //   setAtmFrom(val);
 
-                const updated = {
-                  ...filters, // ✅ Important!
-                  minKg: val ?? undefined,
-                  maxKg: atmTo ?? undefined,
-                };
+              //   const updated = {
+              //     ...filters, // ✅ Important!
+              //     minKg: val ?? undefined,
+              //     maxKg: atmTo ?? undefined,
+              //   };
 
-                setFilters(updated);
-                filtersInitialized.current = true;
-                startTransition(() => {
-                  updateAllFiltersAndURL();
-                });
-              }}
-              // onChange={handleAtmFromChange}
+              //   setFilters(updated);
+              //   filtersInitialized.current = true;
+              //   startTransition(() => {
+              //     updateAllFiltersAndURL();
+              //   });
+              // }}
+              onChange={handleAtmFromChange}
             >
               <option value="">Min</option>
               {atm.map((val) => (
