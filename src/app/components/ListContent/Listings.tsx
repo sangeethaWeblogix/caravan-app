@@ -85,22 +85,6 @@ interface Props {
   metaDescription?: string;
 }
 
-const useDebounce = (value: any, delay: number): any => {
-  const [debouncedValue, setDebouncedValue] = useState(value);
-
-  useEffect(() => {
-    const handler = setTimeout(() => {
-      setDebouncedValue(value);
-    }, delay);
-
-    return () => {
-      clearTimeout(handler);
-    };
-  }, [value, delay]);
-
-  return debouncedValue;
-};
-
 export default function ListingsPage({ category, condition, location }: Props) {
   const pathname =
     typeof window !== "undefined" ? window.location.pathname : "";
@@ -175,8 +159,6 @@ export default function ListingsPage({ category, condition, location }: Props) {
   const searchParams = useSearchParams();
   const initialPage = parseInt(searchParams.get("paged") || "1", 10);
 
-  const debouncedFilters = useDebounce(filters, 500); // 500ms delay
-
   const [pagination, setPagination] = useState<Pagination>({
     current_page: initialPage,
     total_pages: 1,
@@ -184,11 +166,7 @@ export default function ListingsPage({ category, condition, location }: Props) {
     per_page: 12, // The number of items per page
     total_products: 0,
   });
-  useEffect(() => {
-    if (debouncedFilters && filtersReady) {
-      loadListings(pagination.current_page, debouncedFilters);
-    }
-  }, [debouncedFilters, filtersReady, pagination.current_page]);
+
   // Update pagination when page URL param changes
   useEffect(() => {
     const pageParam = searchParams.get("paged");
@@ -463,7 +441,7 @@ export default function ListingsPage({ category, condition, location }: Props) {
       setFilters(mergedFilters);
       loadListings(1, mergedFilters); // fetch based on updated slug filters
     }
-  }, [pathname]);
+  }, [pathname, loadListings]);
 
   // ✨ Add this useEffect at the bottom of your component
   useEffect(() => {

@@ -101,7 +101,6 @@ type Suburb = {
 const CaravanFilter: React.FC<CaravanFilterProps> = ({
   onFilterChange,
   currentFilters,
-  models,
 }) => {
   const router = useRouter();
   const pathname = usePathname();
@@ -151,7 +150,7 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
   );
   const [selectedSuggestion, setSelectedSuggestion] =
     useState<LocationSuggestion | null>(null);
-
+  console.log(selectedSuggestion);
   const [atmFrom, setAtmFrom] = useState<number | null>(null);
   const [atmTo, setAtmTo] = useState<number | null>(null);
   const [lengthFrom, setLengthFrom] = useState<number | null>(null);
@@ -167,7 +166,6 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
   const [yearFrom, setYearFrom] = useState<number | null>(null);
   const [yearTo, setYearTo] = useState<number | null>(null);
   const [showAllMakes, setShowAllMakes] = useState(false);
-  const justSelectedStateRef = useRef(false);
 
   const atm = [
     600, 800, 1000, 1250, 1500, 1750, 2000, 2250, 2500, 2750, 3000, 3500, 4000,
@@ -1209,7 +1207,7 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
         setSelectedModelName(match.name);
       }
     }
-  }, [selectedModel, model]);
+  }, [selectedModel, model, selectedModelName]);
   useEffect(() => {
     if (selectedMake && !filters.make) {
       onFilterChange({ ...filters, make: selectedMake });
@@ -1237,24 +1235,6 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
   useEffect(() => {
     const timeout = setTimeout(() => {
       const slugParts: string[] = [];
-      const noFiltersSelected =
-        !selectedMake &&
-        !selectedModel &&
-        !selectedCategory &&
-        !selectedConditionName &&
-        !selectedStateName &&
-        !selectedRegionName &&
-        !selectedSuburbName &&
-        !selectedPostcode &&
-        !yearFrom &&
-        !yearTo &&
-        !atmFrom &&
-        !atmTo &&
-        !minPrice &&
-        !maxPrice &&
-        !lengthFrom &&
-        !lengthTo &&
-        !selectedSleepName;
 
       if (!filtersInitialized.current) {
         return;
@@ -1371,7 +1351,7 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
         selectedStateName,
       });
     }
-  }, [filters, selectedCategory, selectedMake, selectedStateName]);
+  }, [filters, selectedCategory, selectedMake, selectedStateName, pathname]);
 
   return (
     <div className="filter-card mobile-search">

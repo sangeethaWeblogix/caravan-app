@@ -102,11 +102,11 @@ type Suburb = {
   value: string;
 };
 
-const useDebounce = (value: any, delay: number): any => {
-  const [debouncedValue, setDebouncedValue] = useState(value);
+function useDebounce<T>(value: T, delay: number): T {
+  const [debouncedValue, setDebouncedValue] = useState<T>(value);
 
   useEffect(() => {
-    const handler = setTimeout(() => {
+    const handler: ReturnType<typeof setTimeout> = setTimeout(() => {
       setDebouncedValue(value);
     }, delay);
 
@@ -116,12 +116,11 @@ const useDebounce = (value: any, delay: number): any => {
   }, [value, delay]);
 
   return debouncedValue;
-};
+}
 
 const CaravanFilter: React.FC<CaravanFilterProps> = ({
   onFilterChange,
   currentFilters,
-  models,
 }) => {
   const router = useRouter();
   const pathname = usePathname();
@@ -180,15 +179,14 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
   const conditionDatas = ["Near New", "New", "Used"];
   const [minPrice, setMinPrice] = useState<number | null>(null);
   const [maxPrice, setMaxPrice] = useState<number | null>(null);
-  const [selectedSleepName, setSelectedSleepName] = useState<string>(
-    currentFilters?.sleeps?.replace("-people", "") || ""
+  const [selectedSleepName, setSelectedSleepName] = useState<string | null>(
+    null
   );
   const filtersInitialized = useRef(false);
   const [yearFrom, setYearFrom] = useState<number | null>(null);
   const [yearTo, setYearTo] = useState<number | null>(null);
   const [showAllMakes, setShowAllMakes] = useState(false);
 
-  const justSelectedStateRef = useRef(false);
   const debouncedFilters = useDebounce(filters, 500);
   const atm = [
     600, 800, 1000, 1250, 1500, 1750, 2000, 2250, 2500, 2750, 3000, 3500, 4000,
@@ -209,14 +207,15 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
   const length = [
     12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28,
   ];
-
+  console.log(selectedSuggestion);
   const sleep = [1, 2, 3, 4, 5, 6, 7];
   const [selectedRegion, setSelectedRegion] = useState<string>();
   useEffect(() => {
     if (debouncedFilters) {
       onFilterChange(debouncedFilters); // Trigger the API call only after debounce
     }
-  }, [debouncedFilters]);
+  }, []);
+
   useEffect(() => {
     const loadFilters = async () => {
       const res = await fetchProductList();
@@ -502,37 +501,6 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
       router.push(newPath);
     }
   }, [selectedState, selectedRegionName, selectedSuburbName]); // Dependencies to trigger when state/region/suburb change
-  const buildURL = (filters: Filters) => {
-    // Initialize the URL path with the selected state
-    let url = `/listings/${slugify(filters.state)}-state`;
-
-    // Append region and suburb to the URL path if present
-    if (filters.region) {
-      url += `/${slugify(filters.region)}-region`;
-    }
-    if (filters.suburb) {
-      url += `/${slugify(filters.suburb)}-suburb`;
-    }
-
-    // Manually build the query parameters
-    const queryParams = new URLSearchParams();
-
-    // Add each filter to the query parameters
-    Object.entries(filters).forEach(([key, value]) => {
-      if (value !== null && value !== undefined) {
-        // If the value is an array, loop through it and add each value to the query string
-        if (Array.isArray(value)) {
-          value.forEach((val) => queryParams.append(key, val.toString()));
-        } else {
-          queryParams.set(key, value.toString());
-        }
-      }
-    });
-
-    // Construct the final URL
-    const queryString = queryParams.toString();
-    return queryString ? `${url}?${queryString}` : url;
-  };
 
   const isModelFetchCompleteRef = useRef(false); // ADD THIS
 
@@ -603,7 +571,10 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
         /^between-\d+-\d+$/.test(slug) || // ✅ price: between-30000-200000
         /^between-\d+-kg-\d+-kg-atm$/.test(slug) || // ✅ atm
         /^over-\d+-kg-atm$/.test(slug) ||
-        /^under-\d+-kg-atm$/.test(slug)
+        /^under-\d+-kg-atm$/.test(slug) ||
+        /^length-(\d+)-in-feet$/.test(slug) || // ✅ length filter
+        /^condition-(\w+)$/.test(slug) || // ✅ condition filter
+        /^sleep-(\d+)$/.test(slug)
       );
     };
 
@@ -621,6 +592,8 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
     let matchedMakeName: string | null = null;
     let matchedModelSlug: string | null = null;
     let matchedModelName: string | null = null;
+    let matchedCondition = null;
+    let matchedSleep = null;
     // ✅ CaravanFilter slug parser fix
     // 🔁 Replaces your existing segments.forEach logic
     segments.forEach((part) => {
@@ -695,6 +668,35 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
         return;
       }
 
+      // 4. Handle Length Filter
+
+      if (/^over-(\d+)-in-feet$/.test(part)) {
+        setLengthFrom(parseInt(part.match(/^over-(\d+)-in-feet$/)?.[1] || "0"));
+        setLengthTo(null);
+        return;
+      } else if (/^under-(\d+)-in-feet$/.test(part)) {
+        setLengthFrom(null);
+        setLengthTo(parseInt(part.match(/^under-(\d+)-in-feet$/)?.[1] || "0"));
+        return;
+      } else if (/^between-(\d+)-kg-(\d+)-in-feet$/.test(part)) {
+        const [, from, to] =
+          part.match(/^between-(\d+)-kg-(\d+)-in-feet$/) || [];
+        setLengthFrom(parseInt(from));
+        setLengthTo(parseInt(to));
+        return;
+      }
+
+      // 5. Handle Condition Filter
+      if (/^condition-(\w+)$/.test(part)) {
+        matchedCondition = part.match(/^condition-(\w+)$/)?.[1] || null;
+        return;
+      }
+
+      // 6. Handle Sleep Filter
+      if (/^sleep-(\d+)$/.test(part)) {
+        matchedSleep = parseInt(part.match(/^sleep-(\d+)$/)?.[1] || "0");
+        return;
+      }
       // ✅ 6. Price
       // if (/^over-(\d+)$/.test(part)) {
       //   setMinPrice(parseInt(part.replace("over-", "")));
@@ -710,6 +712,7 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
       //   setMaxPrice(parseInt(to));
       //   return;
       // }
+      // 7. Handle Price Filters
       if (/^over-(\d+)$/.test(part)) {
         setMinPrice(parseInt(part.match(/^over-(\d+)$/)?.[1] || "0"));
         setMaxPrice(null);
@@ -729,6 +732,8 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
     setSelectedMakeName(matchedMakeName);
     setSelectedModel(matchedModelSlug);
     setSelectedModelName(matchedModelName);
+    setSelectedConditionName(matchedCondition);
+    setSelectedSleepName(matchedSleep);
     if (matchedMakeSlug) {
       setSelectedMake(matchedMakeSlug);
       setSelectedMakeName(matchedMakeName);
@@ -794,30 +799,30 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
       if (updated.suburb) slugParts.push(`${slugify(updated.suburb)}-suburb`);
       if (updated.postcode) slugParts.push(updated.postcode);
 
-      if (updated.minKg && updated.maxKg) {
-        slugParts.push(`between-${updated.minKg}-kg-${updated.maxKg}-kg-atm`);
-      } else if (updated.minKg) {
-        slugParts.push(`over-${updated.minKg}-kg-atm`);
-      } else if (updated.maxKg) {
-        slugParts.push(`under-${updated.maxKg}-kg-atm`);
-      }
+      // if (updated.minKg && updated.maxKg) {
+      //   slugParts.push(`between-${updated.minKg}-kg-${updated.maxKg}-kg-atm`);
+      // } else if (updated.minKg) {
+      //   slugParts.push(`over-${updated.minKg}-kg-atm`);
+      // } else if (updated.maxKg) {
+      //   slugParts.push(`under-${updated.maxKg}-kg-atm`);
+      // }
 
-      if (updated.from_price && updated.to_price) {
-        slugParts.push(`between-${updated.from_price}-${updated.to_price}`);
-      } else if (updated.from_price) {
-        slugParts.push(`over-${updated.from_price}`);
-      } else if (updated.to_price) {
-        slugParts.push(`under-${updated.to_price}`);
-      }
+      // if (updated.from_price && updated.to_price) {
+      //   slugParts.push(`between-${updated.from_price}-${updated.to_price}`);
+      // } else if (updated.from_price) {
+      //   slugParts.push(`over-${updated.from_price}`);
+      // } else if (updated.to_price) {
+      //   slugParts.push(`under-${updated.to_price}`);
+      // }
 
-      if (updated.from_length && updated.to_length)
-        slugParts.push(
-          `between-${updated.from_length}-${updated.to_length}-length-in-feet`
-        );
-      else if (updated.from_length)
-        slugParts.push(`over-${updated.from_length}-length-in-feet`);
-      else if (updated.to_length)
-        slugParts.push(`under-${updated.to_length}-length-in-feet`);
+      // if (updated.from_length && updated.to_length)
+      //   slugParts.push(
+      //     `between-${updated.from_length}-${updated.to_length}-length-in-feet`
+      //   );
+      // else if (updated.from_length)
+      //   slugParts.push(`over-${updated.from_length}-length-in-feet`);
+      // else if (updated.to_length)
+      //   slugParts.push(`under-${updated.to_length}-length-in-feet`);
 
       const query: QueryObject = {};
       if (updated.from_year)
@@ -843,9 +848,29 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
       setAtmTo(Number(filters.maxKg));
     }
   }, [filters.minKg, filters.maxKg]);
+  useEffect(() => {
+    if (
+      selectedConditionName ||
+      selectedSleepName ||
+      yearFrom ||
+      yearTo ||
+      lengthFrom ||
+      lengthTo
+    ) {
+      updateAllFiltersAndURL(); // Call the function to update URL and filters
+    }
+  }, [
+    selectedConditionName,
+    selectedSleepName,
+    yearFrom,
+    yearTo,
+    lengthFrom,
+    lengthTo,
+  ]);
 
   // atm function
   const updateAtmFiltersAndURL = () => {
+    // Update filters state
     const updatedFilters: Filters = {
       ...currentFilters,
       minKg: atmFrom ?? undefined,
@@ -857,16 +882,17 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
 
     // Build the URL with updated ATM filters
     const queryString = new URLSearchParams({
-      ...updatedFilters,
-      minKg: atmFrom?.toString(),
-      maxKg: atmTo?.toString(),
+      // Ensure minKg and maxKg are strings before passing them to URLSearchParams
+      minKg: atmFrom !== null ? atmFrom.toString() : "",
+      maxKg: atmTo !== null ? atmTo.toString() : "",
     }).toString();
 
-    const newPath = `/listings/${atmFrom ? `over-${atmFrom}-kg-atm/` : ""}${
-      atmTo ? `under-${atmTo}-kg-atm/` : ""
-    }`;
+    const newPath = `/listings/${
+      atmFrom !== null ? `over-${atmFrom}-kg-atm/` : ""
+    }${atmTo !== null ? `under-${atmTo}-kg-atm/` : ""}`;
     const newURL = newPath + (queryString ? `?${queryString}` : "");
 
+    // Only update the URL if it has changed
     if (newURL !== pathname) {
       router.push(newURL); // Update the URL
     }
@@ -907,7 +933,7 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
   }, [filters]);
 
   const [isPending, startTransition] = useTransition();
-
+  console.log(isPending);
   // ✅ Replace individual onChange calls with this
   // Example:
   // setAtmFrom(val); updateAllFiltersAndURL();
@@ -1678,7 +1704,7 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
   };
   useEffect(() => {
     const slug = pathname.split("/listings/")[1];
-    const isSlugKnownFilter = (slug: any) => {
+    const isSlugKnownFilter = (slug: string) => {
       return (
         slug.endsWith("-state") ||
         slug.endsWith("-region") ||
@@ -1896,6 +1922,36 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
   }, [selectedState, selectedRegionName, states]);
 
   // Trigger this when selectedState, selectedRegionName, or states change
+  const updatePriceFilter = (
+    priceType: "min" | "max", // "min" or "max" to identify the price field
+    value: string | null,
+    otherPrice: number | null // minPrice or maxPrice (depending on the field being updated)
+  ) => {
+    const val = value ? parseInt(value) : null;
+
+    // Update the respective price field (minPrice or maxPrice)
+    if (priceType === "min") {
+      setMinPrice(val);
+    } else if (priceType === "max") {
+      setMaxPrice(val);
+    }
+
+    const updatedFilters: Filters = {
+      ...filters,
+      from_price: priceType === "min" ? val ?? undefined : undefined,
+      to_price:
+        priceType === "max" ? val ?? undefined : otherPrice ?? undefined,
+    };
+
+    setFilters(updatedFilters);
+    onFilterChange(updatedFilters);
+
+    filtersInitialized.current = true;
+
+    startTransition(() => {
+      updateAllFiltersAndURL(); // ✅ triggers slug+router.push
+    });
+  };
 
   return (
     <div className="filter-card mobile-search">
@@ -2613,24 +2669,27 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
             <select
               className="cfs-select-input"
               value={minPrice?.toString() || ""}
-              onChange={(e) => {
-                const val = e.target.value ? parseInt(e.target.value) : null;
-                setMinPrice(val);
+              onChange={(e) =>
+                updatePriceFilter("min", e.target.value, maxPrice)
+              }
+              // onChange={(e) => {
+              //   const val = e.target.value ? parseInt(e.target.value) : null;
+              //   setMinPrice(val);
 
-                const updatedFilters: Filters = {
-                  ...filters,
-                  from_price: val ?? undefined,
-                  to_price: maxPrice ?? undefined,
-                };
+              //   const updatedFilters: Filters = {
+              //     ...filters,
+              //     from_price: val ?? undefined,
+              //     to_price: maxPrice ?? undefined,
+              //   };
 
-                setFilters(updatedFilters);
-                onFilterChange(updatedFilters);
-                filtersInitialized.current = true;
+              //   setFilters(updatedFilters);
+              //   onFilterChange(updatedFilters);
+              //   filtersInitialized.current = true;
 
-                startTransition(() => {
-                  updateAllFiltersAndURL(); // ✅ triggers slug+router.push
-                });
-              }}
+              //   startTransition(() => {
+              //     updateAllFiltersAndURL(); // ✅ triggers slug+router.push
+              //   });
+              // }}
             >
               <option value="">Min</option>
               {price.map((value, idx) => (
@@ -2645,24 +2704,27 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
             <select
               className="cfs-select-input"
               value={maxPrice?.toString() || ""}
-              onChange={(e) => {
-                const val = e.target.value ? parseInt(e.target.value) : null;
-                setMaxPrice(val);
+              onChange={(e) =>
+                updatePriceFilter("max", e.target.value, maxPrice)
+              }
+              // onChange={(e) => {
+              //   const val = e.target.value ? parseInt(e.target.value) : null;
+              //   setMaxPrice(val);
 
-                const updatedFilters: Filters = {
-                  ...filters,
-                  from_price: minPrice ?? undefined,
-                  to_price: val ?? undefined,
-                };
+              //   const updatedFilters: Filters = {
+              //     ...filters,
+              //     from_price: minPrice ?? undefined,
+              //     to_price: val ?? undefined,
+              //   };
 
-                setFilters(updatedFilters);
-                onFilterChange(updatedFilters);
-                filtersInitialized.current = true;
+              //   setFilters(updatedFilters);
+              //   onFilterChange(updatedFilters);
+              //   filtersInitialized.current = true;
 
-                startTransition(() => {
-                  updateAllFiltersAndURL();
-                });
-              }}
+              //   startTransition(() => {
+              //     updateAllFiltersAndURL();
+              //   });
+              // }}
             >
               <option value="">Max</option>
               {price.map((value, idx) => (
