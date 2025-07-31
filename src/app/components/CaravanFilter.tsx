@@ -396,7 +396,7 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
   }, [selectedMake]);
 
   console.log("filters", filters);
-  console.log(setSelectedRegion, filteredRegions);
+  console.log(selectedRegion, filteredRegions);
 
   const [locationSuggestions, setLocationSuggestions] = useState<
     LocationSuggestion[]
