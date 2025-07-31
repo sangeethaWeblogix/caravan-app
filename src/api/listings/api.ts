@@ -18,6 +18,7 @@ interface Filters {
   from_length?: string;
   to_length?: string;
   model?: string;
+  pincode?: string;
 }
 
 export const fetchListings = async (filters: Filters = {}) => {
@@ -35,6 +36,7 @@ export const fetchListings = async (filters: Filters = {}) => {
     state,
     region,
     suburb,
+    pincode,
   } = filters;
 
   const params = new URLSearchParams();
@@ -42,6 +44,8 @@ export const fetchListings = async (filters: Filters = {}) => {
 
   if (category) params.append("category", category);
   if (make) params.append("make", make);
+  if (pincode) params.append("pincode", pincode);
+
   if (state) params.append("state", state);
   if (region) params.append("region", region);
   if (suburb) params.append("suburb", suburb);

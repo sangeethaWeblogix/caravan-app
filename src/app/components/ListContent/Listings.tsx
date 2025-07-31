@@ -74,7 +74,7 @@ export interface Filters {
   state?: string;
   region?: string;
   suburb?: string;
-  postcode?: string;
+  pincode?: string;
 }
 
 interface Props {
@@ -341,8 +341,8 @@ export default function ListingsPage({ category, condition, location }: Props) {
       slugParts.push(
         `${filters.suburb.toLowerCase().replace(/\s+/g, "-")}-suburb`
       );
-      if (filters.postcode) {
-        slugParts.push(filters.postcode); // Ensure postcode is included in the slug
+      if (filters.pincode) {
+        slugParts.push(filters.pincode); // Ensure postcode is included in the slug
       }
     }
 
