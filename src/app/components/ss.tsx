@@ -2492,66 +2492,58 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
           </div>
         )}
       </div>
-      {selectedMake && model.length > 0 && (
-        <div className="cs-full_width_section">
-          <div
-            className="filter-accordion"
-            onClick={() => toggle(setModelOpen)}
-          >
-            <h5 className="cfs-filter-label">Model</h5>
-            <BiChevronDown />
-          </div>
-          {selectedModelName && (
-            <div className="filter-chip">
-              <span>{selectedModelName}</span>
-              <span
-                className="filter-chip-close"
-                onClick={() => {
-                  setSelectedModel(null);
-                  setSelectedModelName(null);
-
-                  const updatedFilters: Filters = {
-                    ...currentFilters,
-                    model: undefined,
-                  };
-                  setFilters(updatedFilters);
-                  onFilterChange(updatedFilters);
-
-                  // Remove model from slug
-                  const segments = pathname.split("/").filter(Boolean);
-                  const newSegments = segments.filter(
-                    (s) => s !== selectedModel
-                  );
-
-                  const newPath = `/${newSegments.join("/")}`;
-                  router.push(
-                    newPath +
-                      (searchParams.toString() ? `?${searchParams}` : "")
-                  );
-                }}
-              >
-                ×
-              </span>
-            </div>
-          )}
-
-          {modelOpen && (
-            <div className="filter-accordion-items">
-              {model.map((mod) => (
-                <div
-                  key={mod.slug}
-                  className={`filter-accordion-item ${
-                    selectedModel === mod.slug ? "selected" : ""
-                  }`}
-                  onClick={() => handleModelSelect(mod)} // ✅ Call here
-                >
-                  {mod.name}
-                </div>
-              ))}
-            </div>
-          )}
+      <div className="cs-full_width_section">
+        <div className="filter-accordion" onClick={() => toggle(setModelOpen)}>
+          <h5 className="cfs-filter-label">Model</h5>
+          <BiChevronDown />
         </div>
-      )}
+        {selectedModelName && (
+          <div className="filter-chip">
+            <span>{selectedModelName}</span>
+            <span
+              className="filter-chip-close"
+              onClick={() => {
+                setSelectedModel(null);
+                setSelectedModelName(null);
+
+                const updatedFilters: Filters = {
+                  ...currentFilters,
+                  model: undefined,
+                };
+                setFilters(updatedFilters);
+                onFilterChange(updatedFilters);
+
+                // Remove model from slug
+                const segments = pathname.split("/").filter(Boolean);
+                const newSegments = segments.filter((s) => s !== selectedModel);
+
+                const newPath = `/${newSegments.join("/")}`;
+                router.push(
+                  newPath + (searchParams.toString() ? `?${searchParams}` : "")
+                );
+              }}
+            >
+              ×
+            </span>
+          </div>
+        )}
+
+        {modelOpen && (
+          <div className="filter-accordion-items">
+            {model.map((mod) => (
+              <div
+                key={mod.slug}
+                className={`filter-accordion-item ${
+                  selectedModel === mod.slug ? "selected" : ""
+                }`}
+                onClick={() => handleModelSelect(mod)} // ✅ Call here
+              >
+                {mod.name}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
 
       {/* ATM Range */}
       {/* ATM Range */}
