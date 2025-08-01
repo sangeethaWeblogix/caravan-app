@@ -119,7 +119,7 @@ export default function ListingContent({
                         modules={[Navigation]}
                         className="mySwiper"
                       >
-                        {/* <SwiperSlide>
+                        <SwiperSlide>
                           <div className="swiper-zoom-container">
                             {product.image && product.image.trim() !== "" ? (
                               <Image
@@ -137,7 +137,7 @@ export default function ListingContent({
                               />
                             )}
                           </div>
-                        </SwiperSlide> */}
+                        </SwiperSlide>
                       </Swiper>
                     </div>
                   </Link>

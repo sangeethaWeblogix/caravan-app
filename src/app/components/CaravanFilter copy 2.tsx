@@ -77,10 +77,7 @@ interface CaravanFilterProps {
   currentFilters: Filters;
   onFilterChange: (filters: Filters) => void;
 }
-type QueryObject = {
-  acustom_fromyears?: string;
-  acustom_toyears?: string;
-};
+
 interface Option {
   name: string;
   slug: string;
@@ -99,22 +96,6 @@ type Suburb = {
   name: string;
   value: string;
 };
-
-function useDebounce<T>(value: T, delay: number): T {
-  const [debouncedValue, setDebouncedValue] = useState<T>(value);
-
-  useEffect(() => {
-    const handler: ReturnType<typeof setTimeout> = setTimeout(() => {
-      setDebouncedValue(value);
-    }, delay);
-
-    return () => {
-      clearTimeout(handler);
-    };
-  }, [value, delay]);
-
-  return debouncedValue;
-}
 
 const CaravanFilter: React.FC<CaravanFilterProps> = ({
   onFilterChange,
@@ -185,7 +166,6 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
   const [yearTo, setYearTo] = useState<number | null>(null);
   const [showAllMakes, setShowAllMakes] = useState(false);
 
-  const debouncedFilters = useDebounce(filters, 300);
   const atm = [
     600, 800, 1000, 1250, 1500, 1750, 2000, 2250, 2500, 2750, 3000, 3500, 4000,
     4500,
@@ -403,20 +383,6 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
   // kkkkk
   // Dependencies to trigger when state/region/suburb change
   // ✅ Unified Filters Update & URL Sync Handler
-  const sanitizeMakeModel = (
-    make: string | null,
-    model: string | null,
-    knownMakes: Option[],
-    knownModels: Model[]
-  ): { make?: string; model?: string } => {
-    const isValidMake = make && knownMakes.some((m) => m.slug === make);
-    const isValidModel = model && knownModels.some((m) => m.slug === model);
-
-    return {
-      make: isValidMake ? make : undefined,
-      model: isValidModel ? model : undefined,
-    };
-  };
 
   const pendingURLRef = useRef<string | null>(null);
 
@@ -454,12 +420,12 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
       );
     };
 
-    let matchedMakeSlug: string | null = null;
-    let matchedMakeName: string | null = null;
-    let matchedModelSlug: string | null = null;
-    let matchedModelName: string | null = null;
-    let matchedCondition = null;
-    let matchedSleep = null;
+    const matchedMakeSlug: string | null = null;
+    const matchedMakeName: string | null = null;
+    const matchedModelSlug: string | null = null;
+    const matchedModelName: string | null = null;
+    const matchedCondition = null;
+    const matchedSleep = null;
     // ✅ CaravanFilter slug parser fix
     // 🔁 Replaces your existing segments.forEach logic
     const isValidMakeSlug = (
