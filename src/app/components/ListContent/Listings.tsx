@@ -211,6 +211,7 @@ export default function ListingsPage({ category, condition, location }: Props) {
           state: appliedFilters.state,
           region: appliedFilters.region,
           suburb: appliedFilters.suburb,
+          postcode: appliedFilters.pincode,
         });
 
         const hasFilters = Object.values(appliedFilters).some(
