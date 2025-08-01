@@ -308,7 +308,8 @@ export default function ListingsPage({ category, condition, location }: Props) {
     console.log("🔗 calling updateURLWithFilters");
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-
+  const slugify = (value: string | null | undefined) =>
+    value?.toLowerCase().replace(/\s+/g, "-").trim() || "";
   const buildSlugPath = () => {
     const slugParts: string[] = [];
 
@@ -339,11 +340,20 @@ export default function ListingsPage({ category, condition, location }: Props) {
     }
 
     if (filters.suburb) {
-      slugParts.push(
-        `${filters.suburb.toLowerCase().replace(/\s+/g, "-")}-suburb`
-      );
+      slugParts.push(`${slugify(filters.suburb)}-suburb`);
+      if (filters.state) {
+        slugParts.push(`${slugify(filters.state)}-state`);
+      }
       if (filters.pincode) {
-        slugParts.push(filters.pincode); // Ensure postcode is included in the slug
+        slugParts.push(filters.pincode);
+      }
+    } else {
+      // ✅ Else: State → Region
+      if (filters.state) {
+        slugParts.push(`${slugify(filters.state)}-state`);
+      }
+      if (filters.region) {
+        slugParts.push(`${slugify(filters.region)}-region`);
       }
     }
 

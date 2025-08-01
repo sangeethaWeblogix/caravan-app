@@ -114,7 +114,7 @@ export default function ListingContent({
                 {product.link ? (
                   <Link href={product.link}>
                     <div>
-                      <Swiper
+                      {/* <Swiper
                         navigation
                         modules={[Navigation]}
                         className="mySwiper"
@@ -138,7 +138,7 @@ export default function ListingContent({
                             )}
                           </div>
                         </SwiperSlide>
-                      </Swiper>
+                      </Swiper> */}
                     </div>
                   </Link>
                 ) : (
