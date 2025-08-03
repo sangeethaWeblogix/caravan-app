@@ -13,7 +13,7 @@ import { useSearchParams } from "next/navigation";
 import { fetchProductList } from "@/api/productList/api";
 import { fetchModelsByMake } from "@/api/model/api";
 import "./filter.css";
-import { buildSlugPath } from "../../app/components/slugBuilter";
+import { buildSlugFromFilters } from "./slugBuilter";
 type LocationSuggestion = {
   key: string;
   uri: string;
@@ -201,6 +201,75 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
     loadFilters();
   }, []);
   const urlJustUpdatedRef = useRef(false);
+  // useEffect(() => {
+  //   if (currentFilters.minKg && !atmFrom) {
+  //     setAtmFrom(Number(currentFilters.minKg));
+  //   }
+  //   if (currentFilters.maxKg && !atmTo) {
+  //     setAtmTo(Number(currentFilters.maxKg));
+  //   }
+  // }, [currentFilters.minKg, currentFilters.maxKg, atmFrom, atmTo]);
+  // useEffect(() => {
+  //   if (currentFilters.from_price && !minPrice) {
+  //     setMinPrice(Number(currentFilters.from_price));
+  //   }
+  //   if (currentFilters.to_price && !maxPrice) {
+  //     setMaxPrice(Number(currentFilters.to_price));
+  //   }
+  // }, [currentFilters.from_price, currentFilters.to_price, minPrice, maxPrice]);
+  useEffect(() => {
+    // ATM
+    if (currentFilters.minKg !== undefined && atmFrom === null) {
+      setAtmFrom(Number(currentFilters.minKg));
+    }
+    if (currentFilters.maxKg !== undefined && atmTo === null) {
+      setAtmTo(Number(currentFilters.maxKg));
+    }
+
+    // Price
+    if (currentFilters.from_price !== undefined && minPrice === null) {
+      setMinPrice(Number(currentFilters.from_price));
+    }
+    if (currentFilters.to_price !== undefined && maxPrice === null) {
+      setMaxPrice(Number(currentFilters.to_price));
+    }
+
+    // Length
+    if (currentFilters.from_length !== undefined && lengthFrom === null) {
+      setLengthFrom(Number(currentFilters.from_length));
+    }
+    if (currentFilters.to_length !== undefined && lengthTo === null) {
+      setLengthTo(Number(currentFilters.to_length));
+    }
+
+    // Sleep
+    if (currentFilters.sleeps && !selectedSleepName) {
+      setSelectedSleepName(currentFilters.sleeps.replace("-people", ""));
+    }
+
+    // Condition
+    if (currentFilters.condition && !selectedConditionName) {
+      setSelectedConditionName(currentFilters.condition);
+    }
+  }, [
+    currentFilters.minKg,
+    currentFilters.maxKg,
+    currentFilters.from_price,
+    currentFilters.to_price,
+    currentFilters.from_length,
+    currentFilters.to_length,
+    currentFilters.sleeps,
+    currentFilters.condition,
+
+    atmFrom,
+    atmTo,
+    minPrice,
+    maxPrice,
+    lengthFrom,
+    lengthTo,
+    selectedSleepName,
+    selectedConditionName,
+  ]);
 
   useEffect(() => {
     if (currentFilters.category && !selectedCategory && categories.length > 0) {
@@ -399,280 +468,10 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
     setter((prev) => !prev);
   };
 
-  // useEffect(() => {
-  //   const slug = pathname.split("/listings/")[1];
-  //   const segments = slug?.split("/") || [];
-
-  //   const isSlugKnownFilter = (slug: string) => {
-  //     return (
-  //       /^\d{4}$/.test(slug) || // ✅ Postcode (like 2650)
-  //       slug.endsWith("-suburb") ||
-  //       slug.endsWith("-state") ||
-  //       slug.endsWith("-region") ||
-  //       slug.endsWith("-category") ||
-  //       slug.includes("-condition") ||
-  //       slug.includes("-people-sleeping-capacity") ||
-  //       slug.includes("length-in-feet") ||
-  //       /^over-\d+$/.test(slug) ||
-  //       /^under-\d+$/.test(slug) ||
-  //       /^between-\d+-\d+$/.test(slug) ||
-  //       /^between-\d+-kg-\d+-kg-atm$/.test(slug) ||
-  //       /^over-\d+-kg-atm$/.test(slug) ||
-  //       /^under-\d+-kg-atm$/.test(slug)
-  //     );
-  //   };
-
-  //   const matchedMakeSlug: string | null = null;
-  //   const matchedMakeName: string | null = null;
-  //   const matchedModelSlug: string | null = null;
-  //   const matchedModelName: string | null = null;
-  //   const matchedCondition = null;
-  //   const matchedSleep = null;
-  //   // ✅ CaravanFilter slug parser fix
-  //   // 🔁 Replaces your existing segments.forEach logic
-  //   const isValidMakeSlug = (
-  //     slug: string | undefined | null,
-  //     makes: Option[]
-  //   ) => {
-  //     if (!slug || /^\d+$/.test(slug)) return false;
-  //     return makes.some((make) => make.slug === slug);
-  //   };
-
-  //   const isValidModelSlug = (
-  //     slug: string | undefined | null,
-  //     models: Model[]
-  //   ) => {
-  //     if (!slug || /^\d+$/.test(slug)) return false;
-  //     return models.some((model) => model.slug === slug);
-  //   };
-
-  //   segments.forEach((part) => {
-  //     console.log("🧩 Processing slug segment:", part);
-
-  //     // ✅ 1. Handle postcode early to avoid make/model confusion
-  //     if (/^\d{4}$/.test(part)) {
-  //       console.log("📮 Detected postcode:", part);
-  //       setSelectedPostcode(part);
-  //       filters.pincode = part;
-  //       return;
-  //     }
-
-  //     // ✅ 2. Handle suburb
-  //     if (part.endsWith("-suburb")) {
-  //       const name = part.replace("-suburb", "").replace(/-/g, " ");
-  //       setSelectedSuburbName(name);
-  //       filters.suburb = name;
-  //       return;
-  //     }
-
-  //     // ✅ 3. Handle state
-  //     if (part.endsWith("-state")) {
-  //       const name = part.replace("-state", "").replace(/-/g, " ");
-  //       setSelectedStateName(name);
-  //       setSelectedState(name);
-  //       filters.state = name;
-  //       return;
-  //     }
-
-  //     // ✅ 4. Handle region
-  //     if (part.endsWith("-region")) {
-  //       const name = part.replace("-region", "").replace(/-/g, " ");
-  //       setSelectedRegionName(name);
-  //       filters.region = name;
-  //       return;
-  //     }
-  //     if (part.endsWith("-suburb")) {
-  //       const name = part.replace("-suburb", "").replace(/-/g, " ");
-  //       setSelectedRegionName(name);
-  //       filters.suburb = name;
-  //       return;
-  //     }
-
-  //     if (part.endsWith("-pincode")) {
-  //       setSelectedPostcode(part);
-  //       filters.pincode = part;
-  //       return;
-  //     }
-  //     // ✅ 5. Handle category
-  //     if (part.endsWith("-category")) {
-  //       const slug = part.replace("-category", "");
-  //       const match = categories.find((c) => c.slug === slug);
-  //       if (match) {
-  //         setSelectedCategory(slug);
-  //         setSelectedCategoryName(match.name);
-  //         filters.category = slug;
-  //       }
-  //       return;
-  //     }
-
-  //     // ✅ 6. Handle condition
-  //     if (part.endsWith("-condition")) {
-  //       const condition = part.replace("-condition", "");
-  //       setSelectedConditionName(condition);
-  //       filters.condition = condition;
-  //       return;
-  //     }
-
-  //     // ✅ 7. Handle sleeps
-  //     if (part.includes("-people-sleeping-capacity")) {
-  //       const sleepMatch = part.match(/over-(\d+)-people/);
-  //       const sleep = sleepMatch?.[1];
-  //       if (sleep) {
-  //         setSelectedSleepName(sleep);
-  //         filters.sleeps = `${sleep}-people`;
-  //       }
-  //       return;
-  //     }
-
-  //     // ✅ 8. Handle ATM
-  //     if (/^over-(\d+)-kg-atm$/.test(part)) {
-  //       const val = parseInt(part.match(/^over-(\d+)-kg-atm$/)?.[1] || "0");
-  //       setAtmFrom(val);
-  //       setAtmTo(null);
-  //       filters.minKg = val;
-  //       return;
-  //     }
-  //     if (/^under-(\d+)-kg-atm$/.test(part)) {
-  //       const val = parseInt(part.match(/^under-(\d+)-kg-atm$/)?.[1] || "0");
-  //       setAtmTo(val);
-  //       setAtmFrom(null);
-  //       filters.maxKg = val;
-  //       return;
-  //     }
-  //     if (/^between-(\d+)-kg-(\d+)-kg-atm$/.test(part)) {
-  //       const [, from, to] =
-  //         part.match(/^between-(\d+)-kg-(\d+)-kg-atm$/) || [];
-  //       setAtmFrom(parseInt(from));
-  //       setAtmTo(parseInt(to));
-  //       filters.minKg = parseInt(from);
-  //       filters.maxKg = parseInt(to);
-  //       return;
-  //     }
-
-  //     // ✅ 9. Handle Length
-  //     if (/^over-(\d+)-length-in-feet$/.test(part)) {
-  //       const val = parseInt(
-  //         part.match(/^over-(\d+)-length-in-feet$/)?.[1] || "0"
-  //       );
-  //       setLengthFrom(val);
-  //       setLengthTo(null);
-  //       filters.from_length = val;
-  //       return;
-  //     }
-  //     if (/^under-(\d+)-length-in-feet$/.test(part)) {
-  //       const val = parseInt(
-  //         part.match(/^under-(\d+)-length-in-feet$/)?.[1] || "0"
-  //       );
-  //       setLengthFrom(null);
-  //       setLengthTo(val);
-  //       filters.to_length = val;
-  //       return;
-  //     }
-  //     if (/^between-(\d+)-(\d+)-length-in-feet$/.test(part)) {
-  //       const [, from, to] =
-  //         part.match(/^between-(\d+)-(\d+)-length-in-feet$/) || [];
-  //       setLengthFrom(parseInt(from));
-  //       setLengthTo(parseInt(to));
-  //       filters.from_length = parseInt(from);
-  //       filters.to_length = parseInt(to);
-  //       return;
-  //     }
-
-  //     // ✅ 10. Handle Price
-  //     if (/^over-(\d+)$/.test(part)) {
-  //       const val = parseInt(part.replace("over-", ""));
-  //       setMinPrice(val);
-  //       setMaxPrice(null);
-  //       filters.from_price = val;
-  //       return;
-  //     }
-  //     if (/^under-(\d+)$/.test(part)) {
-  //       const val = parseInt(part.replace("under-", ""));
-  //       setMinPrice(null);
-  //       setMaxPrice(val);
-  //       filters.to_price = val;
-  //       return;
-  //     }
-  //     if (/^between-(\d+)-(\d+)$/.test(part)) {
-  //       const [, from, to] = part.match(/^between-(\d+)-(\d+)$/) || [];
-  //       setMinPrice(parseInt(from));
-  //       setMaxPrice(parseInt(to));
-  //       filters.from_price = parseInt(from);
-  //       filters.to_price = parseInt(to);
-  //       return;
-  //     }
-
-  //     // ✅ 11. Handle Make & Model (only if valid slugs)
-  //     // ✅ 11. Handle Make only if it's NOT a known filter
-  //     if (!isSlugKnownFilter(part) && isValidMakeSlug(part, makes)) {
-  //       const makeMatch = makes.find((m) => m.slug === part);
-  //       if (makeMatch) {
-  //         setSelectedMake(makeMatch.slug);
-  //         setSelectedMakeName(makeMatch.name);
-  //         filters.make = makeMatch.slug;
-  //       }
-  //       return;
-  //     }
-  //     if (!isSlugKnownFilter(part) && isValidModelSlug(part, model)) {
-  //       const modelMatch = model.find((m) => m.slug === part);
-  //       if (modelMatch) {
-  //         setSelectedModel(modelMatch.slug);
-  //         setSelectedModelName(modelMatch.name);
-  //         filters.model = modelMatch.slug;
-  //       }
-  //       return;
-  //     }
-
-  //     // 🚫 Skip any unrecognized part
-  //     console.warn("❓ Unknown slug part skipped:", part);
-  //   });
-
-  //   setSelectedModel(matchedModelSlug);
-  //   setSelectedModelName(matchedModelName);
-  //   setSelectedConditionName(matchedCondition);
-  //   setSelectedSleepName(matchedSleep);
-  //   if (isValidMakeSlug(matchedMakeSlug, makes)) {
-  //     setSelectedMake(matchedMakeSlug);
-  //     setSelectedMakeName(matchedMakeName);
-  //   } else {
-  //     setSelectedMake(null);
-  //     setSelectedMakeName(null);
-  //   }
-
-  //   if (isValidModelSlug(matchedModelSlug, model)) {
-  //     setSelectedModel(matchedModelSlug);
-  //     setSelectedModelName(matchedModelName);
-  //   } else {
-  //     setSelectedModel(null);
-  //     setSelectedModelName(null);
-  //   }
-  // }, [pathname, states, makes, model]);
-
   console.log("Active filters at API call:", filters);
-
-  // useEffect(() => {
-  //   if (atmFrom !== null || atmTo !== null) {
-  //     updateAtmFiltersAndURL(); // Update filters and URL when values change
-  //   }
-  // }, [atmFrom, atmTo]);
-
-  // useEffect(() => {
-  //   if (!filtersInitialized.current || !pendingURLRef.current) return;
-
-  //   const url = pendingURLRef.current;
-  //   pendingURLRef.current = null;
-
-  //   if (url && url !== pathname) {
-  //     router.push(url);
-  //   }
-  // }, [filters]);
 
   const [isPending, startTransition] = useTransition();
   console.log(isPending);
-  // ✅ Replace individual onChange calls with this
-  // Example:
-  // setAtmFrom(val); updateAllFiltersAndURL();
-  // setSelectedCategory(cat.slug); updateAllFiltersAndURL();
 
   const accordionStyle = (highlight: boolean) => ({
     display: "flex",
@@ -1027,40 +826,6 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
     selectedRegionName,
   ]);
 
-  // useEffect(() => {
-  //   // Auto-load suburbs when state and region are already selected
-  //   if (selectedState && selectedRegionName && states.length > 0) {
-  //     const matchedState = states.find((s) => s.value === selectedState);
-
-  //     const matchedRegion = matchedState?.regions?.find(
-  //       (r) =>
-  //         r.name.trim().toLowerCase() ===
-  //         selectedRegionName.trim().toLowerCase()
-  //     );
-
-  //     if (matchedRegion && Array.isArray(matchedRegion.suburbs)) {
-  //       console.log("✅ Auto-loading suburbs for region:", matchedRegion.name);
-  //       console.log("✅ Suburbs:", matchedRegion.suburbs);
-  //       setFilteredSuburbs(matchedRegion.suburbs);
-
-  //       // ✅ Also auto-set postcode from first suburb if not set
-  //       if (!selectedPostcode && matchedRegion.suburbs.length > 0) {
-  //         const firstSuburb = matchedRegion.suburbs[0];
-  //         const postcodeMatch = firstSuburb.value?.match(/\b\d{4}\b/);
-  //         if (postcodeMatch) {
-  //           setSelectedPostcode(postcodeMatch[0]);
-  //           console.log("📮 Auto-set postcode:", postcodeMatch[0]);
-  //         }
-  //       }
-  //     } else {
-  //       console.warn(
-  //         "❌ Region not found or has no suburbs:",
-  //         selectedRegionName
-  //       );
-  //     }
-  //   }
-  // }, [ states]);
-
   console.log("🔁 suburb Render triggered — filteredSuburbs:", filteredSuburbs);
 
   useEffect(() => {
@@ -1294,61 +1059,79 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
 
   // router issue
   const lastPushedURLRef = useRef<string>("");
-  const buildSlugFromFilters = (filters: Filters) => {
-    const slugParts: string[] = [];
+  // const buildSlugFromFilters = (filters: Filters) => {
+  //   const slugParts: string[] = [];
 
-    if (isValidMakeSlug(filters.make)) slugParts.push(filters.make);
-    if (isValidModelSlug(filters.model)) slugParts.push(filters.model);
-    if (filters.condition) slugParts.push(`${filters.condition}-condition`);
-    if (filters.category) slugParts.push(`${filters.category}-category`);
+  //   if (isValidMakeSlug(filters.make)) slugParts.push(filters.make);
+  //   if (isValidModelSlug(filters.model)) slugParts.push(filters.model);
+  //   if (filters.condition) slugParts.push(`${filters.condition}-condition`);
+  //   if (filters.category) slugParts.push(`${filters.category}-category`);
 
-    if (filters.suburb) {
-      slugParts.push(`${slugify(filters.suburb)}-suburb`);
-      if (filters.state) slugParts.push(`${slugify(filters.state)}-state`);
-      if (filters.pincode) slugParts.push(filters.pincode);
-    } else {
-      if (filters.state) slugParts.push(`${slugify(filters.state)}-state`);
-      if (filters.region) slugParts.push(`${slugify(filters.region)}-region`);
-    }
+  //   if (filters.suburb) {
+  //     slugParts.push(`${slugify(filters.suburb)}-suburb`);
+  //     if (filters.state) slugParts.push(`${slugify(filters.state)}-state`);
+  //     if (filters.pincode) slugParts.push(filters.pincode);
+  //   } else {
+  //     if (filters.state) slugParts.push(`${slugify(filters.state)}-state`);
+  //     if (filters.region) slugParts.push(`${slugify(filters.region)}-region`);
+  //   }
 
-    if (filters.minKg && filters.maxKg)
-      slugParts.push(`between-${filters.minKg}-kg-${filters.maxKg}-kg-atm`);
-    else if (filters.minKg) slugParts.push(`over-${filters.minKg}-kg-atm`);
-    else if (filters.maxKg) slugParts.push(`under-${filters.maxKg}-kg-atm`);
+  //   if (filters.minKg && filters.maxKg)
+  //     slugParts.push(`between-${filters.minKg}-kg-${filters.maxKg}-kg-atm`);
+  //   else if (filters.minKg) slugParts.push(`over-${filters.minKg}-kg-atm`);
+  //   else if (filters.maxKg) slugParts.push(`under-${filters.maxKg}-kg-atm`);
 
-    if (filters.from_price && filters.to_price)
-      slugParts.push(`between-${filters.from_price}-${filters.to_price}`);
-    else if (filters.from_price) slugParts.push(`over-${filters.from_price}`);
-    else if (filters.to_price) slugParts.push(`under-${filters.to_price}`);
+  //   if (filters.from_price && filters.to_price)
+  //     slugParts.push(`between-${filters.from_price}-${filters.to_price}`);
+  //   else if (filters.from_price) slugParts.push(`over-${filters.from_price}`);
+  //   else if (filters.to_price) slugParts.push(`under-${filters.to_price}`);
 
-    if (filters.from_length && filters.to_length)
-      slugParts.push(
-        `between-${filters.from_length}-${filters.to_length}-length-in-feet`
-      );
-    else if (filters.from_length)
-      slugParts.push(`over-${filters.from_length}-length-in-feet`);
-    else if (filters.to_length)
-      slugParts.push(`under-${filters.to_length}-length-in-feet`);
+  //   if (filters.from_length && filters.to_length)
+  //     slugParts.push(
+  //       `between-${filters.from_length}-${filters.to_length}-length-in-feet`
+  //     );
+  //   else if (filters.from_length)
+  //     slugParts.push(`over-${filters.from_length}-length-in-feet`);
+  //   else if (filters.to_length)
+  //     slugParts.push(`under-${filters.to_length}-length-in-feet`);
 
-    const query: Record<string, string> = {};
-    if (filters.from_year)
-      query.acustom_fromyears = filters.from_year.toString();
-    if (filters.to_year) query.acustom_toyears = filters.to_year.toString();
+  //   const query: Record<string, string> = {};
+  //   if (filters.from_year)
+  //     query.acustom_fromyears = filters.from_year.toString();
+  //   if (filters.to_year) query.acustom_toyears = filters.to_year.toString();
 
-    const queryString = new URLSearchParams(query).toString();
-    return `/listings/${slugParts.join("/")}${
-      queryString ? `?${queryString}` : ""
-    }`;
-  };
+  //   const queryString = new URLSearchParams(query).toString();
+  //   return `/listings/${slugParts.join("/")}${
+  //     queryString ? `?${queryString}` : ""
+  //   }`;
+  // };
+  // location correct
+  // useEffect(() => {
+  //   if (!filtersInitialized.current) return;
+
+  //   const fullSlug = buildSlugFromFilters(filters);
+
+  //   if (lastPushedURLRef.current !== fullSlug) {
+  //     lastPushedURLRef.current = fullSlug;
+  //     console.log("🚀 Pushing URL2:", fullSlug);
+  //     router.push(fullSlug);
+  //     // onFilterChange(filters); // ✅ Call API ONLY here
+  //   }
+  // }, [filters]);
   useEffect(() => {
     if (!filtersInitialized.current) return;
 
     const fullSlug = buildSlugFromFilters(filters);
-
     if (lastPushedURLRef.current !== fullSlug) {
       lastPushedURLRef.current = fullSlug;
       console.log("🚀 Pushing URL2:", fullSlug);
-      router.push(fullSlug);
+
+      startTransition(() => {
+        router.push(fullSlug);
+        setTimeout(() => {
+          onFilterChange(filters); // ✅ trigger API call once
+        }, 50);
+      });
     }
   }, [filters]);
 
@@ -1374,7 +1157,14 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
   }, [filters, selectedCategory, selectedMake, selectedStateName]);
 
   const isValidMakeSlug = (slug: string | null | undefined): slug is string =>
-    !!slug && isNaN(Number(slug)) && makes.some((m) => m.slug === slug);
+    !!slug &&
+    isNaN(Number(slug)) &&
+    makes.some((m) => m.slug === slug) &&
+    !slug.includes("kg") &&
+    !slug.includes("atm") &&
+    !/^over-/.test(slug) &&
+    !/^under-/.test(slug) &&
+    !/^between-/.test(slug);
 
   const isValidModelSlug = (slug: string | null | undefined): slug is string =>
     !!slug && isNaN(Number(slug)) && model.some((m) => m.slug === slug);
@@ -1412,24 +1202,21 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
 
   // ✅ Update all filters and URL with validation
   const updateAllFiltersAndURL = () => {
-    const safeMake = isValidMakeSlug(selectedMake) ? selectedMake : undefined;
-    const safeModel = isValidModelSlug(selectedModel)
-      ? selectedModel
-      : undefined;
-
+    alert("enter");
     const updated: Filters = {
       ...filters,
       category: selectedCategory || undefined,
-      make: safeMake,
-      model: safeModel,
-      condition: selectedConditionName || undefined,
+      make: isValidMakeSlug(selectedMake) ? selectedMake : undefined,
+      model: isValidModelSlug(selectedModel) ? selectedModel : undefined,
+      condition: selectedConditionName || filters.condition,
       sleeps: selectedSleepName ? `${selectedSleepName}-people` : undefined,
       state: selectedStateName || undefined,
       region: selectedRegionName || undefined,
       suburb: selectedSuburbName || undefined,
       pincode: selectedPostcode || filters.pincode || undefined,
-      minKg: atmFrom ?? filters.minKg,
-      maxKg: atmTo ?? filters.maxKg,
+      minKg: atmFrom ?? undefined,
+      maxKg: atmTo ?? undefined,
+
       from_price: minPrice ?? filters.from_price,
       to_price: maxPrice ?? filters.to_price,
       from_year: yearFrom ?? filters.from_year,
@@ -1438,12 +1225,15 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
       to_length: lengthTo ?? filters.to_length,
       location: selectedStateName || undefined,
     };
+    console.log("update", filters);
+    console.log("🚀 Updating all filters and URL with validation:", updated);
 
     // ✅ Trigger API call
     onFilterChange(updated);
 
     // ✅ Update filters in state
     setFilters(updated);
+    filtersInitialized.current = true;
   };
 
   // ✅ Update handleModelSelect with valid check
@@ -1496,38 +1286,6 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
       setFilteredSuburbs([]); // If selectedStateData doesn't exist or has no regions, fallback to empty array
     }
   }, [selectedState, selectedRegionName, states]);
-
-  // Trigger this when selectedState, selectedRegionName, or states change
-  const updatePriceFilter = (
-    priceType: "min" | "max", // "min" or "max" to identify the price field
-    value: string | null,
-    otherPrice: number | null // minPrice or maxPrice (depending on the field being updated)
-  ) => {
-    const val = value ? parseInt(value) : null;
-
-    // Update the respective price field (minPrice or maxPrice)
-    if (priceType === "min") {
-      setMinPrice(val);
-    } else if (priceType === "max") {
-      setMaxPrice(val);
-    }
-
-    const updatedFilters: Filters = {
-      ...filters,
-      from_price: priceType === "min" ? val ?? undefined : undefined,
-      to_price:
-        priceType === "max" ? val ?? undefined : otherPrice ?? undefined,
-    };
-
-    setFilters(updatedFilters);
-    onFilterChange(updatedFilters);
-
-    filtersInitialized.current = true;
-
-    startTransition(() => {
-      updateAllFiltersAndURL(); // ✅ triggers slug+router.push
-    });
-  };
 
   return (
     <div className="filter-card mobile-search">
@@ -2162,6 +1920,7 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
       <div className="cs-full_width_section">
         <h5 className="cfs-filter-label">ATM</h5>
         <div className="row">
+          {/* ATM From */}
           <div className="col-6">
             <h6 className="cfs-filter-label-sub">From</h6>
             <select
@@ -2171,21 +1930,14 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
                 const val = e.target.value ? parseInt(e.target.value) : null;
                 setAtmFrom(val);
 
-                const updated = {
+                const updatedFilters: Filters = {
                   ...filters,
                   minKg: val ?? undefined,
                   maxKg: atmTo ?? undefined,
-                  make: selectedMake || currentFilters.make,
-                  model: selectedModel || currentFilters.model,
                 };
 
-                setFilters(updated);
-                onFilterChange(updated); // ✅ ADD THIS
+                setFilters(updatedFilters);
                 filtersInitialized.current = true;
-
-                startTransition(() => {
-                  updateAllFiltersAndURL();
-                });
               }}
             >
               <option value="">Min</option>
@@ -2196,9 +1948,10 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
               ))}
             </select>
           </div>
+
+          {/* ATM To */}
           <div className="col-6">
             <h6 className="cfs-filter-label-sub">To</h6>
-
             <select
               className="cfs-select-input"
               value={atmTo?.toString() || ""}
@@ -2206,21 +1959,15 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
                 const val = e.target.value ? parseInt(e.target.value) : null;
                 setAtmTo(val);
 
-                const updated = {
+                const updatedFilters: Filters = {
                   ...filters,
-                  minKg: atmFrom ? `${atmFrom}kg` : undefined,
-                  maxKg: atmTo ? `${atmTo}kg` : undefined,
+                  minKg: atmFrom ?? undefined,
+                  maxKg: val ?? undefined,
                 };
 
-                setFilters(updated);
+                setFilters(updatedFilters);
                 filtersInitialized.current = true;
-
-                startTransition(() => {
-                  updateAllFiltersAndURL();
-                });
               }}
-
-              // onChange={handleAtmToChange}
             >
               <option value="">Max</option>
               {atm.map((val) => (
@@ -2231,11 +1978,13 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
             </select>
           </div>
         </div>
+
+        {/* ✅ Filter Chip Display */}
         {(atmFrom || atmTo) && (
           <div className="filter-chip">
             <span>
-              {atmFrom ? `${atmFrom.toLocaleString()}-Kg` : "Min"} –{" "}
-              {atmTo ? `${atmTo.toLocaleString()}-Kg` : "Max"}
+              {atmFrom ? `${atmFrom.toLocaleString()} Kg` : "Min"} –{" "}
+              {atmTo ? `${atmTo.toLocaleString()} Kg` : "Max"}
             </span>
             <span
               className="filter-chip-close"
@@ -2244,20 +1993,21 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
                 setAtmTo(null);
 
                 const updatedFilters: Filters = {
-                  ...currentFilters,
+                  ...filters,
                   minKg: undefined,
                   maxKg: undefined,
                 };
-                setFilters(updatedFilters);
-                //                 onFilterChange(updatedFilters);
 
-                // Remove from slug
+                setFilters(updatedFilters);
+                onFilterChange(updatedFilters);
+
                 const segments = pathname.split("/").filter(Boolean);
                 const newSegments = segments.filter(
                   (s) =>
                     !s.includes("-kg-atm") &&
-                    !s.match(/^between-\d+-kg-\d+-kg-atm$/)
+                    !/^between-\d+-kg-\d+-kg-atm$/.test(s)
                 );
+
                 const newPath = `/${newSegments.join("/")}`;
                 router.push(
                   newPath + (searchParams.toString() ? `?${searchParams}` : "")
@@ -2269,6 +2019,7 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
           </div>
         )}
       </div>
+
       {/* Price Range */}
       <div className="cs-full_width_section">
         <h5 className="cfs-filter-label">Price</h5>
@@ -2278,32 +2029,28 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
             <select
               className="cfs-select-input"
               value={minPrice?.toString() || ""}
-              onChange={(e) =>
-                updatePriceFilter("min", e.target.value, maxPrice)
-              }
-              // onChange={(e) => {
-              //   const val = e.target.value ? parseInt(e.target.value) : null;
-              //   setMinPrice(val);
+              onChange={(e) => {
+                const val = e.target.value ? parseInt(e.target.value) : null;
+                setMinPrice(val);
 
-              //   const updatedFilters: Filters = {
-              //     ...filters,
-              //     from_price: val ?? undefined,
-              //     to_price: maxPrice ?? undefined,
-              //   };
+                const updatedFilters: Filters = {
+                  ...filters,
+                  from_price: val ?? undefined,
+                  to_price: maxPrice ?? undefined,
+                };
 
-              //   setFilters(updatedFilters);
-              //   onFilterChange(updatedFilters);
-              //   filtersInitialized.current = true;
+                setFilters(updatedFilters);
+                filtersInitialized.current = true;
 
-              //   startTransition(() => {
-              //     updateAllFiltersAndURL(); // ✅ triggers slug+router.push
-              //   });
-              // }}
+                startTransition(() => {
+                  updateAllFiltersAndURL();
+                });
+              }}
             >
               <option value="">Min</option>
-              {price.map((value, idx) => (
-                <option key={idx} value={value}>
-                  ${value.toLocaleString()}{" "}
+              {price.map((val) => (
+                <option key={val} value={val}>
+                  {val.toLocaleString()} kg
                 </option>
               ))}
             </select>
@@ -2313,27 +2060,24 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
             <select
               className="cfs-select-input"
               value={maxPrice?.toString() || ""}
-              onChange={(e) =>
-                updatePriceFilter("max", e.target.value, maxPrice)
-              }
-              // onChange={(e) => {
-              //   const val = e.target.value ? parseInt(e.target.value) : null;
-              //   setMaxPrice(val);
+              onChange={(e) => {
+                const val = e.target.value ? parseInt(e.target.value) : null;
+                setMaxPrice(val);
 
-              //   const updatedFilters: Filters = {
-              //     ...filters,
-              //     from_price: minPrice ?? undefined,
-              //     to_price: val ?? undefined,
-              //   };
+                const updatedFilters: Filters = {
+                  ...filters,
+                  from_price: minPrice ?? undefined,
+                  to_price: val ?? undefined,
+                };
 
-              //   setFilters(updatedFilters);
-              //   onFilterChange(updatedFilters);
-              //   filtersInitialized.current = true;
+                setFilters(updatedFilters);
+                onFilterChange(updatedFilters);
+                filtersInitialized.current = true;
 
-              //   startTransition(() => {
-              //     updateAllFiltersAndURL();
-              //   });
-              // }}
+                startTransition(() => {
+                  updateAllFiltersAndURL();
+                });
+              }}
             >
               <option value="">Max</option>
               {price.map((value, idx) => (
@@ -2439,16 +2183,19 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
                 onClick={() => {
                   setSelectedConditionName(condition);
                   setConditionOpen(false);
-                  suburbClickedRef.current = true;
-                  filtersInitialized.current = true;
+
                   const updatedFilters: Filters = {
                     ...filters,
                     condition,
                   };
 
                   setFilters(updatedFilters);
-                  //                 onFilterChange(updatedFilters);
-                  updateAllFiltersAndURL(); // ✅ Force filter effect
+                  onFilterChange(updatedFilters);
+                  filtersInitialized.current = true;
+
+                  startTransition(() => {
+                    updateAllFiltersAndURL();
+                  });
                 }}
               >
                 {condition}
@@ -2461,14 +2208,7 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
       {/* Sleeps Accordion */}
       <div className="cs-full_width_section">
         <div className="filter-accordion" onClick={() => toggle(setSleepsOpen)}>
-          <h5 className="cfs-filter-label">
-            Sleep
-            {selectedSleepName && (
-              <span className="filter-accordion-items">
-                : {selectedSleepName} People
-              </span>
-            )}
-          </h5>
+          <h5 className="cfs-filter-label">Sleep</h5>
           <BiChevronDown />
         </div>
         {selectedSleepName && (
@@ -2509,9 +2249,22 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
                   selectedSleepName === String(sleepValue) ? "selected" : ""
                 }`}
                 onClick={() => {
-                  setSelectedSleepName(String(sleepValue));
+                  const selectedValue = String(sleepValue);
+                  setSelectedSleepName(selectedValue);
                   setSleepsOpen(false);
-                  suburbClickedRef.current = true;
+
+                  const updatedFilters: Filters = {
+                    ...filters,
+                    sleeps: `${selectedValue}-people`,
+                  };
+
+                  setFilters(updatedFilters);
+                  onFilterChange(updatedFilters);
+                  filtersInitialized.current = true;
+
+                  startTransition(() => {
+                    updateAllFiltersAndURL();
+                  });
                 }}
               >
                 {sleepValue} People

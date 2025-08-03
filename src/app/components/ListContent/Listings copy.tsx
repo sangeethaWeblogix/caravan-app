@@ -15,7 +15,6 @@ import SkeletonListing from "../skelton";
 import Footer from "../Footer";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { buildSlugFromFilters } from "../slugBuilter";
 import Head from "next/head";
 interface Product {
   id: number;
@@ -603,62 +602,47 @@ export default function ListingsPage({
     twImg.setAttribute("content", imageUrl); // Fallback image if not provided
   }, [metaTitle, metaDescription, metaImage]); // Trigger this useEffect whenever any of these values change
 
-  // const updateURLWithFilters = (page: number) => {
-  //    const slug = buildSlugFromFilters(filters);
-  //   console.log("✅ updateURLWithFilters CALLED with page:", page);
-  //   const current = new URLSearchParams(searchParams.toString());
-  //   current.set("paged", page.toString());
-  //   console.log(
-  //     "🧭 New URL will be:",
-  //     `${buildSlugPath()}?${current.toString()}`
-  //   );
+  const updateURLWithFilters = (page: number) => {
+    console.log("✅ updateURLWithFilters CALLED with page:", page);
+    const current = new URLSearchParams(searchParams.toString());
+    current.set("paged", page.toString());
+    console.log(
+      "🧭 New URL will be:",
+      `${buildSlugPath()}?${current.toString()}`
+    );
 
-  //   Object.entries(filters).forEach(([key, value]) => {
-  //     if (
-  //       value &&
-  //       ![
-  //         "category",
-  //         "location",
-  //         "minKg",
-  //         "maxKg",
-  //         "from_price",
-  //         "to_price",
-  //         "sleeps",
-  //         "condition",
-  //         "from_year",
-  //         "to_year",
-  //         "from_length",
-  //         "to_length",
-  //         "make",
-  //         "model",
-  //         "state",
-  //         "region",
-  //         "suburb",
-  //       ].includes(key)
-  //     ) {
-  //       current.set(key, value.toString());
-  //     } else {
-  //       current.delete(key);
-  //     }
-  //   });
+    Object.entries(filters).forEach(([key, value]) => {
+      if (
+        value &&
+        ![
+          "category",
+          "location",
+          "minKg",
+          "maxKg",
+          "from_price",
+          "to_price",
+          "sleeps",
+          "condition",
+          "from_year",
+          "to_year",
+          "from_length",
+          "to_length",
+          "make",
+          "model",
+          "state",
+          "region",
+          "suburb",
+        ].includes(key)
+      ) {
+        current.set(key, value.toString());
+      } else {
+        current.delete(key);
+      }
+    });
 
-  //   const finalUrl = `${buildSlugPath()}?${current.toString()}`;
-  //   console.log("🚀 Updating URL to:", finalUrl);
-  //   // 👇 Only update the URL. Let useEffect trigger the API
-  //   router.push(finalUrl);
-  // };
-
-  const updateURLWithFilters = (filters: Filters, page: number) => {
-    const slug = buildSlugFromFilters(filters); // ✅ call from shared slugBuilder
-    const query = new URLSearchParams();
-    query.set("paged", page.toString());
-
-    if (filters.from_year)
-      query.set("acustom_fromyears", filters.from_year.toString());
-    if (filters.to_year)
-      query.set("acustom_toyears", filters.to_year.toString());
-
-    const finalUrl = `${slug}?${query.toString()}`;
+    const finalUrl = `${buildSlugPath()}?${current.toString()}`;
+    console.log("🚀 Updating URL to:", finalUrl);
+    // 👇 Only update the URL. Let useEffect trigger the API
     router.push(finalUrl);
   };
 
@@ -666,14 +650,14 @@ export default function ListingsPage({
     if (pagination.current_page < pagination.total_pages) {
       const nextPage = pagination.current_page + 1;
       console.log("🟢 Triggering updateURLWithFilters with page:", nextPage);
-      updateURLWithFilters(filtersRef.current, nextPage); // triggers useEffect to fetch correct page
+      updateURLWithFilters(nextPage); // triggers useEffect to fetch correct page
     }
   };
 
   const handlePrevPage = () => {
     if (pagination.current_page > 1) {
       const prevPage = pagination.current_page - 1;
-      updateURLWithFilters(filtersRef.current, prevPage);
+      updateURLWithFilters(prevPage);
     }
   };
   useEffect(() => {
