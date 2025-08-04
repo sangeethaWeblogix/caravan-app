@@ -1148,8 +1148,11 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
     if (filters.to_year)
       query.set("acustom_toyears", filters.to_year.toString());
 
-    // Preserve paged=1 if you need
-    query.set("paged", "1");
+    // ✅ Only set paged if user is on a later page
+    const paged = searchParams.get("paged");
+    if (paged && parseInt(paged) > 1) {
+      query.set("paged", paged);
+    }
 
     const finalURL = query.toString()
       ? `${slugPath}?${query.toString()}`
@@ -2299,17 +2302,18 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
               onChange={(e) => {
                 const val = e.target.value ? parseInt(e.target.value) : null;
                 setYearFrom(val);
+
                 const updatedFilters: Filters = {
                   ...currentFilters,
-                  from_year: val ?? undefined,
-                  to_year: yearTo ?? undefined,
+                  from_year: val ?? undefined, // ✅ Use val directly!
+                  to_year: yearTo ?? filters.to_year,
                 };
 
                 setFilters(updatedFilters);
-                // onFilterChange(updatedFilters);
                 filtersInitialized.current = true;
+
                 startTransition(() => {
-                  updateAllFiltersAndURL();
+                  updateAllFiltersAndURL(); // ✅ URL and API update together
                 });
               }}
             >
@@ -2329,17 +2333,18 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
               onChange={(e) => {
                 const val = e.target.value ? parseInt(e.target.value) : null;
                 setYearTo(val);
+
                 const updatedFilters: Filters = {
                   ...currentFilters,
-                  from_year: yearFrom ?? undefined,
-                  to_year: val ?? undefined,
+                  from_year: yearFrom ?? filters.from_year,
+                  to_year: val ?? undefined, // ✅ Use val directly!
                 };
 
                 setFilters(updatedFilters);
-                // onFilterChange(updatedFilters);
                 filtersInitialized.current = true;
+
                 startTransition(() => {
-                  updateAllFiltersAndURL(); // ✅ make API + URL sync
+                  updateAllFiltersAndURL(); // ✅ Correct filter & URL
                 });
               }}
             >

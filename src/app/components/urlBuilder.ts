@@ -94,12 +94,10 @@ export function parseSlugToFilters(slugParts: string[]): Filters {
         filters.from_price = match[1];
         filters.to_price = match[2];
       }
-    } else {
-      if (!filters.make && isNaN(Number(part)) && !part.includes("-")) {
-        filters.make = part;
-      } else if (!filters.model && isNaN(Number(part)) && !part.includes("-")) {
-        filters.model = part;
-      }
+    } else if (!filters.make && isNaN(Number(part)) && !part.includes("-")) {
+      filters.make = part;
+    } else if (!filters.model && isNaN(Number(part)) && !part.includes("-")) {
+      filters.model = part;
     }
   });
 
@@ -109,4 +107,21 @@ export function parseSlugToFilters(slugParts: string[]): Filters {
 export function parsePathnameToFilters(pathname: string): Filters {
   const slugParts = pathname.split("/listings/")[1]?.split("/") || [];
   return parseSlugToFilters(slugParts);
+}
+
+export function refineMakeModel(
+  filters: Filters,
+  knownMakes: string[],
+  knownModels: string[]
+): Filters {
+  const refined = { ...filters };
+
+  if (refined.make && !knownMakes.includes(refined.make)) {
+    refined.make = undefined;
+  }
+  if (refined.model && !knownModels.includes(refined.model)) {
+    refined.model = undefined;
+  }
+
+  return refined;
 }
