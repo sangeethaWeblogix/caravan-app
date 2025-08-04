@@ -16,6 +16,8 @@ import Footer from "../Footer";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { buildSlugFromFilters } from "../slugBuilter";
+import { parseSlugToFilters } from "../../components/urlBuilder";
+
 import Head from "next/head";
 interface Product {
   id: number;
@@ -124,151 +126,155 @@ export default function ListingsPage({
 }: Props) {
   const pathname =
     typeof window !== "undefined" ? window.location.pathname : "";
-
   const initialFilters: Filters = useMemo(() => {
     const slugParts = pathname.split("/listings/")[1]?.split("/") || [];
-    const statePart = slugParts.find((part) => part.endsWith("-state"));
-    const regionPart = slugParts.find((part) => part.endsWith("-region"));
-    const suburbPart = slugParts.find((part) => part.endsWith("-suburb"));
-    const postcodePart = slugParts.find((part) => /^\d{4}$/.test(part));
-    const categoryPart = slugParts.find((part) => part.includes("-category"));
-    const conditionPart = slugParts.find((part) => part.includes("-condition"));
+    return parseSlugToFilters(slugParts);
+  }, [pathname]);
 
-    const knownSlugs = [
-      statePart,
-      regionPart,
-      suburbPart,
-      postcodePart,
-      categoryPart,
-      conditionPart,
-    ].filter(Boolean);
-    const unknownSlugs = slugParts.filter((slug) => !knownSlugs.includes(slug));
+  // const initialFilters: Filters = useMemo(() => {
+  //   const slugParts = pathname.split("/listings/")[1]?.split("/") || [];
+  //   const statePart = slugParts.find((part) => part.endsWith("-state"));
+  //   const regionPart = slugParts.find((part) => part.endsWith("-region"));
+  //   const suburbPart = slugParts.find((part) => part.endsWith("-suburb"));
+  //   const postcodePart = slugParts.find((part) => /^\d{4}$/.test(part));
+  //   const categoryPart = slugParts.find((part) => part.includes("-category"));
+  //   const conditionPart = slugParts.find((part) => part.includes("-condition"));
 
-    const parsedSleepMatch = pathname.match(
-      /over-(\d+)-people-sleeping-capacity/
-    );
-    const parsedSleep = parsedSleepMatch
-      ? `${parsedSleepMatch[1]}-people`
-      : undefined;
+  //   const knownSlugs = [
+  //     statePart,
+  //     regionPart,
+  //     suburbPart,
+  //     postcodePart,
+  //     categoryPart,
+  //     conditionPart,
+  //   ].filter(Boolean);
+  //   const unknownSlugs = slugParts.filter((slug) => !knownSlugs.includes(slug));
 
-    const parsedCategory =
-      category || categoryPart?.replace("-category", "") || undefined;
-    const parsedCondition =
-      condition || conditionPart?.replace("-condition", "") || undefined;
-    const parsedState =
-      state || statePart?.replace("-state", "").replace(/-/g, " ");
-    const parsedRegion =
-      region || regionPart?.replace("-region", "").replace(/-/g, " ");
-    const parsedSuburb =
-      suburb || suburbPart?.replace("-suburb", "").replace(/-/g, " ");
-    const parsedPostcode = pincode || postcodePart;
+  //   const parsedSleepMatch = pathname.match(
+  //     /over-(\d+)-people-sleeping-capacity/
+  //   );
+  //   const parsedSleep = parsedSleepMatch
+  //     ? `${parsedSleepMatch[1]}-people`
+  //     : undefined;
 
-    // ✅ Safely assign make and model from unknownSlugs
-    const isValidSlug = (s?: string) =>
-      !!s && isNaN(Number(s)) && !s.includes("-");
+  //   const parsedCategory =
+  //     category || categoryPart?.replace("-category", "") || undefined;
+  //   const parsedCondition =
+  //     condition || conditionPart?.replace("-condition", "") || undefined;
+  //   const parsedState =
+  //     state || statePart?.replace("-state", "").replace(/-/g, " ");
+  //   const parsedRegion =
+  //     region || regionPart?.replace("-region", "").replace(/-/g, " ");
+  //   const parsedSuburb =
+  //     suburb || suburbPart?.replace("-suburb", "").replace(/-/g, " ");
+  //   const parsedPostcode = pincode || postcodePart;
 
-    const finalMake =
-      make || (isValidSlug(unknownSlugs[0]) ? unknownSlugs[0] : undefined);
-    const finalModel =
-      model || (isValidSlug(unknownSlugs[1]) ? unknownSlugs[1] : undefined);
+  //   // ✅ Safely assign make and model from unknownSlugs
+  //   const isValidSlug = (s?: string) =>
+  //     !!s && isNaN(Number(s)) && !s.includes("-");
 
-    // ✅ Init all filters
-    let from_price_final = from_price?.toString();
-    let to_price_final = to_price?.toString();
-    let minKg_final = minKg?.toString();
-    let maxKg_final = maxKg?.toString();
-    let from_length_final = from_length?.toString();
-    let to_length_final = to_length?.toString();
+  //   const finalMake =
+  //     make || (isValidSlug(unknownSlugs[0]) ? unknownSlugs[0] : undefined);
+  //   const finalModel =
+  //     model || (isValidSlug(unknownSlugs[1]) ? unknownSlugs[1] : undefined);
 
-    slugParts.forEach((slug) => {
-      // ✅ ATM weight parser
-      if (slug.includes("-kg-atm")) {
-        if (slug.startsWith("between-")) {
-          const match = slug.match(/between-(\d+)-kg-(\d+)-kg-atm/);
-          if (match) {
-            minKg_final ||= match[1];
-            maxKg_final ||= match[2];
-          }
-        } else if (slug.startsWith("over-")) {
-          minKg_final ||= slug.replace("over-", "").replace("-kg-atm", "");
-        } else if (slug.startsWith("under-")) {
-          maxKg_final ||= slug.replace("under-", "").replace("-kg-atm", "");
-        }
-        return;
-      }
+  //   // ✅ Init all filters
+  //   let from_price_final = from_price?.toString();
+  //   let to_price_final = to_price?.toString();
+  //   let minKg_final = minKg?.toString();
+  //   let maxKg_final = maxKg?.toString();
+  //   let from_length_final = from_length?.toString();
+  //   let to_length_final = to_length?.toString();
 
-      // ✅ Price parser
-      if (/^over-\d+$/.test(slug)) {
-        from_price_final ||= slug.replace("over-", "");
-      } else if (/^under-\d+$/.test(slug)) {
-        to_price_final ||= slug.replace("under-", "");
-      } else if (/^between-\d+-\d+$/.test(slug)) {
-        const match = slug.match(/between-(\d+)-(\d+)/);
-        if (match) {
-          from_price_final ||= match[1];
-          to_price_final ||= match[2];
-        }
-      }
+  //   slugParts.forEach((slug) => {
+  //     // ✅ ATM weight parser
+  //     if (slug.includes("-kg-atm")) {
+  //       if (slug.startsWith("between-")) {
+  //         const match = slug.match(/between-(\d+)-kg-(\d+)-kg-atm/);
+  //         if (match) {
+  //           minKg_final ||= match[1];
+  //           maxKg_final ||= match[2];
+  //         }
+  //       } else if (slug.startsWith("over-")) {
+  //         minKg_final ||= slug.replace("over-", "").replace("-kg-atm", "");
+  //       } else if (slug.startsWith("under-")) {
+  //         maxKg_final ||= slug.replace("under-", "").replace("-kg-atm", "");
+  //       }
+  //       return;
+  //     }
 
-      // ✅ Length parser
-      if (slug.includes("length-in-feet")) {
-        if (slug.startsWith("between-")) {
-          const match = slug.match(/between-(\d+)-(\d+)-length-in-feet/);
-          if (match) {
-            from_length_final ||= match[1];
-            to_length_final ||= match[2];
-          }
-        } else if (slug.startsWith("over-")) {
-          from_length_final ||= slug
-            .replace("over-", "")
-            .replace("-length-in-feet", "");
-        } else if (slug.startsWith("under-")) {
-          to_length_final ||= slug
-            .replace("under-", "")
-            .replace("-length-in-feet", "");
-        }
-      }
-    });
+  //     // ✅ Price parser
+  //     if (/^over-\d+$/.test(slug)) {
+  //       from_price_final ||= slug.replace("over-", "");
+  //     } else if (/^under-\d+$/.test(slug)) {
+  //       to_price_final ||= slug.replace("under-", "");
+  //     } else if (/^between-\d+-\d+$/.test(slug)) {
+  //       const match = slug.match(/between-(\d+)-(\d+)/);
+  //       if (match) {
+  //         from_price_final ||= match[1];
+  //         to_price_final ||= match[2];
+  //       }
+  //     }
 
-    return {
-      make: finalMake,
-      model: finalModel,
-      category: parsedCategory,
-      condition: parsedCondition,
-      sleeps: sleeps || parsedSleep,
-      state: parsedState,
-      region: parsedRegion,
-      suburb: parsedSuburb,
-      pincode: parsedPostcode,
-      from_price: from_price_final,
-      to_price: to_price_final,
-      minKg: minKg_final,
-      maxKg: maxKg_final,
-      from_length: from_length_final,
-      to_length: to_length_final,
-      from_year,
-      to_year,
-    };
-  }, [
-    pathname,
-    category,
-    condition,
-    make,
-    model,
-    state,
-    region,
-    suburb,
-    pincode,
-    from_price,
-    to_price,
-    minKg,
-    maxKg,
-    from_length,
-    to_length,
-    from_year,
-    to_year,
-    sleeps,
-  ]);
+  //     // ✅ Length parser
+  //     if (slug.includes("length-in-feet")) {
+  //       if (slug.startsWith("between-")) {
+  //         const match = slug.match(/between-(\d+)-(\d+)-length-in-feet/);
+  //         if (match) {
+  //           from_length_final ||= match[1];
+  //           to_length_final ||= match[2];
+  //         }
+  //       } else if (slug.startsWith("over-")) {
+  //         from_length_final ||= slug
+  //           .replace("over-", "")
+  //           .replace("-length-in-feet", "");
+  //       } else if (slug.startsWith("under-")) {
+  //         to_length_final ||= slug
+  //           .replace("under-", "")
+  //           .replace("-length-in-feet", "");
+  //       }
+  //     }
+  //   });
+
+  //   return {
+  //     make: finalMake,
+  //     model: finalModel,
+  //     category: parsedCategory,
+  //     condition: parsedCondition,
+  //     sleeps: sleeps || parsedSleep,
+  //     state: parsedState,
+  //     region: parsedRegion,
+  //     suburb: parsedSuburb,
+  //     pincode: parsedPostcode,
+  //     from_price: from_price_final,
+  //     to_price: to_price_final,
+  //     minKg: minKg_final,
+  //     maxKg: maxKg_final,
+  //     from_length: from_length_final,
+  //     to_length: to_length_final,
+  //     from_year,
+  //     to_year,
+  //   };
+  // }, [
+  //   pathname,
+  //   category,
+  //   condition,
+  //   make,
+  //   model,
+  //   state,
+  //   region,
+  //   suburb,
+  //   pincode,
+  //   from_price,
+  //   to_price,
+  //   minKg,
+  //   maxKg,
+  //   from_length,
+  //   to_length,
+  //   from_year,
+  //   to_year,
+  //   sleeps,
+  // ]);
 
   const [filtersReady, setFiltersReady] = useState(false);
   const [filters, setFilters] = useState<Filters>(initialFilters);
@@ -399,12 +405,24 @@ export default function ListingsPage({
     [] // ✅ fixed dependency
   );
 
+  // useEffect(() => {
+  //   if (!hasSearched && filtersReady) {
+  //     filtersRef.current = initialFilters;
+  //     setFilters(initialFilters); // ✅ sync filter state
+  //     // loadListings(initialPage, initialFilters); // ✅ call even if no filters
+  //     setHasSearched(true); // ✅ avoid re-fetching
+  //   }
+  // }, [filtersReady, hasSearched]);
   useEffect(() => {
     if (!hasSearched && filtersReady) {
       filtersRef.current = initialFilters;
-      setFilters(initialFilters); // ✅ sync filter state
-      // loadListings(initialPage, initialFilters); // ✅ call even if no filters
-      setHasSearched(true); // ✅ avoid re-fetching
+      setFilters(initialFilters);
+
+      // ✅ Call loadListings only on first render
+      const currentPage = parseInt(searchParams.get("paged") || "1", 10);
+      loadListings(currentPage, initialFilters);
+
+      setHasSearched(true);
     }
   }, [filtersReady, hasSearched]);
 
@@ -657,16 +675,13 @@ export default function ListingsPage({
       updateURLWithFilters(filtersRef.current, prevPage);
     }
   };
+
   useEffect(() => {
     if (filtersReady && hasSearched) {
       const currentPage = parseInt(searchParams.get("paged") || "1", 10);
       loadListings(currentPage, filtersRef.current);
     }
   }, [filters]);
-
-  useEffect(() => {
-    loadListings(1);
-  }, []);
 
   console.log("metaaa", metaTitle);
   return (

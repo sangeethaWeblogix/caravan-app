@@ -987,6 +987,19 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
       }
     }
   }, [selectedModel, model]);
+  useEffect(() => {
+    if (selectedModel && model.length > 0) {
+      const match = model.find((m) => m.slug === selectedModel);
+      if (match) {
+        setSelectedModelName(match.name);
+      }
+    }
+  }, [selectedModel, model]);
+  useEffect(() => {
+    if (!selectedModel && currentFilters.model) {
+      setSelectedModel(currentFilters.model);
+    }
+  }, [currentFilters.model, selectedModel]);
 
   useEffect(() => {
     if (
@@ -1224,17 +1237,17 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
 
   // ✅ Update handleModelSelect with valid check
   const handleModelSelect = (mod: Model) => {
+    const safeMake = isValidMakeSlug(selectedMake) ? selectedMake : undefined;
+    const safeModel = isValidModelSlug(mod.slug) ? mod.slug : undefined;
+
     setSelectedModel(mod.slug);
     setSelectedModelName(mod.name);
     setModelOpen(false);
 
-    const safeMake = isValidMakeSlug(selectedMake) ? selectedMake : undefined;
-    const safeModel = isValidModelSlug(mod.slug) ? mod.slug : undefined;
-
     const updatedFilters: Filters = {
       ...currentFilters,
-      make: isValidMakeSlug(selectedMake) ? selectedMake : undefined,
-      model: isValidModelSlug(selectedModel) ? selectedModel : undefined,
+      make: safeMake,
+      model: safeModel,
       category: selectedCategory || currentFilters.category,
       state: selectedStateName || currentFilters.state,
       region: selectedRegionName || currentFilters.region,
@@ -1243,8 +1256,12 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
     };
 
     setFilters(updatedFilters);
-    onFilterChange(updatedFilters);
-    updateAllFiltersAndURL(); // ✅ This ensures all values are merged
+    filtersInitialized.current = true;
+
+    startTransition(() => {
+      router.push(buildSlugFromFilters(updatedFilters));
+      onFilterChange(updatedFilters); // ✅ correct model slug is used
+    });
   };
 
   useEffect(() => {
