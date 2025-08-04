@@ -4,7 +4,8 @@ export const buildSlugFromFilters = (filters: Filters): string => {
   const slugParts: string[] = [];
 
   if (filters.make) slugParts.push(filters.make);
-  if (filters.model) slugParts.push(filters.model);
+  if (filters.model && filters.model !== filters.make)
+    slugParts.push(filters.model);
   if (filters.condition)
     slugParts.push(`${filters.condition.toLowerCase()}-condition`);
   if (filters.category) slugParts.push(`${filters.category}-category`);
@@ -14,9 +15,8 @@ export const buildSlugFromFilters = (filters: Filters): string => {
     if (filters.state)
       slugParts.push(`${filters.state.replace(/\s+/g, "-")}-state`);
     if (filters.pincode) slugParts.push(filters.pincode);
-  } else {
-    if (filters.state)
-      slugParts.push(`${filters.state.replace(/\s+/g, "-")}-state`);
+  } else if (filters.state) {
+    slugParts.push(`${filters.state.replace(/\s+/g, "-")}-state`);
     if (filters.region)
       slugParts.push(`${filters.region.replace(/\s+/g, "-")}-region`);
   }
@@ -40,11 +40,18 @@ export const buildSlugFromFilters = (filters: Filters): string => {
   else if (filters.to_length)
     slugParts.push(`under-${filters.to_length}-length-in-feet`);
 
-  // Sleeping Capacity Filter
-  if (filters.sleeps) {
-    const num = filters.sleeps.split("-")[0]; // Extract number
-    slugParts.push(`over-${num}-people-sleeping-capacity`);
-  }
+  if (filters.sleeps)
+    slugParts.push(
+      `over-${filters.sleeps.replace("-people", "")}-people-sleeping-capacity`
+    );
 
-  return `/listings/${slugParts.join("/")}`;
+  const query = new URLSearchParams();
+
+  if (filters.from_year)
+    query.set("acustom_fromyears", filters.from_year.toString());
+  if (filters.to_year) query.set("acustom_toyears", filters.to_year.toString());
+
+  return `/listings/${slugParts.join("/")}${
+    query.toString() ? `?${query.toString()}` : ""
+  }`;
 };

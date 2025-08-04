@@ -124,6 +124,7 @@ export default function ListingsPage({
 }: Props) {
   const pathname =
     typeof window !== "undefined" ? window.location.pathname : "";
+
   const initialFilters: Filters = useMemo(() => {
     const slugParts = pathname.split("/listings/")[1]?.split("/") || [];
     const statePart = slugParts.find((part) => part.endsWith("-state"));
@@ -429,7 +430,7 @@ export default function ListingsPage({
       total_products: 0,
     });
     setFiltersReady(true);
-    loadListings(pageFromURL, mergedFilters);
+    // loadListings(pageFromURL, mergedFilters);
     console.log("🔗 calling updateURLWithFilters");
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -711,7 +712,7 @@ export default function ListingsPage({
                       models={models}
                       states={stateOptions}
                       onFilterChange={handleFilterChange}
-                      currentFilters={filters}
+                      // currentFilters={filters}
                     />
                   </Suspense>
                 </div>
