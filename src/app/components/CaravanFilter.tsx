@@ -1128,9 +1128,7 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
 
       startTransition(() => {
         router.push(fullSlug);
-        setTimeout(() => {
-          onFilterChange(filters); // ✅ trigger API call once
-        }, 50);
+        onFilterChange(filters); // ✅ Trigger ListingsPage API call immediately
       });
     }
   }, [filters]);

@@ -414,29 +414,10 @@ export default function ListingsPage({
 
   const handleFilterChange = useCallback((newFilters: Filters) => {
     console.log("🚚 got from CaravanFilter →", minKg); // 👈 should contain sleeps
-    const mergedFilters: Filters = {
-      ...filtersRef.current,
-      ...newFilters,
-      category: newFilters.category || filtersRef.current.category,
-      condition: newFilters.condition || filtersRef.current.condition,
-      sleeps: newFilters.sleeps || filtersRef.current.sleeps,
-      make: newFilters.make || filtersRef.current.make,
-      model: newFilters.model || filtersRef.current.model,
-      state: newFilters.state || filtersRef.current.state,
-      region: newFilters.region || filtersRef.current.region,
-      suburb: newFilters.suburb || filtersRef.current.suburb,
-      pincode: newFilters.pincode || filtersRef.current.pincode,
-      from_price: newFilters.from_price || filtersRef.current.from_price,
-      to_price: newFilters.to_price || filtersRef.current.to_price,
-      minKg: newFilters.minKg || filtersRef.current.minKg,
-      maxKg: newFilters.maxKg || filtersRef.current.maxKg,
-      from_length: newFilters.from_length || filtersRef.current.from_length,
-      to_length: newFilters.to_length || filtersRef.current.to_length,
-      from_year: newFilters.from_year || filtersRef.current.from_year,
-      to_year: newFilters.to_year || filtersRef.current.to_year,
-    };
+    const mergedFilters = { ...filtersRef.current, ...newFilters };
     console.log("🔗 Merging filters", mergedFilters);
     setHasSearched(true);
+    setFiltersReady(true);
     setFilters(mergedFilters);
     filtersRef.current = mergedFilters;
     const pageFromURL = parseInt(searchParams.get("paged") || "1", 10);
@@ -675,6 +656,13 @@ export default function ListingsPage({
       updateURLWithFilters(filtersRef.current, prevPage);
     }
   };
+  useEffect(() => {
+    if (filtersReady && hasSearched) {
+      const currentPage = parseInt(searchParams.get("paged") || "1", 10);
+      loadListings(currentPage, filtersRef.current);
+    }
+  }, [filters]);
+
   useEffect(() => {
     loadListings(1);
   }, []);
