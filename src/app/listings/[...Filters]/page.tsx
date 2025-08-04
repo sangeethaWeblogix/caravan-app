@@ -23,17 +23,18 @@ interface Filters {
 
 function parseSlugToFilters(slugParts: string[]): Filters {
   const filters: Filters = {};
+  const conditionMap: Record<string, string> = {
+    new: "New",
+    used: "Used",
+    "near-new": "Near New",
+  };
+
   slugParts.forEach((part) => {
     if (part.endsWith("-category")) {
       filters.category = part.replace("-category", "");
     } else if (part.endsWith("-condition")) {
-      const conditionSlug = part.replace("-condition", "").toLowerCase();
-      const conditionMap: Record<string, string> = {
-        new: "New",
-        used: "Used",
-        "near-new": "Near New",
-      };
-      filters.condition = conditionMap[conditionSlug] || conditionSlug;
+      const slug = part.replace("-condition", "").toLowerCase();
+      filters.condition = conditionMap[slug] || slug;
     } else if (part.endsWith("-state")) {
       filters.state = part.replace("-state", "").replace(/-/g, " ");
     } else if (part.endsWith("-region")) {
@@ -70,10 +71,21 @@ function parseSlugToFilters(slugParts: string[]): Filters {
           .replace("under-", "")
           .replace("-length-in-feet", "");
       }
-    } else if (/over-(\d+)-people-sleeping-capacity/.test(part)) {
-      const match = part.match(/over-(\d+)-people/);
-      if (match) {
-        filters.sleeps = `${match[1]}-people`;
+    } else if (part.includes("-people-sleeping-capacity")) {
+      // ✅ supports: 3-people-sleeping-capacity, over-4-, under-6-, between-2-and-6-
+      if (/^between-\d+-and-\d+-people-sleeping-capacity$/.test(part)) {
+        const match = part.match(
+          /between-(\d+)-and-(\d+)-people-sleeping-capacity/
+        );
+        if (match) {
+          filters.sleeps = `${match[1]}-people`; // Default to lower bound
+        }
+      } else {
+        const raw = part.replace("-people-sleeping-capacity", "");
+        const cleaned = raw.replace(/^over-/, "").replace(/^under-/, "");
+        if (!isNaN(Number(cleaned))) {
+          filters.sleeps = `${cleaned}-people`;
+        }
       }
     } else if (/^over-\d+$/.test(part)) {
       filters.from_price = part.replace("over-", "");
@@ -86,7 +98,7 @@ function parseSlugToFilters(slugParts: string[]): Filters {
         filters.to_price = match[2];
       }
     } else {
-      // fallback for make/model slugs (must be non-numeric and valid)
+      // fallback for make/model: only allow non-numeric, no hyphens
       if (!filters.make && isNaN(Number(part)) && !part.includes("-")) {
         filters.make = part;
       } else if (!filters.model && isNaN(Number(part)) && !part.includes("-")) {
@@ -95,6 +107,7 @@ function parseSlugToFilters(slugParts: string[]): Filters {
     }
   });
 
+  console.log("✅ Final Filters Parsed:", filters);
   return filters;
 }
 
@@ -139,6 +152,8 @@ export default function Listings({
   searchParams: { paged?: string };
 }) {
   const slugParts = params.slug || [];
+  console.log("Parsed filters", slugParts);
   const filters = parseSlugToFilters(slugParts);
+  console.log("Parsed filters from slug:", filters);
   return <ListingsPage {...filters} paged={searchParams?.paged || "1"} />;
 }

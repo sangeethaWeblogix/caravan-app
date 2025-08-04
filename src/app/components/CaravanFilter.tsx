@@ -1967,6 +1967,9 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
 
                 setFilters(updatedFilters);
                 filtersInitialized.current = true;
+                startTransition(() => {
+                  updateAllFiltersAndURL();
+                });
               }}
             >
               <option value="">Max</option>
@@ -2041,10 +2044,6 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
 
                 setFilters(updatedFilters);
                 filtersInitialized.current = true;
-
-                startTransition(() => {
-                  updateAllFiltersAndURL();
-                });
               }}
             >
               <option value="">Min</option>
@@ -2250,20 +2249,27 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
                 }`}
                 onClick={() => {
                   const selectedValue = String(sleepValue);
-                  setSelectedSleepName(selectedValue);
+                  const isAlreadySelected = selectedSleepName === selectedValue;
+
+                  const newSleep = isAlreadySelected
+                    ? undefined
+                    : `${selectedValue}-people`;
+                  setSelectedSleepName(
+                    isAlreadySelected ? null : selectedValue
+                  );
                   setSleepsOpen(false);
 
                   const updatedFilters: Filters = {
                     ...filters,
-                    sleeps: `${selectedValue}-people`,
+                    sleeps: newSleep,
                   };
 
                   setFilters(updatedFilters);
-                  onFilterChange(updatedFilters);
+                  // onFilterChange(updatedFilters);
                   filtersInitialized.current = true;
 
                   startTransition(() => {
-                    updateAllFiltersAndURL();
+                    updateAllFiltersAndURL(); // ✅ SHOULD be called here
                   });
                 }}
               >

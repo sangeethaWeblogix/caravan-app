@@ -40,10 +40,11 @@ export const buildSlugFromFilters = (filters: Filters): string => {
   else if (filters.to_length)
     slugParts.push(`under-${filters.to_length}-length-in-feet`);
 
-  if (filters.sleeps)
-    slugParts.push(
-      `over-${filters.sleeps.split("-")[0]}-people-sleeping-capacity`
-    );
+  // Sleeping Capacity Filter
+  if (filters.sleeps) {
+    const num = filters.sleeps.split("-")[0]; // Extract number
+    slugParts.push(`over-${num}-people-sleeping-capacity`);
+  }
 
   return `/listings/${slugParts.join("/")}`;
 };

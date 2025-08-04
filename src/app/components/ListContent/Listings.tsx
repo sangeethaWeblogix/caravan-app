@@ -126,7 +126,6 @@ export default function ListingsPage({
     typeof window !== "undefined" ? window.location.pathname : "";
   const initialFilters: Filters = useMemo(() => {
     const slugParts = pathname.split("/listings/")[1]?.split("/") || [];
-
     const statePart = slugParts.find((part) => part.endsWith("-state"));
     const regionPart = slugParts.find((part) => part.endsWith("-region"));
     const suburbPart = slugParts.find((part) => part.endsWith("-suburb"));
