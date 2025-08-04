@@ -712,7 +712,7 @@ export default function ListingsPage({
                       models={models}
                       states={stateOptions}
                       onFilterChange={handleFilterChange}
-                      // currentFilters={filters}
+                      currentFilters={filters}
                     />
                   </Suspense>
                 </div>
