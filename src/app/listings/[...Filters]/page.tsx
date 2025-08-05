@@ -1,56 +1,32 @@
 // ✅ FILE: app/listings/[...slug]/page.tsx
 import ListingsPage from "@/app/components/ListContent/Listings";
 import { fetchListings } from "@/api/listings/api";
-import { Metadata } from "next";
 import { parseSlugToFilters } from "../../components/urlBuilder";
-
-interface Filters {
-  category?: string;
-  condition?: string;
-  state?: string;
-  region?: string;
-  suburb?: string;
-  pincode?: string;
-  from_price?: string;
-  to_price?: string;
-  minKg?: string;
-  maxKg?: string;
-  from_length?: string;
-  to_length?: string;
-  sleeps?: string;
-  make?: string;
-  model?: string;
-}
 
 export async function generateMetadata({
   params,
   searchParams,
 }: {
-  params: { slug: string[] };
-  searchParams: { paged?: string };
-}): Promise<Metadata> {
+  params: { slug?: string[] };
+  searchParams?: { [key: string]: string };
+}) {
   const slugParts = params.slug || [];
   const filters = parseSlugToFilters(slugParts);
-  const page = parseInt(searchParams?.paged || "1", 10);
+
+  const page = searchParams?.paged ? parseInt(searchParams.paged, 10) : 1;
 
   const response = await fetchListings({ ...filters, page });
 
+  const title = response?.metaTitle || "Listings";
+  const description = response?.metaDescription || "Browse available listings.";
+
   return {
-    title: response?.seo?.metatitle || "Caravan Listings",
-    description: response?.seo?.metadescription || "Browse caravans for sale",
+    title,
+    description,
     openGraph: {
-      title: response?.seo?.metatitle,
-      description: response?.seo?.metadescription,
-      images: [
-        {
-          url: response?.seo?.metaimage || "/favicon.ico",
-        },
-      ],
-    },
-    twitter: {
-      title: response?.seo?.metatitle,
-      description: response?.seo?.metadescription,
-      images: [response?.seo?.metaimage || "/favicon.ico"],
+      title,
+      description,
+      images: ["/og-image.png"],
     },
   };
 }

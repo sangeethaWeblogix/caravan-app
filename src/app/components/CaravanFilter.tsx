@@ -14,6 +14,7 @@ import { fetchProductList } from "@/api/productList/api";
 import { fetchModelsByMake } from "@/api/model/api";
 import "./filter.css";
 import { buildSlugFromFilters } from "./slugBuilter";
+import { buildUpdatedFilters } from "./buildUpdatedFilters";
 type LocationSuggestion = {
   key: string;
   uri: string;
@@ -455,7 +456,7 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
     return categorySegment?.replace("-category", "") || null;
   };
 
-  const pendingURLRef = useRef<string | null>(null);
+  // const pendingURLRef = useRef<string | null>(null);
 
   console.log("filters", filters);
   console.log(selectedRegion, filteredRegions);
@@ -525,13 +526,6 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
       setFilteredSuburbs([]);
     }
   }, [pathname]); // Ensure this is triggered whenever the URL pathname changes
-
-  const updateFilters = (partial: Partial<Filters>) => {
-    const updated = { ...currentFilters, ...partial };
-    setFilters(updated);
-    onFilterChange(updated);
-    filtersInitialized.current = true;
-  };
 
   const resetStateFilters = () => {
     console.log("❌ State Reset Triggered");
@@ -690,15 +684,16 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
     setLocationInput(locationData.short_address);
 
     // ✅ Update filters first
-    const updatedFilters = {
-      ...currentFilters,
-      make: selectedMake || currentFilters.make,
-      model: selectedModel || currentFilters.model,
-      region,
+    const updatedFilters = buildUpdatedFilters(currentFilters, {
       suburb,
+      region,
       state,
       pincode: postcode,
-    };
+      make: selectedMake || currentFilters.make,
+      model: selectedModel || currentFilters.model,
+    });
+    setFilters(updatedFilters);
+    onFilterChange(updatedFilters);
 
     setFilters(updatedFilters);
     filtersInitialized.current = true;
@@ -1060,15 +1055,6 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
       hasCategoryBeenSetRef.current = true;
     }
   }, [selectedCategory]);
-  const syncSlugToName = (
-    slug: string | undefined,
-    list: { name: string; slug: string }[],
-    setName: (name: string) => void
-  ) => {
-    if (!slug || !list.length) return;
-    const match = list.find((item) => item.slug === slug);
-    if (match) setName(match.name);
-  };
 
   // router issue
   const lastPushedURLRef = useRef<string>("");
@@ -1149,7 +1135,10 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
     //   query.set("acustom_toyears", filters.to_year.toString());
 
     if (!searchParams.has("paged")) {
-      query.set("paged", "1");
+      const paged = searchParams.get("paged");
+      if (paged && paged !== "1") {
+        query.set("paged", paged);
+      }
     }
 
     // ✅ Clean URL before pushing
@@ -1351,22 +1340,11 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
                     setSelectedCategory(cat.slug);
                     setSelectedCategoryName(cat.name);
                     setCategoryOpen(false);
-                    updateFilters({ category: cat.slug });
-
-                    updateAllFiltersAndURL(); // ✅ This ensures all values are merged
-                    filtersInitialized.current = true;
-                    const updatedFilters: Filters = {
-                      ...currentFilters, // ✅ live state
+                    const updatedFilters = buildUpdatedFilters(currentFilters, {
                       category: cat.slug,
-                      make: selectedMake || filters.make || currentFilters.make,
-                      model: selectedModel || currentFilters.model,
-                      state: selectedStateName || currentFilters.state,
-                      region: selectedRegionName || currentFilters.region,
-                      suburb: selectedSuburbName || currentFilters.suburb,
-                      pincode: selectedPostcode || currentFilters.pincode,
-                    };
-
+                    });
                     setFilters(updatedFilters);
+                    filtersInitialized.current = true;
                     //                 onFilterChange(updatedFilters);
                   }}
                 >

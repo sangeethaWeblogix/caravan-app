@@ -105,23 +105,8 @@ interface Props {
 }
 
 export default function ListingsPage({
-  category,
-  condition,
-  make,
-  model,
-  state,
-  region,
-  suburb,
-  pincode,
-  from_price,
-  to_price,
   minKg,
-  maxKg,
-  from_length,
-  to_length,
-  from_year,
-  to_year,
-  sleeps,
+
   paged,
 }: Props) {
   const pathname =
@@ -452,93 +437,6 @@ export default function ListingsPage({
     console.log("🔗 calling updateURLWithFilters");
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-  const slugify = (value: string | null | undefined) =>
-    value?.toLowerCase().replace(/\s+/g, "-").trim() || "";
-  const buildSlugPath = () => {
-    const slugParts: string[] = [];
-    alert("build");
-    // Make and Model Filters
-    if (filters.make) {
-      slugParts.push(filters.make);
-      if (filters.model && filters.model !== filters.make) {
-        slugParts.push(filters.model); // Ensure model is only added if it is different from make
-      }
-    }
-
-    // Category and Condition Filters
-    if (filters.category) slugParts.push(`${filters.category}-category`);
-    if (filters.condition)
-      slugParts.push(`${filters.condition.toLowerCase()}-condition`);
-
-    // Location Filters: State → Region → Suburb → Postcode
-    if (filters.state) {
-      slugParts.push(
-        `${filters.state.toLowerCase().replace(/\s+/g, "-")}-state`
-      );
-    }
-
-    if (filters.region && filters.state) {
-      slugParts.push(
-        `${filters.region.toLowerCase().replace(/\s+/g, "-")}-region`
-      );
-    }
-
-    if (filters.suburb) {
-      slugParts.push(`${slugify(filters.suburb)}-suburb`);
-      if (filters.state) {
-        slugParts.push(`${slugify(filters.state)}-state`);
-      }
-      if (filters.pincode) {
-        slugParts.push(filters.pincode);
-      }
-    } else {
-      // ✅ Else: State → Region
-      if (filters.state) {
-        slugParts.push(`${slugify(filters.state)}-state`);
-      }
-      if (filters.region) {
-        slugParts.push(`${slugify(filters.region)}-region`);
-      }
-    }
-
-    // Price and ATM Filters
-    if (filters.from_price && filters.to_price) {
-      slugParts.push(`between-${filters.from_price}-${filters.to_price}`);
-    } else if (filters.from_price) {
-      slugParts.push(`over-${filters.from_price}`);
-    } else if (filters.to_price) {
-      slugParts.push(`under-${filters.to_price}`);
-    }
-
-    // Weight (ATM) Range Filters
-    if (filters.minKg && filters.maxKg) {
-      slugParts.push(`between-${filters.minKg}-kg-${filters.maxKg}-kg-atm`);
-    } else if (filters.minKg) {
-      slugParts.push(`over-${filters.minKg}-kg-atm`);
-    } else if (filters.maxKg) {
-      slugParts.push(`under-${filters.maxKg}-kg-atm`);
-    }
-
-    // Sleeping Capacity Filter
-    if (filters.sleeps) {
-      const num = filters.sleeps.split("-")[0]; // Extract number of people
-      slugParts.push(`over-${num}-people-sleeping-capacity`);
-    }
-
-    // Length Filters
-    if (filters.from_length && filters.to_length) {
-      slugParts.push(
-        `between-${filters.from_length}-${filters.to_length}-length-in-feet`
-      );
-    } else if (filters.from_length) {
-      slugParts.push(`over-${filters.from_length}-length-in-feet`);
-    } else if (filters.to_length) {
-      slugParts.push(`under-${filters.to_length}-length-in-feet`);
-    }
-
-    // Combine filters into the URL
-    return `/listings/${slugParts.join("/")}`;
-  };
 
   // ✨ Add this useEffect at the bottom of your component
   useEffect(() => {
