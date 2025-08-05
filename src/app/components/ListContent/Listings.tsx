@@ -103,12 +103,11 @@ interface Props {
   sleeps?: string;
   paged?: string | number;
 }
+interface Props extends Filters {
+  paged?: string | number;
+}
 
-export default function ListingsPage({
-  minKg,
-
-  paged,
-}: Props) {
+export default function ListingsPage({ paged, ...incomingFilters }: Props) {
   const pathname =
     typeof window !== "undefined" ? window.location.pathname : "";
   const initialFilters: Filters = useMemo(() => {
@@ -400,12 +399,11 @@ export default function ListingsPage({
   // }, [filtersReady, hasSearched]);
   useEffect(() => {
     if (!hasSearched && filtersReady) {
-      filtersRef.current = initialFilters;
-      setFilters(initialFilters);
-
+      filtersRef.current = { ...initialFilters, ...incomingFilters };
+      setFilters(filtersRef.current);
       // ✅ Call loadListings only on first render
       const currentPage = parseInt(searchParams.get("paged") || "1", 10);
-      loadListings(currentPage, initialFilters);
+      loadListings(currentPage, filtersRef.current);
 
       setHasSearched(true);
     }
@@ -417,7 +415,6 @@ export default function ListingsPage({
   }, []);
 
   const handleFilterChange = useCallback((newFilters: Filters) => {
-    console.log("🚚 got from CaravanFilter →", minKg); // 👈 should contain sleeps
     const mergedFilters = { ...filtersRef.current, ...newFilters };
     console.log("🔗 Merging filters", mergedFilters);
     setHasSearched(true);

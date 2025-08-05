@@ -1,46 +1,23 @@
-// ✅ FILE: app/listings/[...slug]/page.tsx
+"use client";
+
 import ListingsPage from "@/app/components/ListContent/Listings";
-import { fetchListings } from "@/api/listings/api";
 import { parseSlugToFilters } from "../../components/urlBuilder";
+import { usePathname, useSearchParams } from "next/navigation";
+import { useMemo } from "react";
 
-export async function generateMetadata({
-  params,
-  searchParams,
-}: {
-  params: { slug?: string[] };
-  searchParams?: { [key: string]: string };
-}) {
-  const slugParts = params.slug || [];
-  const filters = parseSlugToFilters(slugParts);
+export default function Listings() {
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
 
-  const page = searchParams?.paged ? parseInt(searchParams.paged, 10) : 1;
+  const slugParts = useMemo(() => {
+    const pathSegments = pathname?.split("/").filter(Boolean);
+    const listingsIndex = pathSegments.indexOf("listings");
+    return listingsIndex !== -1 ? pathSegments.slice(listingsIndex + 1) : [];
+  }, [pathname]);
 
-  const response = await fetchListings({ ...filters, page });
+  const filters = useMemo(() => parseSlugToFilters(slugParts), [slugParts]);
 
-  const title = response?.metaTitle || "Listings";
-  const description = response?.metaDescription || "Browse available listings.";
+  const paged = searchParams?.get("paged") || "1";
 
-  return {
-    title,
-    description,
-    openGraph: {
-      title,
-      description,
-      images: ["/og-image.png"],
-    },
-  };
-}
-
-export default function Listings({
-  params,
-  searchParams,
-}: {
-  params: { slug: string[] };
-  searchParams: { paged?: string };
-}) {
-  const slugParts = params.slug || [];
-  console.log("Parsed filters", slugParts);
-  const filters = parseSlugToFilters(slugParts);
-  console.log("Parsed filters from slug:", filters);
-  return <ListingsPage {...filters} paged={searchParams?.paged || "1"} />;
+  return <ListingsPage {...filters} paged={paged} />;
 }
