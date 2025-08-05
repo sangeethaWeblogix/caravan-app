@@ -377,15 +377,16 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
       return;
     }
 
-    // Clear previous model selection
-    setSelectedModel(null);
-    setSelectedModelName(null);
     isModelFetchCompleteRef.current = false;
 
     fetchModelsByMake(selectedMake)
       .then((models) => {
         setModel(models || []);
         isModelFetchCompleteRef.current = true;
+
+        // ✅ Moved clearing logic here
+        setSelectedModel(null);
+        setSelectedModelName(null);
 
         const updatedFilters: Filters = {
           ...currentFilters,
@@ -896,6 +897,11 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
       const match = makes.find((m) => m.slug === selectedMake);
       if (match) {
         setSelectedMakeName(match.name);
+
+        // ✅ Trigger full filter+URL sync here
+        startTransition(() => {
+          updateAllFiltersAndURL(); // Push slug with current filters
+        });
       }
     }
   }, [selectedMake, makes, selectedMakeName]);
@@ -975,26 +981,32 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
   }, [currentFilters.state, selectedStateName, filtersInitialized.current]);
 
   useEffect(() => {
+    if (
+      selectedMake &&
+      !selectedModel &&
+      currentFilters.model &&
+      model.length > 0
+    ) {
+      const match = model.find((m) => m.slug === currentFilters.model);
+      if (match) {
+        setSelectedModel(match.slug);
+        setSelectedModelName(match.name);
+      }
+    }
+
     if (selectedModel && model.length > 0 && !selectedModelName) {
       const match = model.find((m) => m.slug === selectedModel);
       if (match) {
         setSelectedModelName(match.name);
       }
     }
-  }, [selectedModel, model]);
-  useEffect(() => {
-    if (selectedModel && model.length > 0) {
-      const match = model.find((m) => m.slug === selectedModel);
-      if (match) {
-        setSelectedModelName(match.name);
-      }
-    }
-  }, [selectedModel, model]);
-  useEffect(() => {
-    if (!selectedModel && currentFilters.model) {
-      setSelectedModel(currentFilters.model);
-    }
-  }, [currentFilters.model, selectedModel]);
+  }, [
+    selectedMake,
+    selectedModel,
+    model,
+    currentFilters.model,
+    selectedModelName,
+  ]);
 
   useEffect(() => {
     if (

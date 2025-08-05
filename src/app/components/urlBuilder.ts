@@ -94,9 +94,9 @@ export function parseSlugToFilters(slugParts: string[]): Filters {
         filters.from_price = match[1];
         filters.to_price = match[2];
       }
-    } else if (!filters.make && isNaN(Number(part)) && !part.includes("-")) {
+    } else if (!filters.make && isNaN(Number(part))) {
       filters.make = part;
-    } else if (!filters.model && isNaN(Number(part)) && !part.includes("-")) {
+    } else if (!filters.model && isNaN(Number(part))) {
       filters.model = part;
     }
   });

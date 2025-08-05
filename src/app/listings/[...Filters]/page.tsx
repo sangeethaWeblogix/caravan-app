@@ -45,8 +45,8 @@ import { useMemo } from "react";
 export default function Listings() {
   const pathname =
     typeof window !== "undefined" ? window.location.pathname : "";
-  // const searchParams = useSearchParams();
-  console.log("pathname", pathname);
+  const search = typeof window !== "undefined" ? window.location.search : "";
+
   const slugParts = useMemo(() => {
     const pathSegments = pathname?.split("/").filter(Boolean);
     const listingsIndex = pathSegments.indexOf("listings");
@@ -55,8 +55,7 @@ export default function Listings() {
 
   const filters = useMemo(() => parseSlugToFilters(slugParts), [slugParts]);
 
-  // const paged = searchParams?.get("paged") || "1";
-  const params = new URLSearchParams(pathname);
+  const params = new URLSearchParams(search);
   const paged = params.get("paged") || "1";
 
   return <ListingsPage {...filters} paged={paged} />;
