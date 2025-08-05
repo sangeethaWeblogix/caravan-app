@@ -581,7 +581,7 @@ export default function ListingsPage({ paged, ...incomingFilters }: Props) {
       const currentPage = parseInt(searchParams.get("paged") || "1", 10);
       loadListings(currentPage, filtersRef.current);
     }
-  }, [filters]);
+  }, [filters, hasSearched]);
 
   console.log("metaaa", metaTitle);
   return (
