@@ -1,23 +1,23 @@
-// app/listings/[...slug]/page.tsx or listings.tsx
 "use client";
-import { usePathname } from "next/navigation";
+
 import ListingsPage from "@/app/components/ListContent/Listings";
+import { parseSlugToFilters } from "../../components/urlBuilder";
+import { usePathname, useSearchParams } from "next/navigation";
+import { useMemo } from "react";
 
-const Listings = () => {
+export default function Listings() {
   const pathname = usePathname();
+  const searchParams = useSearchParams();
 
-  const pathParts = pathname?.split("/").filter(Boolean);
-  const slug1 = pathParts?.[1];
-  const slug2 = pathParts?.[2];
+  const slugParts = useMemo(() => {
+    const pathSegments = pathname?.split("/").filter(Boolean);
+    const listingsIndex = pathSegments.indexOf("listings");
+    return listingsIndex !== -1 ? pathSegments.slice(listingsIndex + 1) : [];
+  }, [pathname]);
 
-  const category = slug1?.endsWith("-category")
-    ? slug1.replace("-category", "")
-    : undefined;
-  const location = (slug2 ?? (slug1?.endsWith("-state") ? slug1 : undefined))
-    ?.replace("-state", "")
-    ?.replace(/-/g, " ");
+  const filters = useMemo(() => parseSlugToFilters(slugParts), [slugParts]);
 
-  return <ListingsPage category={category} location={location} />;
-};
+  const paged = searchParams?.get("paged") || "1";
 
-export default Listings;
+  return <ListingsPage {...filters} paged={paged} />;
+}

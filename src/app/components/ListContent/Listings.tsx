@@ -15,6 +15,9 @@ import SkeletonListing from "../skelton";
 import Footer from "../Footer";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
+import { buildSlugFromFilters } from "../slugBuilter";
+import { parseSlugToFilters } from "../../components/urlBuilder";
+
 import Head from "next/head";
 interface Product {
   id: number;
@@ -83,62 +86,179 @@ interface Props {
   location?: string;
   metaTitle?: string;
   metaDescription?: string;
+  make?: string;
+  model?: string;
+  state?: string;
+  region?: string;
+  suburb?: string;
+  pincode?: string;
+  from_price?: string | number;
+  to_price?: string | number;
+  minKg?: string | number;
+  maxKg?: string | number;
+  from_length?: string | number;
+  to_length?: string | number;
+  from_year?: string | number;
+  to_year?: string | number;
+  sleeps?: string;
+  paged?: string | number;
+}
+interface Props extends Filters {
+  paged?: string | number;
 }
 
-export default function ListingsPage({ category, condition, location }: Props) {
+export default function ListingsPage({ paged, ...incomingFilters }: Props) {
   const pathname =
     typeof window !== "undefined" ? window.location.pathname : "";
-
-  // ✅ FIX: Add suburb/postcode extraction to initialFilters
   const initialFilters: Filters = useMemo(() => {
-    const parsedCategory = category?.replace("-category", "") || undefined;
-    const parsedCondition = condition?.replace("-condition", "") || undefined;
-    const sleepMatch = pathname.match(/over-(\d+)-people-sleeping-capacity/);
-    const parsedSleep = sleepMatch ? `${sleepMatch[1]}-people` : undefined;
-
     const slugParts = pathname.split("/listings/")[1]?.split("/") || [];
+    return parseSlugToFilters(slugParts);
+  }, [pathname]);
 
-    const statePart = slugParts.find((part) => part.endsWith("-state"));
-    const regionPart = slugParts.find((part) => part.endsWith("-region"));
-    const suburbPart = slugParts.find((part) => part.endsWith("-suburb"));
-    const postcodePart = slugParts.find((part) => /^\\d{4}$/.test(part));
-    const categoryPart = slugParts.find((part) => part.includes("-category"));
+  // const initialFilters: Filters = useMemo(() => {
+  //   const slugParts = pathname.split("/listings/")[1]?.split("/") || [];
+  //   const statePart = slugParts.find((part) => part.endsWith("-state"));
+  //   const regionPart = slugParts.find((part) => part.endsWith("-region"));
+  //   const suburbPart = slugParts.find((part) => part.endsWith("-suburb"));
+  //   const postcodePart = slugParts.find((part) => /^\d{4}$/.test(part));
+  //   const categoryPart = slugParts.find((part) => part.includes("-category"));
+  //   const conditionPart = slugParts.find((part) => part.includes("-condition"));
 
-    const conditionPart = slugParts.find((part) => part.includes("-condition"));
+  //   const knownSlugs = [
+  //     statePart,
+  //     regionPart,
+  //     suburbPart,
+  //     postcodePart,
+  //     categoryPart,
+  //     conditionPart,
+  //   ].filter(Boolean);
+  //   const unknownSlugs = slugParts.filter((slug) => !knownSlugs.includes(slug));
 
-    const knownSlugs = [
-      statePart,
-      regionPart,
-      suburbPart,
-      postcodePart,
-      categoryPart,
-      conditionPart,
-    ].filter(Boolean);
-    const unknownSlugs = slugParts.filter((slug) => !knownSlugs.includes(slug));
+  //   const parsedSleepMatch = pathname.match(
+  //     /over-(\d+)-people-sleeping-capacity/
+  //   );
+  //   const parsedSleep = parsedSleepMatch
+  //     ? `${parsedSleepMatch[1]}-people`
+  //     : undefined;
 
-    const make = unknownSlugs[0];
-    const model = unknownSlugs[1];
+  //   const parsedCategory =
+  //     category || categoryPart?.replace("-category", "") || undefined;
+  //   const parsedCondition =
+  //     condition || conditionPart?.replace("-condition", "") || undefined;
+  //   const parsedState =
+  //     state || statePart?.replace("-state", "").replace(/-/g, " ");
+  //   const parsedRegion =
+  //     region || regionPart?.replace("-region", "").replace(/-/g, " ");
+  //   const parsedSuburb =
+  //     suburb || suburbPart?.replace("-suburb", "").replace(/-/g, " ");
+  //   const parsedPostcode = pincode || postcodePart;
 
-    return {
-      ...(make && { make }),
-      ...(model && { model }),
-      ...(parsedCategory && { category: parsedCategory }),
-      ...(parsedCondition && { condition: parsedCondition }),
-      ...(parsedSleep && { sleeps: parsedSleep }),
-      ...(statePart && {
-        state: statePart.replace("-state", "").replace(/-/g, " "),
-      }),
-      ...(regionPart && {
-        region: regionPart.replace("-region", "").replace(/-/g, " "),
-      }),
-      ...(suburbPart && {
-        suburb: suburbPart?.replace("-suburb", "").replace(/-/g, " "),
-      }),
-      ...(postcodePart && {
-        postcode: postcodePart,
-      }),
-    };
-  }, [category, condition, pathname]);
+  //   // ✅ Safely assign make and model from unknownSlugs
+  //   const isValidSlug = (s?: string) =>
+  //     !!s && isNaN(Number(s)) && !s.includes("-");
+
+  //   const finalMake =
+  //     make || (isValidSlug(unknownSlugs[0]) ? unknownSlugs[0] : undefined);
+  //   const finalModel =
+  //     model || (isValidSlug(unknownSlugs[1]) ? unknownSlugs[1] : undefined);
+
+  //   // ✅ Init all filters
+  //   let from_price_final = from_price?.toString();
+  //   let to_price_final = to_price?.toString();
+  //   let minKg_final = minKg?.toString();
+  //   let maxKg_final = maxKg?.toString();
+  //   let from_length_final = from_length?.toString();
+  //   let to_length_final = to_length?.toString();
+
+  //   slugParts.forEach((slug) => {
+  //     // ✅ ATM weight parser
+  //     if (slug.includes("-kg-atm")) {
+  //       if (slug.startsWith("between-")) {
+  //         const match = slug.match(/between-(\d+)-kg-(\d+)-kg-atm/);
+  //         if (match) {
+  //           minKg_final ||= match[1];
+  //           maxKg_final ||= match[2];
+  //         }
+  //       } else if (slug.startsWith("over-")) {
+  //         minKg_final ||= slug.replace("over-", "").replace("-kg-atm", "");
+  //       } else if (slug.startsWith("under-")) {
+  //         maxKg_final ||= slug.replace("under-", "").replace("-kg-atm", "");
+  //       }
+  //       return;
+  //     }
+
+  //     // ✅ Price parser
+  //     if (/^over-\d+$/.test(slug)) {
+  //       from_price_final ||= slug.replace("over-", "");
+  //     } else if (/^under-\d+$/.test(slug)) {
+  //       to_price_final ||= slug.replace("under-", "");
+  //     } else if (/^between-\d+-\d+$/.test(slug)) {
+  //       const match = slug.match(/between-(\d+)-(\d+)/);
+  //       if (match) {
+  //         from_price_final ||= match[1];
+  //         to_price_final ||= match[2];
+  //       }
+  //     }
+
+  //     // ✅ Length parser
+  //     if (slug.includes("length-in-feet")) {
+  //       if (slug.startsWith("between-")) {
+  //         const match = slug.match(/between-(\d+)-(\d+)-length-in-feet/);
+  //         if (match) {
+  //           from_length_final ||= match[1];
+  //           to_length_final ||= match[2];
+  //         }
+  //       } else if (slug.startsWith("over-")) {
+  //         from_length_final ||= slug
+  //           .replace("over-", "")
+  //           .replace("-length-in-feet", "");
+  //       } else if (slug.startsWith("under-")) {
+  //         to_length_final ||= slug
+  //           .replace("under-", "")
+  //           .replace("-length-in-feet", "");
+  //       }
+  //     }
+  //   });
+
+  //   return {
+  //     make: finalMake,
+  //     model: finalModel,
+  //     category: parsedCategory,
+  //     condition: parsedCondition,
+  //     sleeps: sleeps || parsedSleep,
+  //     state: parsedState,
+  //     region: parsedRegion,
+  //     suburb: parsedSuburb,
+  //     pincode: parsedPostcode,
+  //     from_price: from_price_final,
+  //     to_price: to_price_final,
+  //     minKg: minKg_final,
+  //     maxKg: maxKg_final,
+  //     from_length: from_length_final,
+  //     to_length: to_length_final,
+  //     from_year,
+  //     to_year,
+  //   };
+  // }, [
+  //   pathname,
+  //   category,
+  //   condition,
+  //   make,
+  //   model,
+  //   state,
+  //   region,
+  //   suburb,
+  //   pincode,
+  //   from_price,
+  //   to_price,
+  //   minKg,
+  //   maxKg,
+  //   from_length,
+  //   to_length,
+  //   from_year,
+  //   to_year,
+  //   sleeps,
+  // ]);
 
   const [filtersReady, setFiltersReady] = useState(false);
   const [filters, setFilters] = useState<Filters>(initialFilters);
@@ -157,8 +277,8 @@ export default function ListingsPage({ category, condition, location }: Props) {
   const [hasSearched, setHasSearched] = useState(false);
   const router = useRouter();
   const searchParams = useSearchParams();
-  const initialPage = parseInt(searchParams.get("paged") || "1", 10);
-
+  // const initialPage = parseInt(searchParams.get("paged") || "1", 10);
+  const initialPage = parseInt(paged?.toString() || "1", 10);
   const [pagination, setPagination] = useState<Pagination>({
     current_page: initialPage,
     total_pages: 1,
@@ -183,7 +303,6 @@ export default function ListingsPage({ category, condition, location }: Props) {
     loadListings(page, filtersRef.current);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams, pagination, filtersReady]);
-  console.log(location);
 
   console.log("✅ Filters about to be applied:", filtersRef.current);
 
@@ -270,12 +389,23 @@ export default function ListingsPage({ category, condition, location }: Props) {
     [] // ✅ fixed dependency
   );
 
+  // useEffect(() => {
+  //   if (!hasSearched && filtersReady) {
+  //     filtersRef.current = initialFilters;
+  //     setFilters(initialFilters); // ✅ sync filter state
+  //     // loadListings(initialPage, initialFilters); // ✅ call even if no filters
+  //     setHasSearched(true); // ✅ avoid re-fetching
+  //   }
+  // }, [filtersReady, hasSearched]);
   useEffect(() => {
     if (!hasSearched && filtersReady) {
-      filtersRef.current = initialFilters;
-      setFilters(initialFilters); // ✅ sync filter state
-      // loadListings(initialPage, initialFilters); // ✅ call even if no filters
-      setHasSearched(true); // ✅ avoid re-fetching
+      filtersRef.current = { ...initialFilters, ...incomingFilters };
+      setFilters(filtersRef.current);
+      // ✅ Call loadListings only on first render
+      const currentPage = parseInt(searchParams.get("paged") || "1", 10);
+      loadListings(currentPage, filtersRef.current);
+
+      setHasSearched(true);
     }
   }, [filtersReady, hasSearched]);
 
@@ -285,14 +415,10 @@ export default function ListingsPage({ category, condition, location }: Props) {
   }, []);
 
   const handleFilterChange = useCallback((newFilters: Filters) => {
-    console.log("🚚 got from CaravanFilter →", categories); // 👈 should contain sleeps
-    const mergedFilters = {
-      ...filtersRef.current,
-      ...newFilters,
-      category: newFilters.category || filtersRef.current.category, // Fallback
-    };
+    const mergedFilters = { ...filtersRef.current, ...newFilters };
     console.log("🔗 Merging filters", mergedFilters);
     setHasSearched(true);
+    setFiltersReady(true);
     setFilters(mergedFilters);
     filtersRef.current = mergedFilters;
     const pageFromURL = parseInt(searchParams.get("paged") || "1", 10);
@@ -304,87 +430,10 @@ export default function ListingsPage({ category, condition, location }: Props) {
       total_products: 0,
     });
     setFiltersReady(true);
-    loadListings(pageFromURL, mergedFilters);
+    // loadListings(pageFromURL, mergedFilters);
     console.log("🔗 calling updateURLWithFilters");
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-
-  const buildSlugPath = () => {
-    const slugParts: string[] = [];
-
-    // Make and Model Filters
-    if (filters.make) {
-      slugParts.push(filters.make);
-      if (filters.model && filters.model !== filters.make) {
-        slugParts.push(filters.model); // Ensure model is only added if it is different from make
-      }
-    }
-
-    // Category and Condition Filters
-    if (filters.category) slugParts.push(`${filters.category}-category`);
-    if (filters.condition)
-      slugParts.push(`${filters.condition.toLowerCase()}-condition`);
-
-    // Location Filters: State → Region → Suburb → Postcode
-    if (filters.state) {
-      slugParts.push(
-        `${filters.state.toLowerCase().replace(/\s+/g, "-")}-state`
-      );
-    }
-
-    if (filters.region && filters.state) {
-      slugParts.push(
-        `${filters.region.toLowerCase().replace(/\s+/g, "-")}-region`
-      );
-    }
-
-    if (filters.suburb) {
-      slugParts.push(
-        `${filters.suburb.toLowerCase().replace(/\s+/g, "-")}-suburb`
-      );
-      if (filters.pincode) {
-        slugParts.push(filters.pincode); // Ensure postcode is included in the slug
-      }
-    }
-
-    // Price and ATM Filters
-    if (filters.from_price && filters.to_price) {
-      slugParts.push(`between-${filters.from_price}-${filters.to_price}`);
-    } else if (filters.from_price) {
-      slugParts.push(`over-${filters.from_price}`);
-    } else if (filters.to_price) {
-      slugParts.push(`under-${filters.to_price}`);
-    }
-
-    // Weight (ATM) Range Filters
-    if (filters.minKg && filters.maxKg) {
-      slugParts.push(`between-${filters.minKg}-kg-${filters.maxKg}-kg-atm`);
-    } else if (filters.minKg) {
-      slugParts.push(`over-${filters.minKg}-kg-atm`);
-    } else if (filters.maxKg) {
-      slugParts.push(`under-${filters.maxKg}-kg-atm`);
-    }
-
-    // Sleeping Capacity Filter
-    if (filters.sleeps) {
-      const num = filters.sleeps.split("-")[0]; // Extract number of people
-      slugParts.push(`over-${num}-people-sleeping-capacity`);
-    }
-
-    // Length Filters
-    if (filters.from_length && filters.to_length) {
-      slugParts.push(
-        `between-${filters.from_length}-${filters.to_length}-length-in-feet`
-      );
-    } else if (filters.from_length) {
-      slugParts.push(`over-${filters.from_length}-length-in-feet`);
-    } else if (filters.to_length) {
-      slugParts.push(`under-${filters.to_length}-length-in-feet`);
-    }
-
-    // Combine filters into the URL
-    return `/listings/${slugParts.join("/")}`;
-  };
 
   // ✨ Add this useEffect at the bottom of your component
   useEffect(() => {
@@ -448,67 +497,91 @@ export default function ListingsPage({ category, condition, location }: Props) {
     twImg.setAttribute("content", imageUrl); // Fallback image if not provided
   }, [metaTitle, metaDescription, metaImage]); // Trigger this useEffect whenever any of these values change
 
-  const updateURLWithFilters = (page: number) => {
-    console.log("✅ updateURLWithFilters CALLED with page:", page);
-    const current = new URLSearchParams(searchParams.toString());
-    current.set("paged", page.toString());
-    console.log(
-      "🧭 New URL will be:",
-      `${buildSlugPath()}?${current.toString()}`
-    );
+  // const updateURLWithFilters = (page: number) => {
+  //    const slug = buildSlugFromFilters(filters);
+  //   console.log("✅ updateURLWithFilters CALLED with page:", page);
+  //   const current = new URLSearchParams(searchParams.toString());
+  //   current.set("paged", page.toString());
+  //   console.log(
+  //     "🧭 New URL will be:",
+  //     `${buildSlugPath()}?${current.toString()}`
+  //   );
 
-    Object.entries(filters).forEach(([key, value]) => {
-      if (
-        value &&
-        ![
-          "category",
-          "location",
-          "minKg",
-          "maxKg",
-          "from_price",
-          "to_price",
-          "sleeps",
-          "condition",
-          "from_year",
-          "to_year",
-          "from_length",
-          "to_length",
-          "make",
-          "model",
-          "state",
-          "region",
-          "suburb",
-        ].includes(key)
-      ) {
-        current.set(key, value.toString());
-      } else {
-        current.delete(key);
-      }
-    });
+  //   Object.entries(filters).forEach(([key, value]) => {
+  //     if (
+  //       value &&
+  //       ![
+  //         "category",
+  //         "location",
+  //         "minKg",
+  //         "maxKg",
+  //         "from_price",
+  //         "to_price",
+  //         "sleeps",
+  //         "condition",
+  //         "from_year",
+  //         "to_year",
+  //         "from_length",
+  //         "to_length",
+  //         "make",
+  //         "model",
+  //         "state",
+  //         "region",
+  //         "suburb",
+  //       ].includes(key)
+  //     ) {
+  //       current.set(key, value.toString());
+  //     } else {
+  //       current.delete(key);
+  //     }
+  //   });
 
-    const finalUrl = `${buildSlugPath()}?${current.toString()}`;
-    console.log("🚀 Updating URL to:", finalUrl);
-    // 👇 Only update the URL. Let useEffect trigger the API
-    router.push(finalUrl);
+  //   const finalUrl = `${buildSlugPath()}?${current.toString()}`;
+  //   console.log("🚀 Updating URL to:", finalUrl);
+  //   // 👇 Only update the URL. Let useEffect trigger the API
+  //   router.push(finalUrl);
+  // };
+
+  const updateURLWithFilters = (filters: Filters, page: number) => {
+    const slug = buildSlugFromFilters(filters); // no ?paged=1 inside it
+    const query = new URLSearchParams();
+
+    if (filters.from_year)
+      query.set("acustom_fromyears", filters.from_year.toString());
+
+    if (filters.to_year)
+      query.set("acustom_toyears", filters.to_year.toString());
+
+    // ✅ Only add paged if greater than 1
+    if (page > 1) {
+      query.set("paged", page.toString());
+    }
+
+    const finalURL = query.toString() ? `${slug}?${query}` : slug;
+    router.push(finalURL);
   };
 
   const handleNextPage = () => {
     if (pagination.current_page < pagination.total_pages) {
       const nextPage = pagination.current_page + 1;
       console.log("🟢 Triggering updateURLWithFilters with page:", nextPage);
-      updateURLWithFilters(nextPage); // triggers useEffect to fetch correct page
+      updateURLWithFilters(filtersRef.current, nextPage); // triggers useEffect to fetch correct page
     }
   };
 
   const handlePrevPage = () => {
     if (pagination.current_page > 1) {
       const prevPage = pagination.current_page - 1;
-      updateURLWithFilters(prevPage);
+      updateURLWithFilters(filtersRef.current, prevPage);
     }
   };
+
   useEffect(() => {
-    loadListings(1);
-  }, []);
+    if (filtersReady && hasSearched) {
+      const currentPage = parseInt(searchParams.get("paged") || "1", 10);
+      loadListings(currentPage, filtersRef.current);
+    }
+  }, [filters]);
 
   console.log("metaaa", metaTitle);
   return (

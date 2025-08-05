@@ -1,68 +1,127 @@
-import { Filters } from "./CaravanFilter"; // or wherever Filters is declared
+// utils/parseFilters.ts
 
-export const generateSlugURL = (
+export interface Filters {
+  category?: string;
+  condition?: string;
+  state?: string;
+  region?: string;
+  suburb?: string;
+  pincode?: string;
+  from_price?: string;
+  to_price?: string;
+  minKg?: string;
+  maxKg?: string;
+  from_length?: string;
+  to_length?: string;
+  sleeps?: string;
+  make?: string;
+  model?: string;
+}
+
+const conditionMap: Record<string, string> = {
+  new: "New",
+  used: "Used",
+  "near-new": "Near New",
+};
+
+export function parseSlugToFilters(slugParts: string[]): Filters {
+  const filters: Filters = {};
+
+  slugParts.forEach((part) => {
+    if (part.endsWith("-category")) {
+      filters.category = part.replace("-category", "");
+    } else if (part.endsWith("-condition")) {
+      const slug = part.replace("-condition", "").toLowerCase();
+      filters.condition = conditionMap[slug] || slug;
+    } else if (part.endsWith("-state")) {
+      filters.state = part.replace("-state", "").replace(/-/g, " ");
+    } else if (part.endsWith("-region")) {
+      filters.region = part.replace("-region", "").replace(/-/g, " ");
+    } else if (part.endsWith("-suburb")) {
+      filters.suburb = part.replace("-suburb", "").replace(/-/g, " ");
+    } else if (/^\d{4}$/.test(part)) {
+      filters.pincode = part;
+    } else if (part.includes("-kg-atm")) {
+      if (part.startsWith("between-")) {
+        const match = part.match(/between-(\d+)-kg-(\d+)-kg-atm/);
+        if (match) {
+          filters.minKg = match[1];
+          filters.maxKg = match[2];
+        }
+      } else if (part.startsWith("over-")) {
+        filters.minKg = part.replace("over-", "").replace("-kg-atm", "");
+      } else if (part.startsWith("under-")) {
+        filters.maxKg = part.replace("under-", "").replace("-kg-atm", "");
+      }
+    } else if (part.includes("length-in-feet")) {
+      if (part.startsWith("between-")) {
+        const match = part.match(/between-(\d+)-(\d+)-length-in-feet/);
+        if (match) {
+          filters.from_length = match[1];
+          filters.to_length = match[2];
+        }
+      } else if (part.startsWith("over-")) {
+        filters.from_length = part
+          .replace("over-", "")
+          .replace("-length-in-feet", "");
+      } else if (part.startsWith("under-")) {
+        filters.to_length = part
+          .replace("under-", "")
+          .replace("-length-in-feet", "");
+      }
+    } else if (part.includes("-people-sleeping-capacity")) {
+      if (/^between-\d+-and-\d+-people-sleeping-capacity$/.test(part)) {
+        const match = part.match(
+          /between-(\d+)-and-(\d+)-people-sleeping-capacity/
+        );
+        if (match) {
+          filters.sleeps = `${match[1]}-people`;
+        }
+      } else {
+        const raw = part.replace("-people-sleeping-capacity", "");
+        const cleaned = raw.replace(/^over-/, "").replace(/^under-/, "");
+        if (!isNaN(Number(cleaned))) {
+          filters.sleeps = `${cleaned}-people`;
+        }
+      }
+    } else if (/^over-\d+$/.test(part)) {
+      filters.from_price = part.replace("over-", "");
+    } else if (/^under-\d+$/.test(part)) {
+      filters.to_price = part.replace("under-", "");
+    } else if (/^between-\d+-\d+$/.test(part)) {
+      const match = part.match(/between-(\d+)-(\d+)/);
+      if (match) {
+        filters.from_price = match[1];
+        filters.to_price = match[2];
+      }
+    } else if (!filters.make && isNaN(Number(part)) && !part.includes("-")) {
+      filters.make = part;
+    } else if (!filters.model && isNaN(Number(part)) && !part.includes("-")) {
+      filters.model = part;
+    }
+  });
+
+  return filters;
+}
+
+export function parsePathnameToFilters(pathname: string): Filters {
+  const slugParts = pathname.split("/listings/")[1]?.split("/") || [];
+  return parseSlugToFilters(slugParts);
+}
+
+export function refineMakeModel(
   filters: Filters,
-  selectedStateName?: string,
-  selectedSuburbName?: string,
-  selectedMake?: string,
-  selectedModel?: string
-): string => {
-  const {
-    from_price,
-    to_price,
-    minKg,
-    maxKg,
-    from_length,
-    to_length,
-    condition,
-    sleeps,
-    from_year,
-    to_year,
-    category,
-  } = filters;
+  knownMakes: string[],
+  knownModels: string[]
+): Filters {
+  const refined = { ...filters };
 
-  const slugParts: string[] = [];
-
-  if (condition)
-    slugParts.push(`${condition.toLowerCase().replace(/\s+/g, "-")}-condition`);
-  if (category) slugParts.push(`${category}-category`);
-  if (selectedSuburbName) slugParts.push(`${selectedSuburbName}-suburb`);
-  if (selectedStateName)
-    slugParts.push(`${selectedStateName.toLowerCase()}-state`);
-
-  if (from_price && to_price)
-    slugParts.push(`between-${from_price}-${to_price}`);
-  else if (from_price) slugParts.push(`over-${from_price}`);
-  else if (to_price) slugParts.push(`under-${to_price}`);
-
-  if (minKg && maxKg) slugParts.push(`between-${minKg}-kg-${maxKg}-kg-atm`);
-  else if (minKg) slugParts.push(`over-${minKg}-kg-atm`);
-  else if (maxKg) slugParts.push(`under-${maxKg}-kg-atm`);
-
-  if (sleeps) {
-    const people = sleeps.replace("-people", "");
-    slugParts.push(`over-${people}-people-sleeping-capacity`);
+  if (refined.make && !knownMakes.includes(refined.make)) {
+    refined.make = undefined;
+  }
+  if (refined.model && !knownModels.includes(refined.model)) {
+    refined.model = undefined;
   }
 
-  if (from_length && to_length)
-    slugParts.push(`between-${from_length}-${to_length}-length-in-feet`);
-  else if (from_length) slugParts.push(`over-${from_length}-length-in-feet`);
-  else if (to_length) slugParts.push(`under-${to_length}-length-in-feet`);
-
-  if (selectedMake) slugParts.push(selectedMake);
-  if (selectedModel) slugParts.push(selectedModel);
-
-  let slugifiedURL = `/listings/${slugParts.join("/")}`
-    .replace(/\s+/g, "-")
-    .replace(/-+/g, "-")
-    .toLowerCase();
-
-  const query: Record<string, string> = {};
-  if (from_year) query.acustom_fromyears = String(from_year);
-  if (to_year) query.acustom_toyears = String(to_year);
-
-  const queryString = new URLSearchParams(query).toString();
-  if (queryString) slugifiedURL += `?${queryString}`;
-
-  return slugifiedURL;
-};
+  return refined;
+}
