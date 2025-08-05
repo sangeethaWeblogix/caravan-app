@@ -36,7 +36,10 @@ export function parseSlugToFilters(slugParts: string[]): Filters {
     } else if (part.endsWith("-state")) {
       filters.state = part.replace("-state", "").replace(/-/g, " ");
     } else if (part.endsWith("-region")) {
-      filters.region = part.replace("-region", "").replace(/-/g, " ");
+      filters.region = part
+        .replace("-region", "") // remove the suffix
+        .replace(/-/g, " ") // convert hyphens to spaces
+        .toLowerCase(); // make all lowercase
     } else if (part.endsWith("-suburb")) {
       filters.suburb = part.replace("-suburb", "").replace(/-/g, " ");
     } else if (/^\d{4}$/.test(part)) {

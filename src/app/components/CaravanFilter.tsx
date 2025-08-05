@@ -321,16 +321,17 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
   }, [pathname, categories]);
   // doubt
   // // Dependencies to trigger when state/region/suburb change
+
   useEffect(() => {
     if (!selectedState) return;
 
-    const slugifiedState = selectedState.toLowerCase().replace(/\s+/g, "-");
-    const slugifiedRegion = selectedRegionName
-      ? selectedRegionName.toLowerCase().replace(/\s+/g, "-")
-      : "";
-    const slugifiedSuburb = selectedSuburbName
-      ? selectedSuburbName.toLowerCase().replace(/\s+/g, "-")
-      : "";
+    // const slugifiedState = selectedState.toLowerCase().replace(/\s+/g, "-");
+    // const slugifiedRegion = selectedRegionName
+    //   ? selectedRegionName.toLowerCase().replace(/\s+/g, "-")
+    //   : "";
+    // const slugifiedSuburb = selectedSuburbName
+    //   ? selectedSuburbName.toLowerCase().replace(/\s+/g, "-")
+    //   : "";
 
     const updatedFilters: Filters = {
       ...currentFilters,
@@ -350,13 +351,17 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
 
     if (selectedSuburbName && selectedPostcode) {
       // ✅ Suburb + Postcode format
-      newPath = `/listings/${slugifiedSuburb}-suburb/${slugifiedState}-state/${selectedPostcode}`;
+      newPath = `/listings/${slugify(selectedSuburbName)}-suburb/${slugify(
+        selectedStateName
+      )}-state/${selectedPostcode}`;
     } else if (selectedRegionName) {
       // ✅ State + Region format
-      newPath = `/listings/${slugifiedState}-state/${slugifiedRegion}-region`;
+      newPath = `/listings/${slugify(selectedStateName)}-state/${slugify(
+        selectedRegionName
+      )}-region`;
     } else {
       // ✅ State only
-      newPath = `/listings/${slugifiedState}-state`;
+      newPath = `/listings/${slugify(selectedStateName)}-state`;
     }
 
     router.push(newPath);
