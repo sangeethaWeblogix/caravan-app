@@ -1,14 +1,52 @@
-"use client";
-
+// ✅ FILE: src/app/listings/[...Filters]/page.tsx
+// import { Metadata } from "next";
 import ListingsPage from "@/app/components/ListContent/Listings";
+// import { fetchListings } from "@/api/listings/api";
 import { parseSlugToFilters } from "../../components/urlBuilder";
-import { usePathname, useSearchParams } from "next/navigation";
 import { useMemo } from "react";
 
-export default function Listings() {
-  const pathname = usePathname();
-  const searchParams = useSearchParams();
+// export async function generateMetadata({
+//   params,
+//   searchParams,
+// }: {
+//   params: { Filters?: string[] };
+//   searchParams?: { [key: string]: string | string[] | undefined };
+// }): Promise<Metadata> {
+//   const slugParts = params.Filters || [];
+//   const filters = parseSlugToFilters(slugParts);
+//   const page =
+//     typeof searchParams?.paged === "string"
+//       ? parseInt(searchParams.paged, 10)
+//       : 1;
 
+//   const response = await fetchListings({ ...filters, page });
+
+//   return {
+//     title: response?.metaTitle || "Listings",
+//     description: response?.metaDescription || "Browse available listings.",
+//     openGraph: {
+//       title: response?.metaTitle || "Listings",
+//       description: response?.metaDescription || "Browse available listings.",
+//       images: ["/og-image.png"],
+//     },
+//   };
+// }
+
+// export default function Listings({ params, searchParams }: PageProps) {
+//   const slugParts = params.Filters || [];
+//   const filters = parseSlugToFilters(slugParts);
+
+//   const paged = Array.isArray(searchParams?.paged)
+//     ? searchParams.paged[0]
+//     : searchParams?.paged || "1";
+
+//   return <ListingsPage {...filters} paged={paged} />;
+// }
+export default function Listings() {
+  const pathname =
+    typeof window !== "undefined" ? window.location.pathname : "";
+  // const searchParams = useSearchParams();
+  console.log("pathname", pathname);
   const slugParts = useMemo(() => {
     const pathSegments = pathname?.split("/").filter(Boolean);
     const listingsIndex = pathSegments.indexOf("listings");
@@ -17,7 +55,9 @@ export default function Listings() {
 
   const filters = useMemo(() => parseSlugToFilters(slugParts), [slugParts]);
 
-  const paged = searchParams?.get("paged") || "1";
+  // const paged = searchParams?.get("paged") || "1";
+  const params = new URLSearchParams(pathname);
+  const paged = params.get("paged") || "1";
 
   return <ListingsPage {...filters} paged={paged} />;
 }
