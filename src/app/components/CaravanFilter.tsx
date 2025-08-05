@@ -202,22 +202,7 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
     loadFilters();
   }, []);
   const urlJustUpdatedRef = useRef(false);
-  // useEffect(() => {
-  //   if (currentFilters.minKg && !atmFrom) {
-  //     setAtmFrom(Number(currentFilters.minKg));
-  //   }
-  //   if (currentFilters.maxKg && !atmTo) {
-  //     setAtmTo(Number(currentFilters.maxKg));
-  //   }
-  // }, [currentFilters.minKg, currentFilters.maxKg, atmFrom, atmTo]);
-  // useEffect(() => {
-  //   if (currentFilters.from_price && !minPrice) {
-  //     setMinPrice(Number(currentFilters.from_price));
-  //   }
-  //   if (currentFilters.to_price && !maxPrice) {
-  //     setMaxPrice(Number(currentFilters.to_price));
-  //   }
-  // }, [currentFilters.from_price, currentFilters.to_price, minPrice, maxPrice]);
+  // correct -2
   useEffect(() => {
     // ATM
     if (currentFilters.minKg !== undefined && atmFrom === null) {
@@ -272,103 +257,76 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
     selectedConditionName,
   ]);
 
-  useEffect(() => {
-    if (currentFilters.category && !selectedCategory && categories.length > 0) {
-      const cat = categories.find((c) => c.slug === currentFilters.category);
-      if (cat) {
-        setSelectedCategory(cat.slug);
-        setSelectedCategoryName(cat.name);
-      }
-    }
-  }, [currentFilters.category, selectedCategory, categories]);
+  // useEffect(() => {
+  //   if (currentFilters.category && !selectedCategory && categories.length > 0) {
+  //     const cat = categories.find((c) => c.slug === currentFilters.category);
+  //     if (cat) {
+  //       setSelectedCategory(cat.slug);
+  //       setSelectedCategoryName(cat.name);
+  //     }
+  //   }
+  // }, [currentFilters.category, selectedCategory, categories]);
 
-  useEffect(() => {
-    const slug = pathname.split("/listings/")[1];
-    const segments = slug?.split("/") || [];
+  // useEffect(() => {
+  //   const slug = pathname.split("/listings/")[1];
+  //   const segments = slug?.split("/") || [];
 
-    const categorySegment = segments.find((s) => s.endsWith("-category"));
-    if (categorySegment && categories.length > 0) {
-      const categorySlug = categorySegment.replace("-category", "");
-      const match = categories.find((c) => c.slug === categorySlug);
-      if (match) {
-        setSelectedCategory(categorySlug);
-        setSelectedCategoryName(match.name);
+  //   const categorySegment = segments.find((s) => s.endsWith("-category"));
+  //   if (categorySegment && categories.length > 0) {
+  //     const categorySlug = categorySegment.replace("-category", "");
+  //     const match = categories.find((c) => c.slug === categorySlug);
+  //     if (match) {
+  //       setSelectedCategory(categorySlug);
+  //       setSelectedCategoryName(match.name);
+  //     }
+  //   }
+  // }, [pathname, categories]);
 
-        if (!hasCategoryBeenSetRef.current) {
-          hasCategoryBeenSetRef.current = true;
+  // correct - 1
+  // useEffect(() => {
+  //   if (!selectedState) return;
 
-          const updatedFilters: Filters = {
-            ...currentFilters,
-            category: categorySlug,
-            make: selectedMake || filters.make || currentFilters.make,
-            model: selectedModel || filters.model || currentFilters.model,
-            state: selectedStateName || filters.state || currentFilters.state,
-            region:
-              selectedRegionName || filters.region || currentFilters.region,
-            suburb:
-              selectedSuburbName || filters.suburb || currentFilters.suburb,
-            pincode:
-              selectedPostcode || filters.pincode || currentFilters.pincode,
-          };
+  //   const updatedFilters: Filters = {
+  //     ...currentFilters,
+  //     state: selectedState,
+  //     region: selectedRegionName || undefined,
+  //     suburb: selectedSuburbName || undefined,
+  //     pincode: selectedPostcode || undefined,
+  //     make: selectedMake || currentFilters.make || undefined,
+  //     model: selectedModel || currentFilters.model,
+  //   };
 
-          setFilters(updatedFilters);
-          // onFilterChange(updatedFilters);
+  //   setFilters(updatedFilters);
+  //   onFilterChange(updatedFilters);
+  //   filtersInitialized.current = true;
 
-          console.log("✅ Category set from slug:", categorySlug);
-        }
-      }
-    }
-  }, [pathname, categories]);
-  // doubt
-  // // Dependencies to trigger when state/region/suburb change
-  useEffect(() => {
-    if (!selectedState) return;
+  //   let newPath = "";
 
-    const slugifiedState = selectedState.toLowerCase().replace(/\s+/g, "-");
-    const slugifiedRegion = selectedRegionName
-      ? selectedRegionName.toLowerCase().replace(/\s+/g, "-")
-      : "";
-    const slugifiedSuburb = selectedSuburbName
-      ? selectedSuburbName.toLowerCase().replace(/\s+/g, "-")
-      : "";
+  //   if (selectedSuburbName && selectedPostcode) {
+  //     // ✅ Suburb + Postcode format
+  //     newPath = `/listings/${slugify(selectedSuburbName)}-suburb/${slugify(
+  //       selectedStateName
+  //     )}-state/${selectedPostcode}`;
+  //   } else if (selectedRegionName) {
+  //     // ✅ State + Region format
+  //     newPath = `/listings/${slugify(selectedStateName)}-state/${slugify(
+  //       selectedRegionName
+  //     )}-region`;
+  //   } else {
+  //     // ✅ State only
+  //     newPath = `/listings/${slugify(selectedStateName)}-state`;
+  //   }
 
-    const updatedFilters: Filters = {
-      ...currentFilters,
-      state: selectedState,
-      region: selectedRegionName || undefined,
-      suburb: selectedSuburbName || undefined,
-      pincode: selectedPostcode || undefined,
-      make: selectedMake || currentFilters.make || undefined,
-      model: selectedModel || currentFilters.model,
-    };
-
-    setFilters(updatedFilters);
-    onFilterChange(updatedFilters);
-    filtersInitialized.current = true;
-
-    let newPath = "";
-
-    if (selectedSuburbName && selectedPostcode) {
-      // ✅ Suburb + Postcode format
-      newPath = `/listings/${slugifiedSuburb}-suburb/${slugifiedState}-state/${selectedPostcode}`;
-    } else if (selectedRegionName) {
-      // ✅ State + Region format
-      newPath = `/listings/${slugifiedState}-state/${slugifiedRegion}-region`;
-    } else {
-      // ✅ State only
-      newPath = `/listings/${slugifiedState}-state`;
-    }
-
-    router.push(newPath);
-  }, [selectedState, selectedRegionName, selectedSuburbName, selectedPostcode]);
+  //   router.push(newPath);
+  // }, [selectedState, selectedRegionName, selectedSuburbName, selectedPostcode]);
 
   const isModelFetchCompleteRef = useRef(false); // ADD THIS
-  useEffect(() => {
-    if (selectedMake && !filters.make) {
-      onFilterChange({ ...currentFilters, make: selectedMake });
-    }
-  }, [selectedMake]);
-
+  // useEffect(() => {
+  //   if (selectedMake && !filters.make) {
+  //     onFilterChange({ ...currentFilters, make: selectedMake });
+  //   }
+  // }, [selectedMake]);
+  // correct 3
   useEffect(() => {
     if (!selectedMake) {
       setModel([]);
@@ -377,15 +335,16 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
       return;
     }
 
-    // Clear previous model selection
-    setSelectedModel(null);
-    setSelectedModelName(null);
     isModelFetchCompleteRef.current = false;
 
     fetchModelsByMake(selectedMake)
       .then((models) => {
         setModel(models || []);
         isModelFetchCompleteRef.current = true;
+
+        // ✅ Moved clearing logic here
+        setSelectedModel(null);
+        setSelectedModelName(null);
 
         const updatedFilters: Filters = {
           ...currentFilters,
@@ -403,41 +362,41 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
       .catch(console.error);
   }, [selectedMake]);
 
-  useEffect(() => {
-    if (!selectedMake) return;
+  // useEffect(() => {
+  //   if (!selectedMake) return;
 
-    const categorySlug = selectedCategory || currentFilters.category;
+  //   const categorySlug = selectedCategory || currentFilters.category;
 
-    // 🛠️ Fallback: parse from pathname if still missing
-    let finalCategory = categorySlug;
-    if (!finalCategory) {
-      const categorySegment = pathname
-        .split("/listings/")[1]
-        ?.split("/")
-        .find((s) => s.endsWith("-category"));
+  //   // 🛠️ Fallback: parse from pathname if still missing
+  //   let finalCategory = categorySlug;
+  //   if (!finalCategory) {
+  //     const categorySegment = pathname
+  //       .split("/listings/")[1]
+  //       ?.split("/")
+  //       .find((s) => s.endsWith("-category"));
 
-      if (categorySegment) {
-        finalCategory = categorySegment.replace("-category", "");
-      }
-    }
+  //     if (categorySegment) {
+  //       finalCategory = categorySegment.replace("-category", "");
+  //     }
+  //   }
 
-    const updatedFilters: Filters = {
-      ...currentFilters,
-      make: selectedMake,
-      model: selectedModel || filters.model || currentFilters.model,
-      category:
-        (selectedCategory ||
-          currentFilters.category ||
-          getCategoryFromPath()) ??
-        undefined,
-      region: selectedRegionName || currentFilters.region || filters.region,
-      suburb: selectedSuburbName || currentFilters.suburb || filters.suburb,
-      pincode: selectedPostcode || currentFilters.pincode || filters.pincode,
-    };
+  //   const updatedFilters: Filters = {
+  //     ...currentFilters,
+  //     make: selectedMake,
+  //     model: selectedModel || filters.model || currentFilters.model,
+  //     category:
+  //       (selectedCategory ||
+  //         currentFilters.category ||
+  //         getCategoryFromPath()) ??
+  //       undefined,
+  //     region: selectedRegionName || currentFilters.region || filters.region,
+  //     suburb: selectedSuburbName || currentFilters.suburb || filters.suburb,
+  //     pincode: selectedPostcode || currentFilters.pincode || filters.pincode,
+  //   };
 
-    setFilters(updatedFilters);
-    onFilterChange(updatedFilters);
-  }, [selectedMake]);
+  //   setFilters(updatedFilters);
+  //   onFilterChange(updatedFilters);
+  // }, [selectedMake]);
 
   useEffect(() => {
     if (!selectedMakeName && filters.make && makes.length > 0) {
@@ -449,12 +408,12 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
     }
   }, [filters.make, makes, selectedMakeName]);
 
-  const getCategoryFromPath = () => {
-    const slug = pathname.split("/listings/")[1];
-    const segments = slug?.split("/") || [];
-    const categorySegment = segments.find((s) => s.endsWith("-category"));
-    return categorySegment?.replace("-category", "") || null;
-  };
+  // const getCategoryFromPath = () => {
+  //   const slug = pathname.split("/listings/")[1];
+  //   const segments = slug?.split("/") || [];
+  //   const categorySegment = segments.find((s) => s.endsWith("-category"));
+  //   return categorySegment?.replace("-category", "") || null;
+  // };
 
   // const pendingURLRef = useRef<string | null>(null);
 
@@ -614,20 +573,20 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
     onFilterChange(updatedFilters);
   };
 
-  // ⬇️ Place this inside your component top-level
-  useEffect(() => {}, [filteredSuburbs]);
-  useEffect(() => {
-    if (
-      !filters.suburb ||
-      !filters.region ||
-      !filters.state ||
-      !filters.pincode
-    ) {
-      console.warn("🚨 Missing one or more location fields", filters);
-    } else {
-      console.log("✅ All location fields present:", filters);
-    }
-  }, [filters]);
+  // // ⬇️ Place this inside your component top-level
+  // useEffect(() => {}, [filteredSuburbs]);
+  // useEffect(() => {
+  //   if (
+  //     !filters.suburb ||
+  //     !filters.region ||
+  //     !filters.state ||
+  //     !filters.pincode
+  //   ) {
+  //     console.warn("🚨 Missing one or more location fields", filters);
+  //   } else {
+  //     console.log("✅ All location fields present:", filters);
+  //   }
+  // }, [filters]);
 
   const handleSearchClick = () => {
     const input = locationInput.trim();
@@ -685,34 +644,19 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
 
     // ✅ Update filters first
     const updatedFilters = buildUpdatedFilters(currentFilters, {
-      suburb,
-      region,
-      state,
-      pincode: postcode,
-      make: selectedMake || currentFilters.make,
-      model: selectedModel || currentFilters.model,
+      make: selectedMake || filters.make || currentFilters.make,
+      model: selectedModel || filters.model || currentFilters.model,
+      category: selectedCategory || filters.category || currentFilters.category,
+      suburb: selectedSuburbName || filters.suburb || currentFilters.suburb,
+      pincode: selectedPostcode || filters.pincode || currentFilters.pincode,
+      state: selectedStateName || filters.state || currentFilters.state,
+      region: selectedRegionName || filters.region || currentFilters.region,
     });
-    setFilters(updatedFilters);
-    onFilterChange(updatedFilters);
 
     setFilters(updatedFilters);
+
     filtersInitialized.current = true;
-    suburbClickedRef.current = true;
-
-    // ✅ Generate & push slug immediately
-    const slugParts: string[] = [];
-    if (suburb) slugParts.push(`${slugify(suburb)}-suburb`);
-    if (state) slugParts.push(`${slugify(state)}-state`);
-    if (postcode) slugParts.push(postcode);
-
-    const query = searchParams.toString();
-    const finalPath = `/listings/${slugParts.join("/")}${
-      query ? `?${query}` : ""
-    }`;
-
-    router.push(finalPath); // ✅ This should now work
   };
-
   useEffect(() => {
     if (
       filters.suburb &&
@@ -870,14 +814,14 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
     suburbFilterReadyRef.current = true;
 
     const updatedFilters = {
-      ...currentFilters,
+      ...currentFilters, // ❌ This drops filters like category/make already in state
       make: selectedMake || currentFilters.make,
       model: selectedModel || currentFilters.model,
       category: selectedCategory || currentFilters.category,
       suburb: selectedSuburbName.toLowerCase(),
       pincode: selectedPostcode || currentFilters.pincode,
       state: selectedStateName,
-      region: selectedRegionName || currentFilters.region, // ✅ Must exist
+      region: selectedRegionName || currentFilters.region,
     };
 
     setFilters(updatedFilters);
@@ -888,14 +832,20 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
     selectedSuburbName,
     selectedPostcode,
     selectedStateName,
-    selectedRegionName, // ✅ include dependency
+    selectedRegionName,
     locationInput,
   ]);
+
   useEffect(() => {
     if (selectedMake && makes.length > 0 && !selectedMakeName) {
       const match = makes.find((m) => m.slug === selectedMake);
       if (match) {
         setSelectedMakeName(match.name);
+
+        // ✅ Trigger full filter+URL sync here
+        startTransition(() => {
+          updateAllFiltersAndURL(); // Push slug with current filters
+        });
       }
     }
   }, [selectedMake, makes, selectedMakeName]);
@@ -975,26 +925,32 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
   }, [currentFilters.state, selectedStateName, filtersInitialized.current]);
 
   useEffect(() => {
+    if (
+      selectedMake &&
+      !selectedModel &&
+      currentFilters.model &&
+      model.length > 0
+    ) {
+      const match = model.find((m) => m.slug === currentFilters.model);
+      if (match) {
+        setSelectedModel(match.slug);
+        setSelectedModelName(match.name);
+      }
+    }
+
     if (selectedModel && model.length > 0 && !selectedModelName) {
       const match = model.find((m) => m.slug === selectedModel);
       if (match) {
         setSelectedModelName(match.name);
       }
     }
-  }, [selectedModel, model]);
-  useEffect(() => {
-    if (selectedModel && model.length > 0) {
-      const match = model.find((m) => m.slug === selectedModel);
-      if (match) {
-        setSelectedModelName(match.name);
-      }
-    }
-  }, [selectedModel, model]);
-  useEffect(() => {
-    if (!selectedModel && currentFilters.model) {
-      setSelectedModel(currentFilters.model);
-    }
-  }, [currentFilters.model, selectedModel]);
+  }, [
+    selectedMake,
+    selectedModel,
+    model,
+    currentFilters.model,
+    selectedModelName,
+  ]);
 
   useEffect(() => {
     if (
@@ -1055,7 +1011,7 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
       hasCategoryBeenSetRef.current = true;
     }
   }, [selectedCategory]);
-
+  console.log("category in filters", currentFilters.category);
   // router issue
   const lastPushedURLRef = useRef<string>("");
 
