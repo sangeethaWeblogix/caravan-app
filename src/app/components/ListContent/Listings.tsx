@@ -648,20 +648,21 @@ export default function ListingsPage({
   // };
 
   const updateURLWithFilters = (filters: Filters, page: number) => {
-    const slug = buildSlugFromFilters(filters);
+    const slug = buildSlugFromFilters(filters); // no ?paged=1 inside it
     const query = new URLSearchParams();
 
     if (filters.from_year)
       query.set("acustom_fromyears", filters.from_year.toString());
+
     if (filters.to_year)
       query.set("acustom_toyears", filters.to_year.toString());
 
-    // ✅ Only set paged if user is on a later page
+    // ✅ Only add paged if greater than 1
     if (page > 1) {
       query.set("paged", page.toString());
     }
 
-    const finalURL = query.toString() ? `${slug}?${query.toString()}` : slug;
+    const finalURL = query.toString() ? `${slug}?${query}` : slug;
     router.push(finalURL);
   };
 

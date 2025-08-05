@@ -1,6 +1,9 @@
 import { Filters } from "../components/ListContent/Listings";
 
-export const buildSlugFromFilters = (filters: Filters): string => {
+export const buildSlugFromFilters = (
+  filters: Filters,
+  page?: number
+): string => {
   const slugParts: string[] = [];
 
   if (filters.make) slugParts.push(filters.make);
@@ -47,11 +50,18 @@ export const buildSlugFromFilters = (filters: Filters): string => {
 
   const query = new URLSearchParams();
 
+  // Add year filter
   if (filters.from_year)
     query.set("acustom_fromyears", filters.from_year.toString());
   if (filters.to_year) query.set("acustom_toyears", filters.to_year.toString());
 
-  return `/listings/${slugParts.join("/")}${
-    query.toString() ? `?${query.toString()}` : ""
-  }`;
+  // ✅ Only include page > 1
+  if (page && page > 1) {
+    query.set("paged", page.toString());
+  }
+
+  const queryString = query.toString();
+  const base = `/listings/${slugParts.join("/")}`;
+
+  return queryString ? `${base}?${queryString}` : base;
 };

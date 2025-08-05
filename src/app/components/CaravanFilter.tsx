@@ -1143,28 +1143,24 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
     const slugPath = buildSlugFromFilters(filters);
     const query = new URLSearchParams();
 
-    if (filters.from_year)
-      query.set("acustom_fromyears", filters.from_year.toString());
-    if (filters.to_year)
-      query.set("acustom_toyears", filters.to_year.toString());
+    // if (filters.from_year)
+    //   query.set("acustom_fromyears", filters.from_year.toString());
+    // if (filters.to_year)
+    //   query.set("acustom_toyears", filters.to_year.toString());
 
-    // ✅ Only set paged if user is on a later page
-    const paged = searchParams.get("paged");
-    if (paged && parseInt(paged) > 1) {
-      query.set("paged", paged);
+    if (!searchParams.has("paged")) {
+      query.set("paged", "1");
     }
 
-    const finalURL = query.toString()
-      ? `${slugPath}?${query.toString()}`
-      : slugPath;
+    // ✅ Clean URL before pushing
+    const deduped = new URLSearchParams(query.toString());
+    const finalURL = deduped.toString() ? `${slugPath}?${deduped}` : slugPath;
 
     if (lastPushedURLRef.current !== finalURL) {
       lastPushedURLRef.current = finalURL;
-
-      console.log("🚀 Pushing URL with slug + query:", finalURL);
       startTransition(() => {
         router.push(finalURL);
-        onFilterChange(filters); // ✅ API call
+        onFilterChange(filters);
       });
     }
   }, [filters]);
@@ -2311,10 +2307,6 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
 
                 setFilters(updatedFilters);
                 filtersInitialized.current = true;
-
-                startTransition(() => {
-                  updateAllFiltersAndURL(); // ✅ URL and API update together
-                });
               }}
             >
               <option value="">Min</option>
@@ -2342,10 +2334,6 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
 
                 setFilters(updatedFilters);
                 filtersInitialized.current = true;
-
-                startTransition(() => {
-                  updateAllFiltersAndURL(); // ✅ Correct filter & URL
-                });
               }}
             >
               <option value="">Max</option>
