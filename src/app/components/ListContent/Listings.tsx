@@ -1,13 +1,6 @@
 "use client";
 
-import {
-  Suspense,
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
+import { Suspense, useCallback, useEffect, useRef, useState } from "react";
 import { fetchListings } from "../../../api/listings/api";
 import Listing from "./LisitingContent";
 import CaravanFilter from "../CaravanFilter";
