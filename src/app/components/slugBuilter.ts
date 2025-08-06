@@ -63,6 +63,5 @@ export const buildSlugFromFilters = (
 
   const queryString = query.toString();
   const base = `/listings/${slugParts.join("/")}`;
-
   return queryString ? `${base}?${queryString}` : base;
 };
