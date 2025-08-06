@@ -108,12 +108,14 @@ interface Props extends Filters {
 }
 
 export default function ListingsPage({ paged, ...incomingFilters }: Props) {
-  const pathname =
-    typeof window !== "undefined" ? window.location.pathname : "";
-  const initialFilters: Filters = useMemo(() => {
-    const slugParts = pathname.split("/listings/")[1]?.split("/") || [];
-    return parseSlugToFilters(slugParts);
-  }, [pathname]);
+  const [initialFilters, setInitialFilters] = useState<Filters>({});
+  const filtersInitializedRef = useRef(false);
+  // const pathname =
+  //   typeof window !== "undefined" ? window.location.pathname : "";
+  // const initialFilters: Filters = useMemo(() => {
+  //   const slugParts = pathname.split("/listings/")[1]?.split("/") || [];
+  //   return parseSlugToFilters(slugParts);
+  // }, [pathname]);
 
   // const initialFilters: Filters = useMemo(() => {
   //   const slugParts = pathname.split("/listings/")[1]?.split("/") || [];
@@ -286,7 +288,17 @@ export default function ListingsPage({ paged, ...incomingFilters }: Props) {
     per_page: 12, // The number of items per page
     total_products: 0,
   });
-
+  useEffect(() => {
+    if (!filtersInitializedRef.current && router) {
+      const path =
+        typeof window !== "undefined" ? window.location.pathname : "";
+      const slugParts = path.split("/listings/")[1]?.split("/") || [];
+      const parsed = parseSlugToFilters(slugParts);
+      setInitialFilters(parsed);
+      filtersRef.current = parsed;
+      filtersInitializedRef.current = true;
+    }
+  }, [router]);
   // Update pagination when page URL param changes
   useEffect(() => {
     const pageParam = searchParams.get("paged");
@@ -308,6 +320,8 @@ export default function ListingsPage({ paged, ...incomingFilters }: Props) {
 
   const loadListings = useCallback(
     async (page = 1, appliedFilters: Filters = filtersRef.current) => {
+      if (noResultsRedirectingRef.current) return; // ✅ Avoid duplicate calls after redirect
+
       setIsLoading(true);
       window.scrollTo({ top: 0, behavior: "smooth" });
 
@@ -351,26 +365,22 @@ export default function ListingsPage({ paged, ...incomingFilters }: Props) {
           setMetaTitle(response.seo?.metatitle);
           setMetaImage(response.seo?.metaimage || "/favicon.ico");
         } else if (hasFilters) {
-          const fallbackResponse = await fetchListings({ page: 1 });
+          // ✅ No results found, show "no results" and redirect after delay
+          setProducts([]);
+          setPageTitle("No results found. Redirecting...");
+          setMetaTitle("No listings found");
+          setMetaDescription("We couldn’t find listings for your filters.");
 
-          setProducts(fallbackResponse?.data?.products || []);
-          setPagination(
-            fallbackResponse?.pagination || {
-              current_page: 1,
-              total_pages: 1,
-              per_page: pagination.per_page,
-              total_products: 0,
-            }
-          );
-          setCategories(fallbackResponse?.data?.all_categories || []);
-          setMakes(fallbackResponse?.data?.make_options || []);
-          setModels(fallbackResponse?.data?.model_options || []);
-          setStateOptions(fallbackResponse?.data?.states || []);
-          setPageTitle(fallbackResponse?.title ?? "Caravan Listings");
-          setMetaTitle(fallbackResponse?.seo?.metatitle ?? "");
-          setMetaDescription(fallbackResponse?.seo?.metadescription ?? "");
-          setMetaImage(fallbackResponse?.seo?.metaimage || "/favicon.ico");
+          // ✅ Redirect to unfiltered listings after 2.5 seconds
+          setTimeout(() => {
+            noResultsRedirectingRef.current = true;
+            const emptyFilters: Filters = {};
+            setFilters(emptyFilters);
+            filtersRef.current = emptyFilters;
+            router.push("/listings");
+          }, 2500);
         } else {
+          // fallback for blank or broken filter
           setProducts([]);
           setPagination({
             current_page: 1,
@@ -386,7 +396,7 @@ export default function ListingsPage({ paged, ...incomingFilters }: Props) {
         setIsLoading(false);
       }
     },
-    [] // ✅ fixed dependency
+    [] // ✅ keep as-is
   );
 
   // useEffect(() => {
@@ -575,8 +585,9 @@ export default function ListingsPage({ paged, ...incomingFilters }: Props) {
       updateURLWithFilters(filtersRef.current, prevPage);
     }
   };
-
+  const noResultsRedirectingRef = useRef(false);
   useEffect(() => {
+    if (noResultsRedirectingRef.current) return; // ✅ Skip if just redirected
     if (filtersReady && hasSearched) {
       const currentPage = parseInt(searchParams.get("paged") || "1", 10);
       loadListings(currentPage, filtersRef.current);

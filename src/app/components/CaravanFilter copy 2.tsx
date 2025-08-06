@@ -1058,7 +1058,6 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
 
       if (matchedRegion) {
         console.log("✅ Auto-detected region:", matchedRegion.name);
-        console.log("✅ Auto-detected :", selectedRegionName);
         setSelectedRegionName(matchedRegion.name);
         setSelectedRegion(matchedRegion.value); // ✅ added line
         regionSetAfterSuburbRef.current = true;
@@ -1154,7 +1153,6 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
 
   console.log("states", states);
   console.log("statesss", selectedState);
-
   useEffect(() => {
     const selectedStateData = states.find(
       (s) =>
@@ -1355,9 +1353,9 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
         {stateOpen && selectedState && !selectedRegionName && (
           <div className="filter-accordion-items">
             {states
-              .find((s) =>
-                s.name.toLowerCase().startsWith(selectedState.toLowerCase())
-              ) // ✅ match the start of state
+              .find((s) => s.name === selectedStateName)
+
+              // ✅ match the start of state
               ?.regions?.map((region, idx) => (
                 <div
                   key={idx}
@@ -1369,9 +1367,13 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
                     setFilteredSuburbs(region.suburbs || []);
                     setSelectedSuburbName(null);
                     setStateOpen(false);
+                    const regionSlug = slugify(region.name);
+                    const stateSlug = slugify(selectedStateName);
+
                     const updatedFilters: Filters = {
                       ...currentFilters,
-                      state: selectedStateName || currentFilters.state,
+
+                      state: selectedStateName || undefined,
                       region: region.name,
                       suburb: undefined,
                       pincode: undefined,
@@ -1379,9 +1381,8 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
 
                     setFilters(updatedFilters);
                     filtersInitialized.current = true;
-
                     startTransition(() => {
-                      updateAllFiltersAndURL(updatedFilters); // ✅ this triggers the API + URL update
+                      updateAllFiltersAndURL(updatedFilters); // ✅ pass it here
                     });
                   }}
                 >
@@ -1474,81 +1475,74 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
                   preventResetRef.current = true;
                   urlJustUpdatedRef.current = true;
 
-                  setSelectedState(state.value);
+                  const slugify = (text: string) =>
+                    text
+                      .toLowerCase()
+                      .replace(/\s+/g, "-")
+                      .replace(/[^\w-]+/g, "");
+
+                  setSelectedState(slugify(state.value));
                   setSelectedStateName(state.name);
                   setSelectedRegionName(null);
                   setSelectedSuburbName(null);
                   setFilteredRegions(state.regions || []);
                   setFilteredSuburbs([]);
                   setStateOpen(true);
+
+                  const preservedMake =
+                    selectedMake || filters.make || currentFilters.make;
+                  const preservedModel =
+                    selectedModel || filters.model || currentFilters.model;
+
+                  const preservedCategory =
+                    selectedCategory ||
+                    currentFilters.category ||
+                    (() => {
+                      const segments = pathname.split("/").filter(Boolean);
+                      const categorySegment = segments.find((s) =>
+                        s.endsWith("-category")
+                      );
+                      if (categorySegment) {
+                        const slug = categorySegment.replace("-category", "");
+                        const matchedCategory = categories.find(
+                          (cat) => cat.slug === slug
+                        );
+                        if (matchedCategory) {
+                          setSelectedCategory(matchedCategory.slug);
+                          setSelectedCategoryName(matchedCategory.name);
+                          return matchedCategory.slug;
+                        }
+                      }
+                      return "";
+                    })();
+
                   const updatedFilters: Filters = {
                     ...currentFilters,
-                    state: selectedStateName || state.name,
+                    make: preservedMake,
+                    model: preservedModel,
+                    category: preservedCategory,
+                    state: state.name,
                     region: undefined,
                     suburb: undefined,
                     pincode: undefined,
                   };
 
                   setFilters(updatedFilters);
-                  filtersInitialized.current = true;
+                  // onFilterChange(updatedFilters);
 
-                  startTransition(() => {
-                    updateAllFiltersAndURL(updatedFilters); // ✅ this triggers the API + URL update
-                  });
-                  // const preservedMake =
-                  //   selectedMake || filters.make || currentFilters.make;
-                  // const preservedModel =
-                  //   selectedModel || filters.model || currentFilters.model;
+                  const slugParts: string[] = [];
+                  if (preservedMake) slugParts.push(preservedMake);
+                  if (preservedModel) slugParts.push(preservedModel);
+                  if (preservedCategory)
+                    slugParts.push(`${preservedCategory}-category`);
+                  if (state.name)
+                    slugParts.push(`${slugify(state.name)}-state`);
 
-                  // const preservedCategory =
-                  //   selectedCategory ||
-                  //   currentFilters.category ||
-                  //   (() => {
-                  //     const segments = pathname.split("/").filter(Boolean);
-                  //     const categorySegment = segments.find((s) =>
-                  //       s.endsWith("-category")
-                  //     );
-                  //     if (categorySegment) {
-                  //       const slug = categorySegment.replace("-category", "");
-                  //       const matchedCategory = categories.find(
-                  //         (cat) => cat.slug === slug
-                  //       );
-                  //       if (matchedCategory) {
-                  //         setSelectedCategory(matchedCategory.slug);
-                  //         setSelectedCategoryName(matchedCategory.name);
-                  //         return matchedCategory.slug;
-                  //       }
-                  //     }
-                  //     return "";
-                  //   })();
+                  const query = searchParams.toString();
+                  const finalSlug = `/listings/${slugParts.join("/")}`;
+                  const finalURL = query ? `${finalSlug}?${query}` : finalSlug;
 
-                  // const updatedFilters: Filters = {
-                  //   ...currentFilters,
-                  //   make: preservedMake,
-                  //   model: preservedModel,
-                  //   category: preservedCategory,
-                  //   state: state.name,
-                  //   region: undefined,
-                  //   suburb: undefined,
-                  //   pincode: undefined,
-                  // };
-
-                  // setFilters(updatedFilters);
-                  // // onFilterChange(updatedFilters);
-
-                  // const slugParts: string[] = [];
-                  // if (preservedMake) slugParts.push(preservedMake);
-                  // if (preservedModel) slugParts.push(preservedModel);
-                  // if (preservedCategory)
-                  //   slugParts.push(`${preservedCategory}-category`);
-                  // if (state.name)
-                  //   slugParts.push(`${slugify(state.name)}-state`);
-
-                  // const query = searchParams.toString();
-                  // const finalSlug = `/listings/${slugParts.join("/")}`;
-                  // const finalURL = query ? `${finalSlug}?${query}` : finalSlug;
-
-                  // router.push(finalURL); // ✅ always starts with /listings/
+                  router.push(finalURL); // ✅ always starts with /listings/
                 }}
               >
                 {state.name}
@@ -1916,7 +1910,7 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
               <option value="">Min</option>
               {price.map((val) => (
                 <option key={val} value={val}>
-                  ${val.toLocaleString()}
+                  {val.toLocaleString()} kg
                 </option>
               ))}
             </select>

@@ -34,7 +34,10 @@ export function parseSlugToFilters(slugParts: string[]): Filters {
       const slug = part.replace("-condition", "").toLowerCase();
       filters.condition = conditionMap[slug] || slug;
     } else if (part.endsWith("-state")) {
-      filters.state = part.replace("-state", "").replace(/-/g, " ");
+      filters.state = part
+        .replace("-state", "")
+        .replace(/-/g, " ")
+        .toLowerCase();
     } else if (part.endsWith("-region")) {
       filters.region = part
         .replace("-region", "") // remove the suffix
