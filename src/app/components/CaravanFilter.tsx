@@ -204,39 +204,41 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
   const urlJustUpdatedRef = useRef(false);
   // correct -2
   useEffect(() => {
-    // ATM
-    if (currentFilters.minKg !== undefined && atmFrom === null) {
-      setAtmFrom(Number(currentFilters.minKg));
-    }
-    if (currentFilters.maxKg !== undefined && atmTo === null) {
-      setAtmTo(Number(currentFilters.maxKg));
-    }
+    setAtmFrom(
+      currentFilters.minKg !== undefined ? Number(currentFilters.minKg) : null
+    );
+    setAtmTo(
+      currentFilters.maxKg !== undefined ? Number(currentFilters.maxKg) : null
+    );
 
-    // Price
-    if (currentFilters.from_price !== undefined && minPrice === null) {
-      setMinPrice(Number(currentFilters.from_price));
-    }
-    if (currentFilters.to_price !== undefined && maxPrice === null) {
-      setMaxPrice(Number(currentFilters.to_price));
-    }
+    setMinPrice(
+      currentFilters.from_price !== undefined
+        ? Number(currentFilters.from_price)
+        : null
+    );
+    setMaxPrice(
+      currentFilters.to_price !== undefined
+        ? Number(currentFilters.to_price)
+        : null
+    );
 
-    // Length
-    if (currentFilters.from_length !== undefined && lengthFrom === null) {
-      setLengthFrom(Number(currentFilters.from_length));
-    }
-    if (currentFilters.to_length !== undefined && lengthTo === null) {
-      setLengthTo(Number(currentFilters.to_length));
-    }
+    setLengthFrom(
+      currentFilters.from_length !== undefined
+        ? Number(currentFilters.from_length)
+        : null
+    );
+    setLengthTo(
+      currentFilters.to_length !== undefined
+        ? Number(currentFilters.to_length)
+        : null
+    );
 
-    // Sleep
-    if (currentFilters.sleeps && !selectedSleepName) {
-      setSelectedSleepName(currentFilters.sleeps.replace("-people", ""));
-    }
-
-    // Condition
-    if (currentFilters.condition && !selectedConditionName) {
-      setSelectedConditionName(currentFilters.condition);
-    }
+    setSelectedSleepName(
+      currentFilters.sleeps
+        ? currentFilters.sleeps.replace("-people", "")
+        : null
+    );
+    setSelectedConditionName(currentFilters.condition ?? null);
   }, [
     currentFilters.minKg,
     currentFilters.maxKg,
@@ -246,15 +248,6 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
     currentFilters.to_length,
     currentFilters.sleeps,
     currentFilters.condition,
-
-    atmFrom,
-    atmTo,
-    minPrice,
-    maxPrice,
-    lengthFrom,
-    lengthTo,
-    selectedSleepName,
-    selectedConditionName,
   ]);
 
   // useEffect(() => {
@@ -489,57 +482,60 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
   const resetStateFilters = () => {
     console.log("❌ State Reset Triggered");
 
-    // ⛔️ Reset all location-related values
+    // ✅ Clear all location-related UI state
     setSelectedState(null);
     setSelectedStateName(null);
+    setSelectedRegion("");
     setSelectedRegionName(null);
     setSelectedSuburbName(null);
     setSelectedPostcode(null);
     setFilteredRegions([]);
     setFilteredSuburbs([]);
+    setLocationInput("");
     setStateOpen(false);
 
-    // ✅ Clear location filters
-    const updatedFilters: Filters = {
-      ...currentFilters,
-      state: undefined,
-      location: undefined,
-      region: undefined,
-      suburb: undefined,
-      pincode: undefined,
-    };
+    // ✅ Delay filter clearing until React state updates apply
+    setTimeout(() => {
+      const updatedFilters: Filters = {
+        ...currentFilters,
+        state: undefined,
+        region: undefined,
+        suburb: undefined,
+        pincode: undefined,
+        location: null,
+      };
 
-    setFilters(updatedFilters);
-    onFilterChange(updatedFilters);
+      filtersInitialized.current = true;
+      setFilters(updatedFilters);
+      console.log("✅ Cleaned filters after timeout", updatedFilters);
 
-    // ✅ Clean URL segments
-    const segments = pathname.split("/").filter(Boolean);
-
-    const filteredSegments = segments
-      // Remove duplicate 'listings' beyond the first
-      .filter((seg, i) => !(seg === "listings" && i !== 0))
-      // Remove state/region/suburb/postcode
-      .filter(
-        (s) =>
-          !s.endsWith("-state") &&
-          !s.endsWith("-region") &&
-          !s.endsWith("-suburb") &&
-          !/^\d{4}$/.test(s)
-      );
-
-    // ✅ Build clean path
-    const newPath = `/${filteredSegments.join("/")}`;
-    const query = searchParams.toString();
-    const finalURL = newPath + (query ? `?${query}` : "");
-
-    router.push(finalURL);
-
-    // ⚠️ Reset internal refs
-    filtersInitialized.current = false;
-    hasCategoryBeenSetRef.current = false;
-    suburbClickedRef.current = false;
-    urlJustUpdatedRef.current = true;
+      startTransition(() => {
+        updateAllFiltersAndURL(updatedFilters);
+      });
+    }, 0); // Allow React to flush UI state
   };
+  useEffect(() => {
+    const noLocationInFilters =
+      !currentFilters.state &&
+      !currentFilters.region &&
+      !currentFilters.suburb &&
+      !currentFilters.pincode;
+
+    if (noLocationInFilters && selectedStateName) {
+      setSelectedState(null);
+      setSelectedStateName(null);
+      setFilteredRegions([]);
+      setSelectedRegionName(null);
+      setSelectedSuburbName(null);
+      setFilteredSuburbs([]);
+    }
+  }, [
+    currentFilters.state,
+    currentFilters.region,
+    currentFilters.suburb,
+    currentFilters.pincode,
+    selectedStateName,
+  ]);
 
   const resetRegionFilters = () => {
     setSelectedRegion("");
@@ -572,21 +568,6 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
     setFilters(updatedFilters);
     onFilterChange(updatedFilters);
   };
-
-  // // ⬇️ Place this inside your component top-level
-  // useEffect(() => {}, [filteredSuburbs]);
-  // useEffect(() => {
-  //   if (
-  //     !filters.suburb ||
-  //     !filters.region ||
-  //     !filters.state ||
-  //     !filters.pincode
-  //   ) {
-  //     console.warn("🚨 Missing one or more location fields", filters);
-  //   } else {
-  //     console.log("✅ All location fields present:", filters);
-  //   }
-  // }, [filters]);
 
   const handleSearchClick = () => {
     const input = locationInput.trim();
@@ -656,6 +637,9 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
     setFilters(updatedFilters);
 
     filtersInitialized.current = true;
+    startTransition(() => {
+      updateAllFiltersAndURL();
+    });
   };
   useEffect(() => {
     if (
@@ -671,35 +655,7 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
     value?.toLowerCase().replace(/\s+/g, "-").trim() || "";
 
   const resetFilters = () => {
-    // ✅ Clear all UI selections
-    setSelectedCategory(null);
-    setSelectedCategoryName(null);
-    setSelectedMake(null);
-    setSelectedModel(null);
-    setSelectedState(null);
-    setSelectedStateName(null);
-    setSelectedRegionName(null);
-    setSelectedSuburbName(null);
-    setSelectedPostcode(null);
-    setFilteredRegions([]);
-    setFilteredSuburbs([]);
-    setSelectedConditionName(null);
-    setSelectedSleepName("");
-    setSelectedMakeName(null);
-    setSelectedModelName(null);
-    setLocationInput("");
-    setLocationSuggestions([]);
-    setAtmFrom(null);
-    setAtmTo(null);
-    setMinPrice(null);
-    setMaxPrice(null);
-    setYearFrom(null);
-    setYearTo(null);
-    setLengthFrom(null);
-    setLengthTo(null);
-
-    // ✅ Clear filter object
-    const resetFilters: Filters = {
+    const reset: Filters = {
       make: undefined,
       model: undefined,
       category: undefined,
@@ -715,16 +671,45 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
       sleeps: undefined,
       from_length: undefined,
       to_length: undefined,
+      from_year: undefined,
+      to_year: undefined,
       location: null,
     };
 
-    // ✅ Update filters in state + trigger API
-    setFilters(resetFilters);
-    onFilterChange(resetFilters);
+    // Clear all UI state
+    setSelectedCategory(null);
+    setSelectedCategoryName(null);
+    setSelectedMake(null);
+    setSelectedMakeName(null);
+    setSelectedModel(null);
+    setSelectedModelName(null);
+    setSelectedState(null);
+    setSelectedStateName(null);
+    setSelectedRegionName(null);
+    setSelectedSuburbName(null);
+    setSelectedPostcode(null);
+    setFilteredRegions([]);
+    setFilteredSuburbs([]);
+    setLocationInput("");
+    setAtmFrom(null);
+    setAtmTo(null);
+    setMinPrice(null);
+    setMaxPrice(null);
+    setYearFrom(null);
+    setYearTo(null);
+    setLengthFrom(null);
+    setLengthTo(null);
+    setSelectedConditionName(null);
+    setSelectedSleepName(null);
 
-    // ✅ Reset URL
-    router.push("/listings");
+    setFilters(reset);
+    filtersInitialized.current = true;
+
+    startTransition(() => {
+      updateAllFiltersAndURL(reset); // ✅ pass clean reset
+    });
   };
+
   // locataion useeffe
   useEffect(() => {
     if (currentFilters.suburb && !selectedSuburbName) {
@@ -1073,6 +1058,7 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
 
       if (matchedRegion) {
         console.log("✅ Auto-detected region:", matchedRegion.name);
+        console.log("✅ Auto-detected :", selectedRegionName);
         setSelectedRegionName(matchedRegion.name);
         setSelectedRegion(matchedRegion.value); // ✅ added line
         regionSetAfterSuburbRef.current = true;
@@ -1111,70 +1097,28 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
   }, [filters]);
 
   // ✅ Update all filters and URL with validation
-  const updateAllFiltersAndURL = () => {
-    const updated: Filters = {
-      ...currentFilters,
+  const updateAllFiltersAndURL = (overrideFilters?: Filters) => {
+    const final = overrideFilters ?? filters;
 
-      // ✅ Category & Make/Model
-      category: selectedCategory || filters.category,
-      make: isValidMakeSlug(selectedMake) ? selectedMake : filters.make,
-      model: isValidModelSlug(selectedModel) ? selectedModel : filters.model,
-
-      // ✅ Condition & Sleeps
-      condition: selectedConditionName || filters.condition,
-      sleeps: selectedSleepName
-        ? `${selectedSleepName}-people`
-        : filters.sleeps,
-
-      // ✅ Location
-      state: selectedStateName || filters.state,
-      region: selectedRegionName || filters.region,
-      suburb: selectedSuburbName || filters.suburb,
-      pincode: selectedPostcode || filters.pincode,
-
-      // ✅ ATM Range
-      minKg: atmFrom ?? filters.minKg,
-      maxKg: atmTo ?? filters.maxKg,
-
-      // ✅ Price Range
-      from_price: minPrice ?? filters.from_price,
-      to_price: maxPrice ?? filters.to_price,
-
-      // ✅ Year Range
-      from_year: yearFrom ?? filters.from_year,
-      to_year: yearTo ?? filters.to_year,
-
-      // ✅ Length Range
-      from_length: lengthFrom ?? filters.from_length,
-      to_length: lengthTo ?? filters.to_length,
-    };
-
-    // ✅ Set latest filters
-    setFilters(updated);
+    setFilters(final);
     filtersInitialized.current = true;
 
-    // ✅ Build slug
-    const slugPath = buildSlugFromFilters(updated);
+    const slugPath = buildSlugFromFilters(final);
     const query = new URLSearchParams();
 
-    // ✅ Add year filters in query string
-    if (updated.from_year)
-      query.set("acustom_fromyears", updated.from_year.toString());
-    if (updated.to_year)
-      query.set("acustom_toyears", updated.to_year.toString());
-
-    // ✅ Always reset pagination
+    if (final.from_year)
+      query.set("acustom_fromyears", final.from_year.toString());
+    if (final.to_year) query.set("acustom_toyears", final.to_year.toString());
     query.set("paged", "1");
 
     const finalURL = query.toString() ? `${slugPath}?${query}` : slugPath;
-    console.log("Pushing URL with slug", finalURL);
 
     if (lastPushedURLRef.current !== finalURL) {
       lastPushedURLRef.current = finalURL;
 
       startTransition(() => {
-        router.push(finalURL); // ✅ URL will contain ALL filters
-        onFilterChange(updated); // ✅ trigger listings
+        router.push(finalURL);
+        onFilterChange(final); // ✅ single clean API call
       });
     }
   };
@@ -1207,6 +1151,9 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
       onFilterChange(updatedFilters); // ✅ correct model slug is used
     });
   };
+
+  console.log("states", states);
+  console.log("statesss", selectedState);
 
   useEffect(() => {
     const selectedStateData = states.find(
@@ -1267,14 +1214,9 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
                 setFilters(updatedFilters);
                 //                 onFilterChange(updatedFilters);
 
-                const segments = pathname.split("/").filter(Boolean);
-                const newSegments = segments
-                  .filter((s) => !s.endsWith("-category"))
-                  .map((s) => s.toLowerCase().replace(/\s+/g, "-")); // ✅ slugify each segme
-                const newPath = `/${newSegments.join("/")}`;
-                router.push(
-                  newPath + (searchParams.toString() ? `?${searchParams}` : "")
-                );
+                startTransition(() => {
+                  updateAllFiltersAndURL();
+                });
               }}
             >
               ×
@@ -1427,6 +1369,20 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
                     setFilteredSuburbs(region.suburbs || []);
                     setSelectedSuburbName(null);
                     setStateOpen(false);
+                    const updatedFilters: Filters = {
+                      ...currentFilters,
+                      state: selectedStateName || currentFilters.state,
+                      region: region.name,
+                      suburb: undefined,
+                      pincode: undefined,
+                    };
+
+                    setFilters(updatedFilters);
+                    filtersInitialized.current = true;
+
+                    startTransition(() => {
+                      updateAllFiltersAndURL(updatedFilters); // ✅ this triggers the API + URL update
+                    });
                   }}
                 >
                   {region.name}
@@ -1518,74 +1474,81 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
                   preventResetRef.current = true;
                   urlJustUpdatedRef.current = true;
 
-                  const slugify = (text: string) =>
-                    text
-                      .toLowerCase()
-                      .replace(/\s+/g, "-")
-                      .replace(/[^\w-]+/g, "");
-
-                  setSelectedState(slugify(state.value));
+                  setSelectedState(state.value);
                   setSelectedStateName(state.name);
                   setSelectedRegionName(null);
                   setSelectedSuburbName(null);
                   setFilteredRegions(state.regions || []);
                   setFilteredSuburbs([]);
                   setStateOpen(true);
-
-                  const preservedMake =
-                    selectedMake || filters.make || currentFilters.make;
-                  const preservedModel =
-                    selectedModel || filters.model || currentFilters.model;
-
-                  const preservedCategory =
-                    selectedCategory ||
-                    currentFilters.category ||
-                    (() => {
-                      const segments = pathname.split("/").filter(Boolean);
-                      const categorySegment = segments.find((s) =>
-                        s.endsWith("-category")
-                      );
-                      if (categorySegment) {
-                        const slug = categorySegment.replace("-category", "");
-                        const matchedCategory = categories.find(
-                          (cat) => cat.slug === slug
-                        );
-                        if (matchedCategory) {
-                          setSelectedCategory(matchedCategory.slug);
-                          setSelectedCategoryName(matchedCategory.name);
-                          return matchedCategory.slug;
-                        }
-                      }
-                      return "";
-                    })();
-
                   const updatedFilters: Filters = {
                     ...currentFilters,
-                    make: preservedMake,
-                    model: preservedModel,
-                    category: preservedCategory,
-                    state: state.name,
+                    state: selectedStateName || state.name,
                     region: undefined,
                     suburb: undefined,
                     pincode: undefined,
                   };
 
                   setFilters(updatedFilters);
-                  // onFilterChange(updatedFilters);
+                  filtersInitialized.current = true;
 
-                  const slugParts: string[] = [];
-                  if (preservedMake) slugParts.push(preservedMake);
-                  if (preservedModel) slugParts.push(preservedModel);
-                  if (preservedCategory)
-                    slugParts.push(`${preservedCategory}-category`);
-                  if (state.name)
-                    slugParts.push(`${slugify(state.name)}-state`);
+                  startTransition(() => {
+                    updateAllFiltersAndURL(updatedFilters); // ✅ this triggers the API + URL update
+                  });
+                  // const preservedMake =
+                  //   selectedMake || filters.make || currentFilters.make;
+                  // const preservedModel =
+                  //   selectedModel || filters.model || currentFilters.model;
 
-                  const query = searchParams.toString();
-                  const finalSlug = `/listings/${slugParts.join("/")}`;
-                  const finalURL = query ? `${finalSlug}?${query}` : finalSlug;
+                  // const preservedCategory =
+                  //   selectedCategory ||
+                  //   currentFilters.category ||
+                  //   (() => {
+                  //     const segments = pathname.split("/").filter(Boolean);
+                  //     const categorySegment = segments.find((s) =>
+                  //       s.endsWith("-category")
+                  //     );
+                  //     if (categorySegment) {
+                  //       const slug = categorySegment.replace("-category", "");
+                  //       const matchedCategory = categories.find(
+                  //         (cat) => cat.slug === slug
+                  //       );
+                  //       if (matchedCategory) {
+                  //         setSelectedCategory(matchedCategory.slug);
+                  //         setSelectedCategoryName(matchedCategory.name);
+                  //         return matchedCategory.slug;
+                  //       }
+                  //     }
+                  //     return "";
+                  //   })();
 
-                  router.push(finalURL); // ✅ always starts with /listings/
+                  // const updatedFilters: Filters = {
+                  //   ...currentFilters,
+                  //   make: preservedMake,
+                  //   model: preservedModel,
+                  //   category: preservedCategory,
+                  //   state: state.name,
+                  //   region: undefined,
+                  //   suburb: undefined,
+                  //   pincode: undefined,
+                  // };
+
+                  // setFilters(updatedFilters);
+                  // // onFilterChange(updatedFilters);
+
+                  // const slugParts: string[] = [];
+                  // if (preservedMake) slugParts.push(preservedMake);
+                  // if (preservedModel) slugParts.push(preservedModel);
+                  // if (preservedCategory)
+                  //   slugParts.push(`${preservedCategory}-category`);
+                  // if (state.name)
+                  //   slugParts.push(`${slugify(state.name)}-state`);
+
+                  // const query = searchParams.toString();
+                  // const finalSlug = `/listings/${slugParts.join("/")}`;
+                  // const finalURL = query ? `${finalSlug}?${query}` : finalSlug;
+
+                  // router.push(finalURL); // ✅ always starts with /listings/
                 }}
               >
                 {state.name}
@@ -1612,37 +1575,7 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
         {selectedSuburbName && selectedStateName && selectedPostcode && (
           <div className="filter-chip">
             {locationInput}
-            <span
-              className="filter-chip-close"
-              onClick={() => {
-                setSelectedSuburbName(null);
-                setSelectedPostcode(null);
-                setLocationInput("");
-                setFilteredSuburbs([]);
-
-                const updatedFilters: Filters = {
-                  ...currentFilters,
-                  suburb: undefined,
-                  pincode: undefined,
-                };
-                filtersInitialized.current = true;
-
-                setFilters(updatedFilters);
-                // onFilterChange(updatedFilters);
-
-                const segments = window.location.pathname
-                  .split("/")
-                  .filter(Boolean);
-                const newSegments = segments.filter(
-                  (s) => !s.includes("-suburb") && !/^\d{4}$/.test(s)
-                );
-
-                const newPath = `/${newSegments.join("/")}`;
-                router.push(
-                  newPath + (searchParams.toString() ? `?${searchParams}` : "")
-                );
-              }}
-            >
+            <span className="filter-chip-close" onClick={resetStateFilters}>
               ×
             </span>
           </div>
@@ -1941,18 +1874,11 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
 
                 setFilters(updatedFilters);
                 // onFilterChange(updatedFilters);
+                //                 onFilterChange(updatedFilters);
 
-                const segments = pathname.split("/").filter(Boolean);
-                const newSegments = segments.filter(
-                  (s) =>
-                    !s.includes("-kg-atm") &&
-                    !/^between-\d+-kg-\d+-kg-atm$/.test(s)
-                );
-
-                const newPath = `/${newSegments.join("/")}`;
-                router.push(
-                  newPath + (searchParams.toString() ? `?${searchParams}` : "")
-                );
+                startTransition(() => {
+                  updateAllFiltersAndURL(updatedFilters); // ✅ pass it here
+                });
               }}
             >
               ×
@@ -1990,7 +1916,7 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
               <option value="">Min</option>
               {price.map((val) => (
                 <option key={val} value={val}>
-                  {val.toLocaleString()} kg
+                  ${val.toLocaleString()}
                 </option>
               ))}
             </select>
@@ -2048,19 +1974,13 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
                 setFilters(updatedFilters);
                 //                 onFilterChange(updatedFilters);
 
-                // Remove price slugs from URL
-                const segments = pathname.split("/").filter(Boolean);
-                const newSegments = segments.filter(
-                  (s) =>
-                    !/^over-\d+$/.test(s) &&
-                    !/^under-\d+$/.test(s) &&
-                    !/^between-\d+-\d+$/.test(s)
-                );
+                setFilters(updatedFilters);
+                // onFilterChange(updatedFilters);
+                //                 onFilterChange(updatedFilters);
 
-                const newPath = `/${newSegments.join("/")}`;
-                router.push(
-                  newPath + (searchParams.toString() ? `?${searchParams}` : "")
-                );
+                startTransition(() => {
+                  updateAllFiltersAndURL(updatedFilters); // ✅ pass it here
+                });
               }}
             >
               ×
@@ -2069,7 +1989,7 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
         )}
       </div>
       {/* 8883944599
-                   9524163042 */}
+                    9524163042 */}
       {/* Condition Accordion */}
       <div className="cs-full_width_section">
         <div
@@ -2093,19 +2013,13 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
                 setFilters(updatedFilters);
                 //                 onFilterChange(updatedFilters);
 
-                const segments = pathname.split("/").filter(Boolean);
-                const newSegments = segments.filter(
-                  (s) =>
-                    ![
-                      "new-condition",
-                      "used-condition",
-                      "near-new-condition",
-                    ].includes(s.toLowerCase())
-                );
-                const newPath = `/${newSegments.join("/")}`;
-                router.push(
-                  newPath + (searchParams.toString() ? `?${searchParams}` : "")
-                );
+                setFilters(updatedFilters);
+                // onFilterChange(updatedFilters);
+                //                 onFilterChange(updatedFilters);
+
+                startTransition(() => {
+                  updateAllFiltersAndURL(updatedFilters); // ✅ pass it here
+                });
               }}
             >
               ×
@@ -2165,14 +2079,13 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
                 setFilters(updatedFilters);
                 //                 onFilterChange(updatedFilters);
 
-                const segments = pathname.split("/").filter(Boolean);
-                const newSegments = segments.filter(
-                  (s) => !s.includes("-people-sleeping-capacity")
-                );
-                const newPath = `/${newSegments.join("/")}`;
-                router.push(
-                  newPath + (searchParams.toString() ? `?${searchParams}` : "")
-                );
+                setFilters(updatedFilters);
+                // onFilterChange(updatedFilters);
+                //                 onFilterChange(updatedFilters);
+
+                startTransition(() => {
+                  updateAllFiltersAndURL(updatedFilters); // ✅ pass it here
+                });
               }}
             >
               ×
@@ -2295,22 +2208,14 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
                   from_year: undefined,
                   to_year: undefined,
                 };
+
                 setFilters(updatedFilters);
+                // onFilterChange(updatedFilters);
                 //                 onFilterChange(updatedFilters);
 
-                // Remove year-range slugs from URL
-                const segments = pathname.split("/").filter(Boolean);
-                const newSegments = segments.filter(
-                  (s) =>
-                    !s.match(/^between-\d+-and-\d+-year-range$/) &&
-                    !s.match(/^from-\d+-year-range$/) &&
-                    !s.match(/^to-\d+-year-range$/)
-                );
-
-                const newPath = `/${newSegments.join("/")}`;
-                router.push(
-                  newPath + (searchParams.toString() ? `?${searchParams}` : "")
-                );
+                startTransition(() => {
+                  updateAllFiltersAndURL(updatedFilters); // ✅ pass it here
+                });
               }}
             >
               ×
