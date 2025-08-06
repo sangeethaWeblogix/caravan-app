@@ -15,7 +15,6 @@ import { fetchModelsByMake } from "@/api/model/api";
 import "./filter.css";
 import { buildSlugFromFilters } from "./slugBuilter";
 import { buildUpdatedFilters } from "./buildUpdatedFilters";
-import { match } from "assert";
 type LocationSuggestion = {
   key: string;
   uri: string;
@@ -611,13 +610,6 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
     setSelectedPostcode(postcode); // 2650
     setSelectedRegionName(region);
     setLocationInput(locationData.short_address);
-
-    // ✅ Robust region detection from suburb
-    const matchedState = states.find(
-      (s) =>
-        s.name.toLowerCase() === state.toLowerCase() ||
-        s.value.toLowerCase() === state.toLowerCase()
-    );
 
     // ✅ Update filters
     const updatedFilters = buildUpdatedFilters(currentFilters, {
