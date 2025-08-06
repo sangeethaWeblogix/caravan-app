@@ -11,11 +11,11 @@ export async function generateMetaFromSlug(
 ): Promise<Metadata> {
   const filters = parseSlugToFilters(slugParts);
   const response = await fetchListings({ ...filters, page: 1 });
-
+  console.log("server data", response);
   const metaTitle = response?.seo?.metatitle || "Caravan Listings";
   const metaDescription =
     response?.seo?.metadescription || "Browse all available caravans.";
-
+  console.log("server meta", metaTitle);
   return {
     title: metaTitle,
     description: metaDescription,
