@@ -137,7 +137,9 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
   const [selectedConditionName, setSelectedConditionName] = useState<
     string | null
   >(null);
-  const [stateOpen, setStateOpen] = useState(false);
+  const [stateOpen, setStateOpen] = useState(true);
+  const [stateLocationOpen, setStateLocationOpen] = useState(false);
+
   const [selectedState, setSelectedState] = useState<string | null>(null);
   const [selectedStateName, setSelectedStateName] = useState<string | null>(
     null
@@ -585,17 +587,22 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
   };
 
   const resetSuburbFilters = () => {
-    setSelectedSuburbName(null);
-    setSelectedPostcode(null);
+    setSelectedSuburbName(null); // ✅ Clear suburb UI label
+    setFilteredSuburbs([]); // ✅ Clear list for region dropdown
 
     const updatedFilters: Filters = {
       ...currentFilters,
-      suburb: undefined,
-      pincode: undefined,
+      suburb: undefined, // ✅ Remove from filters
+      pincode: undefined, // ✅ Remove postcode only
     };
 
     setFilters(updatedFilters);
+    filtersInitialized.current = true;
+
     onFilterChange(updatedFilters);
+
+    // Keep region open if desired
+    setStateOpen(true);
   };
 
   const handleSearchClick = () => {
@@ -805,32 +812,32 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
     }
   }, [pathname]);
 
-  useEffect(() => {
-    if (!selectedStateName || !selectedRegionName || !states.length) return;
+  // useEffect(() => {
+  //   if (!selectedStateName || !selectedRegionName || !states.length) return;
 
-    const matchedState = states.find(
-      (s) =>
-        s.name.toLowerCase() === selectedStateName.toLowerCase() ||
-        s.value.toLowerCase() === selectedStateName.toLowerCase()
-    );
+  //   const matchedState = states.find(
+  //     (s) =>
+  //       s.name.toLowerCase() === selectedStateName.toLowerCase() ||
+  //       s.value.toLowerCase() === selectedStateName.toLowerCase()
+  //   );
 
-    if (!matchedState) return;
+  //   if (!matchedState) return;
 
-    const matchedRegion = matchedState.regions?.find(
-      (r) =>
-        r.name.toLowerCase() === selectedRegionName.toLowerCase() ||
-        r.value.toLowerCase() === selectedRegionName.toLowerCase()
-    );
+  //   const matchedRegion = matchedState.regions?.find(
+  //     (r) =>
+  //       r.name.toLowerCase() === selectedRegionName.toLowerCase() ||
+  //       r.value.toLowerCase() === selectedRegionName.toLowerCase()
+  //   );
 
-    if (matchedRegion?.suburbs?.length) {
-      setFilteredSuburbs(matchedRegion.suburbs);
-    } else {
-      // Only clear if we are switching region
-      if (filteredSuburbs.length) {
-        setFilteredSuburbs([]);
-      }
-    }
-  }, [selectedStateName, selectedRegionName, states]);
+  //   if (matchedRegion?.suburbs?.length) {
+  //     setFilteredSuburbs(matchedRegion.suburbs);
+  //   } else {
+  //     // Only clear if we are switching region
+  //     if (filteredSuburbs.length) {
+  //       setFilteredSuburbs([]);
+  //     }
+  //   }
+  // }, [selectedStateName, selectedRegionName, states]);
 
   useEffect(() => {
     if (!suburbClickedRef.current) return;
@@ -1441,6 +1448,9 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
   console.log("yy selectedState", selectedStateName);
   console.log("yy selectedRegion", selectedRegion);
   console.log("subbb", filteredSuburbs);
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+
   return (
     <div className="filter-card mobile-search">
       <div className="card-title align-items-center d-flex justify-content-between hidden-xs">
@@ -1520,7 +1530,7 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
           <BiChevronDown
             onClick={(e) => {
               e.stopPropagation();
-              setStateOpen((prev) => !prev);
+              setStateLocationOpen((prev) => !prev);
             }}
             style={{
               cursor: "pointer",
@@ -1536,22 +1546,24 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
           >
             <span
               style={{ flexGrow: 1 }}
-              onClick={() => setStateOpen((prev) => !prev)}
+              onClick={() => setStateLocationOpen((prev) => !prev)}
             >
               {selectedStateName}
             </span>
-            <div style={iconRowStyle}>
-              <span onClick={resetStateFilters} style={closeIconStyle}>
-                ×
-              </span>
-              <BiChevronDown
-                onClick={(e) => {
-                  e.stopPropagation(); // prevent parent click from firing
-                  setStateOpen((prev) => !prev);
-                }}
-                style={arrowStyle(stateOpen)}
-              />
-            </div>
+            {!selectedRegionName && (
+              <div style={iconRowStyle}>
+                <span onClick={resetStateFilters} style={closeIconStyle}>
+                  ×
+                </span>
+                <BiChevronDown
+                  onClick={(e) => {
+                    e.stopPropagation(); // prevent parent click from firing
+                    setStateLocationOpen((prev) => !prev);
+                  }}
+                  style={arrowStyle(stateOpen)}
+                />
+              </div>
+            )}
           </div>
         )}
         {/* REGION */}
@@ -1573,28 +1585,8 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
                 </span>
                 <BiChevronDown
                   onClick={(e) => {
-                    e.stopPropagation();
-                    const region = states
-                      .find((s) => s.value === selectedStateName)
-                      ?.regions?.find(
-                        (r) =>
-                          r.name.trim().toLowerCase() ===
-                          selectedRegionName.trim().toLowerCase()
-                      );
-
-                    if (region && Array.isArray(region.suburbs)) {
-                      console.log(
-                        "🔽 Manually loading suburbs from arrow click:",
-                        region.name
-                      );
-                      setFilteredSuburbs(region.suburbs);
-                    } else {
-                      console.warn(
-                        "❌ Region not found or has no suburbs:",
-                        selectedRegionName
-                      );
-                    }
-                    setStateOpen((prev) => !prev); // Toggle dropdown
+                    e.stopPropagation(); // prevent parent click from firing
+                    setStateOpen((prev) => !prev);
                   }}
                   style={arrowStyle(stateOpen)}
                 />
@@ -1612,16 +1604,17 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
           </div>
         )}
         {/* 🔽 REGION LIST */}
-        {stateOpen &&
+        {mounted &&
           selectedStateName &&
+          stateOpen &&
           (!selectedRegionName || filteredSuburbs.length === 0) && (
             <div className="filter-accordion-items">
               {states
-                .find((s) =>
-                  s.name
-                    .toLowerCase()
-                    .startsWith(selectedStateName.toLowerCase())
-                ) // ✅ match the start of state
+                .find(
+                  (s) =>
+                    s.name.toLowerCase().trim() ===
+                    selectedStateName?.toLowerCase().trim()
+                )
                 ?.regions?.map((region, idx) => (
                   <div
                     key={idx}
@@ -1633,7 +1626,7 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
                       setFilteredSuburbs(region.suburbs || []);
 
                       setSelectedSuburbName(null);
-                      setStateOpen(false);
+                      setStateOpen(true);
                       const updatedFilters: Filters = {
                         ...currentFilters,
                         state: selectedStateName || currentFilters.state,
@@ -1707,7 +1700,7 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
           )}
 
         {/* 🔹 INITIAL STATE LIST */}
-        {!selectedState && stateOpen && (
+        {!selectedState && stateLocationOpen && (
           <div className="filter-accordion-items">
             {states.map((state) => (
               <div
@@ -1726,7 +1719,7 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
                   const regions = state.regions || [];
                   setFilteredRegions(regions);
                   setFilteredSuburbs([]);
-                  setStateOpen(true);
+                  setStateLocationOpen(true);
 
                   // ✅ If regions exist, auto-toggle to region list
                   if (regions.length > 0) {
@@ -1779,7 +1772,7 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
           selectedRegionName && (
             <div className="filter-chip">
               {locationInput}
-              <span className="filter-chip-close" onClick={resetStateFilters}>
+              <span className="filter-chip-close" onClick={resetSuburbFilters}>
                 ×
               </span>
             </div>
