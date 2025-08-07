@@ -97,7 +97,7 @@ export default function ListingContent({
                       <option value="year-desc">Year Made (High to Low)</option>
                       <option value="year-asc">Year Made (Low to High)</option>
                     </select>
-                    <input type="hidden" name="paged" value="1" />
+                    <input type="hidden" name="page" value="1" />
                   </div>
                 </form>
               </div>

@@ -58,10 +58,10 @@ export const buildSlugFromFilters = (
 
   // ✅ Only include page > 1
   if (page && page > 1) {
-    query.set("paged", page.toString());
+    query.set("page", page.toString());
   }
 
   const queryString = query.toString();
-  const base = `/listings/${slugParts.join("/")}`;
+  const base = `/listings/${slugParts.join("/")}/`;
   return queryString ? `${base}?${queryString}` : base;
 };

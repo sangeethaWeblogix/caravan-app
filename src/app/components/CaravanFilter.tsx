@@ -1180,10 +1180,10 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
     // if (filters.to_year)
     //   query.set("acustom_toyears", filters.to_year.toString());
 
-    if (!searchParams.has("paged")) {
-      const paged = searchParams.get("paged");
-      if (paged && paged !== "1") {
-        query.set("paged", paged);
+    if (!searchParams.has("page")) {
+      const page = searchParams.get("page");
+      if (page && page !== "1") {
+        query.set("page", page);
       }
     }
 
@@ -1213,7 +1213,7 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
     if (final.from_year)
       query.set("acustom_fromyears", final.from_year.toString());
     if (final.to_year) query.set("acustom_toyears", final.to_year.toString());
-    query.set("paged", "1");
+    query.set("page", "1");
 
     const finalURL = query.toString() ? `${slugPath}?${query}` : slugPath;
 

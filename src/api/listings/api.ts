@@ -40,7 +40,7 @@ export const fetchListings = async (filters: Filters = {}) => {
   } = filters;
 
   const params = new URLSearchParams();
-  params.append("paged", page.toString());
+  params.append("page", page.toString());
 
   if (category) params.append("category", category);
   if (make) params.append("make", make);

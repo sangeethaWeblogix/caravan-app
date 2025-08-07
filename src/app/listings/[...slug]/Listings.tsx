@@ -20,7 +20,7 @@ export default function Listings() {
   const filters = useMemo(() => parseSlugToFilters(slugParts), [slugParts]);
 
   const params = new URLSearchParams(search);
-  const paged = params.get("paged") || "1";
+  const page = params.get("page") || "1";
 
-  return <ListingsPage {...filters} paged={paged} />;
+  return <ListingsPage {...filters} page={page} />;
 }
