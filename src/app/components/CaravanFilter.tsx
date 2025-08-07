@@ -202,6 +202,35 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
     loadFilters();
   }, []);
   const urlJustUpdatedRef = useRef(false);
+
+  const handleATMChange = (newFrom: number | null, newTo: number | null) => {
+    setAtmFrom(newFrom);
+    setAtmTo(newTo);
+
+    const updatedFilters: Filters = {
+      ...filters,
+      minKg: newFrom ?? undefined,
+      maxKg: newTo ?? undefined,
+    };
+
+    setFilters(updatedFilters);
+    filtersInitialized.current = true;
+
+    startTransition(() => {
+      updateAllFiltersAndURL(updatedFilters);
+    });
+  };
+  useEffect(() => {
+    if (!filtersInitialized.current) {
+      setAtmFrom(
+        currentFilters.minKg !== undefined ? Number(currentFilters.minKg) : null
+      );
+      setAtmTo(
+        currentFilters.maxKg !== undefined ? Number(currentFilters.maxKg) : null
+      );
+    }
+  }, [currentFilters.minKg, currentFilters.maxKg]);
+
   // correct -2
   useEffect(() => {
     setAtmFrom(
@@ -814,18 +843,53 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
 
   const suburbFilterReadyRef = useRef(false);
   suburbFilterReadyRef.current = true;
-  // useEffect(() => {
-  //   if (
-  //     !selectedRegionName &&
-  //     currentFilters.region &&
-  //     !selectedSuburbName && // avoid conflict
-  //     !pathname.includes("-region") // ← only if not in URL
-  //   ) {
-  //     setSelectedRegionName(currentFilters.region);
-  //   }
-  // }, [currentFilters.region, selectedRegionName, selectedSuburbName]);
+  useEffect(() => {
+    if (
+      !selectedRegionName &&
+      currentFilters.region &&
+      !selectedSuburbName && // avoid conflict
+      !pathname.includes("-region") // ← only if not in URL
+    ) {
+      setSelectedRegionName(currentFilters.region);
+    }
+  }, [currentFilters.region, selectedRegionName, selectedSuburbName]);
 
-  // useEffect(() => {
+  useEffect(() => {
+    if (
+      !suburbFilterReadyRef.current ||
+      !selectedSuburbName ||
+      !selectedPostcode ||
+      !selectedStateName ||
+      !selectedRegionName ||
+      !locationInput
+    )
+      return;
+
+    suburbFilterReadyRef.current = true;
+
+    const updatedFilters = {
+      ...currentFilters,
+      make: selectedMake || currentFilters.make,
+      model: selectedModel || currentFilters.model,
+      category: selectedCategory || currentFilters.category,
+      suburb: selectedSuburbName.toLowerCase(),
+      pincode: selectedPostcode || currentFilters.pincode,
+      state: selectedStateName,
+      region: selectedRegionName || currentFilters.region,
+    };
+
+    setFilters(updatedFilters);
+    onFilterChange(updatedFilters);
+    filtersInitialized.current = true;
+    suburbClickedRef.current = false;
+  }, [
+    selectedSuburbName,
+    selectedPostcode,
+    selectedStateName,
+    selectedRegionName,
+    locationInput,
+  ]);
+
   //   if (
   //     !suburbFilterReadyRef.current ||
   //     !selectedSuburbName ||
@@ -1116,10 +1180,10 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
     // if (filters.to_year)
     //   query.set("acustom_toyears", filters.to_year.toString());
 
-    if (!searchParams.has("paged")) {
-      const paged = searchParams.get("paged");
-      if (paged && paged !== "1") {
-        query.set("paged", paged);
+    if (!searchParams.has("page")) {
+      const page = searchParams.get("page");
+      if (page && page !== "1") {
+        query.set("page", page);
       }
     }
 
@@ -1149,7 +1213,7 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
     if (final.from_year)
       query.set("acustom_fromyears", final.from_year.toString());
     if (final.to_year) query.set("acustom_toyears", final.to_year.toString());
-    query.set("paged", "1");
+    query.set("page", "1");
 
     const finalURL = query.toString() ? `${slugPath}?${query}` : slugPath;
 
@@ -1937,18 +2001,7 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
               value={atmFrom?.toString() || ""}
               onChange={(e) => {
                 const val = e.target.value ? parseInt(e.target.value) : null;
-                setAtmFrom(val);
-
-                const updatedFilters: Filters = {
-                  ...currentFilters,
-                  minKg: val ?? undefined,
-                  maxKg: atmTo ?? undefined,
-                };
-                setFilters(updatedFilters);
-                filtersInitialized.current = true;
-                startTransition(() => {
-                  updateAllFiltersAndURL();
-                });
+                handleATMChange(val, atmTo); // ✅ pass current `atmTo`
               }}
             >
               <option value="">Min</option>
@@ -1968,19 +2021,7 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
               value={atmTo?.toString() || ""}
               onChange={(e) => {
                 const val = e.target.value ? parseInt(e.target.value) : null;
-                setAtmTo(val);
-
-                const updatedFilters: Filters = {
-                  ...currentFilters,
-                  minKg: atmFrom ?? undefined,
-                  maxKg: val ?? undefined,
-                };
-
-                setFilters(updatedFilters);
-                filtersInitialized.current = true;
-                startTransition(() => {
-                  updateAllFiltersAndURL();
-                });
+                handleATMChange(atmFrom, val); // ✅ pass current `atmFrom`
               }}
             >
               <option value="">Max</option>
@@ -2129,7 +2170,7 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
         )}
       </div>
       {/* 8883944599
-                    9524163042 */}
+                     9524163042 */}
       {/* Condition Accordion */}
       <div className="cs-full_width_section">
         <div

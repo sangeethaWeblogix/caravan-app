@@ -94,13 +94,13 @@ interface Props {
   from_year?: string | number;
   to_year?: string | number;
   sleeps?: string;
-  paged?: string | number;
+  page?: string | number;
 }
 interface Props extends Filters {
-  paged?: string | number;
+  page?: string | number;
 }
 
-export default function ListingsPage({ paged, ...incomingFilters }: Props) {
+export default function ListingsPage({ page, ...incomingFilters }: Props) {
   const [initialFilters, setInitialFilters] = useState<Filters>({});
   const filtersInitializedRef = useRef(false);
   // const pathname =
@@ -272,8 +272,8 @@ export default function ListingsPage({ paged, ...incomingFilters }: Props) {
   const [hasSearched, setHasSearched] = useState(false);
   const router = useRouter();
   const searchParams = useSearchParams();
-  // const initialPage = parseInt(searchParams.get("paged") || "1", 10);
-  const initialPage = parseInt(paged?.toString() || "1", 10);
+  // const initialPage = parseInt(searchParams.get("page") || "1", 10);
+  const initialPage = parseInt(page?.toString() || "1", 10);
   const [pagination, setPagination] = useState<Pagination>({
     current_page: initialPage,
     total_pages: 1,
@@ -294,7 +294,7 @@ export default function ListingsPage({ paged, ...incomingFilters }: Props) {
   }, [router]);
   // Update pagination when page URL param changes
   useEffect(() => {
-    const pageParam = searchParams.get("paged");
+    const pageParam = searchParams.get("page");
     const page = parseInt(pageParam || "1", 10);
     if (!filtersReady) return; // ✅ Prevent early fetch
 
@@ -405,7 +405,7 @@ export default function ListingsPage({ paged, ...incomingFilters }: Props) {
       filtersRef.current = { ...initialFilters, ...incomingFilters };
       setFilters(filtersRef.current);
       // ✅ Call loadListings only on first render
-      const currentPage = parseInt(searchParams.get("paged") || "1", 10);
+      const currentPage = parseInt(searchParams.get("page") || "1", 10);
       loadListings(currentPage, filtersRef.current);
 
       setHasSearched(true);
@@ -424,7 +424,7 @@ export default function ListingsPage({ paged, ...incomingFilters }: Props) {
     setFiltersReady(true);
     setFilters(mergedFilters);
     filtersRef.current = mergedFilters;
-    const pageFromURL = parseInt(searchParams.get("paged") || "1", 10);
+    const pageFromURL = parseInt(searchParams.get("page") || "1", 10);
     setPagination({
       current_page: pageFromURL,
       total_pages: 1,
@@ -504,7 +504,7 @@ export default function ListingsPage({ paged, ...incomingFilters }: Props) {
   //    const slug = buildSlugFromFilters(filters);
   //   console.log("✅ updateURLWithFilters CALLED with page:", page);
   //   const current = new URLSearchParams(searchParams.toString());
-  //   current.set("paged", page.toString());
+  //   current.set("page", page.toString());
   //   console.log(
   //     "🧭 New URL will be:",
   //     `${buildSlugPath()}?${current.toString()}`
@@ -546,7 +546,7 @@ export default function ListingsPage({ paged, ...incomingFilters }: Props) {
   // };
 
   const updateURLWithFilters = (filters: Filters, page: number) => {
-    const slug = buildSlugFromFilters(filters); // no ?paged=1 inside it
+    const slug = buildSlugFromFilters(filters); // no ?page=1 inside it
     const query = new URLSearchParams();
 
     if (filters.from_year)
@@ -555,9 +555,9 @@ export default function ListingsPage({ paged, ...incomingFilters }: Props) {
     if (filters.to_year)
       query.set("acustom_toyears", filters.to_year.toString());
 
-    // ✅ Only add paged if greater than 1
+    // ✅ Only add page if greater than 1
     if (page > 1) {
-      query.set("paged", page.toString());
+      query.set("page", page.toString());
     }
 
     const finalURL = query.toString() ? `${slug}?${query}` : slug;
@@ -582,7 +582,7 @@ export default function ListingsPage({ paged, ...incomingFilters }: Props) {
   useEffect(() => {
     if (noResultsRedirectingRef.current) return; // ✅ Skip if just redirected
     if (filtersReady && hasSearched) {
-      const currentPage = parseInt(searchParams.get("paged") || "1", 10);
+      const currentPage = parseInt(searchParams.get("page") || "1", 10);
       loadListings(currentPage, filtersRef.current);
     }
   }, [filters, hasSearched]);

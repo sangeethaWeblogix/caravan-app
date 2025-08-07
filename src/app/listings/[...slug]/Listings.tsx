@@ -1,18 +1,11 @@
-// ✅ FILE: src/app/listings/[...Filters]/page.tsx
+import { withDynamicSlugMeta } from "./withDynamicSlugMeta";
 import ListingsPage from "@/app/components/ListContent/Listings";
 import { parseSlugToFilters } from "../../components/urlBuilder";
 import { useMemo } from "react";
 
-// export default function Listings({ params, searchParams }: PageProps) {
-//   const slugParts = params.Filters || [];
-//   const filters = parseSlugToFilters(slugParts);
+export const generateMetadata = withDynamicSlugMeta();
 
-//   const paged = Array.isArray(searchParams?.paged)
-//     ? searchParams.paged[0]
-//     : searchParams?.paged || "1";
-
-//   return <ListingsPage {...filters} paged={paged} />;
-// }
+// ✅ Page component
 export default function Listings() {
   const pathname =
     typeof window !== "undefined" ? window.location.pathname : "";
@@ -27,7 +20,7 @@ export default function Listings() {
   const filters = useMemo(() => parseSlugToFilters(slugParts), [slugParts]);
 
   const params = new URLSearchParams(search);
-  const paged = params.get("paged") || "1";
+  const page = params.get("page") || "1";
 
-  return <ListingsPage {...filters} paged={paged} />;
+  return <ListingsPage {...filters} page={page} />;
 }
