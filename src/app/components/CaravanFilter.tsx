@@ -209,11 +209,10 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
     setAtmFrom(newFrom);
     setAtmTo(newTo);
 
-    const updatedFilters: Filters = {
-      ...filters,
+    const updatedFilters = buildUpdatedFilters(currentFilters, {
       minKg: newFrom ?? undefined,
       maxKg: newTo ?? undefined,
-    };
+    });
 
     setFilters(updatedFilters);
     filtersInitialized.current = true;
@@ -222,6 +221,7 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
       updateAllFiltersAndURL(updatedFilters);
     });
   };
+
   useEffect(() => {
     if (!filtersInitialized.current) {
       setAtmFrom(
@@ -600,9 +600,6 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
     filtersInitialized.current = true;
 
     onFilterChange(updatedFilters);
-
-    // Keep region open if desired
-    setStateOpen(true);
   };
 
   const handleSearchClick = () => {
@@ -636,15 +633,16 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
         postcode = addressMatch[0];
       }
     }
-
+    console.log("output", state, region, suburb, postcode);
     // ✅ Set UI states
     setSelectedState(stateSlug);
-    setSelectedRegion(regionSlug); // value: new-south-wales
+    setSelectedRegion(region); // value: new-south-wales
 
     setSelectedStateName(state); // name: New South Wales
     setSelectedSuburbName(suburb); // Wagga Wagga
     setSelectedPostcode(postcode); // 2650
     setSelectedRegionName(region);
+    // setLocationInput(locationData.address);
     setLocationInput(locationData.short_address);
 
     // ✅ Update filters
@@ -666,8 +664,9 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
     //   updateAllFiltersAndURL(updatedFilters);
     // });
   };
+
   console.log(
-    "selected",
+    "output selected",
     selectedPostcode,
     selectedSuburbName,
     selectedStateName,
@@ -709,13 +708,15 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
       location: null,
     };
 
-    // Clear all UI state
+    // ✅ Clear all UI states explicitly
     setSelectedCategory(null);
     setSelectedCategoryName(null);
     setSelectedMake(null);
     setSelectedMakeName(null);
     setSelectedModel(null);
     setSelectedModelName(null);
+
+    // ✅ This block is key to reset location
     setSelectedState(null);
     setSelectedStateName(null);
     setSelectedRegionName(null);
@@ -723,7 +724,8 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
     setSelectedPostcode(null);
     setFilteredRegions([]);
     setFilteredSuburbs([]);
-    setLocationInput("");
+    setLocationInput(""); // <-- Reset visible field
+
     setAtmFrom(null);
     setAtmTo(null);
     setMinPrice(null);
@@ -738,8 +740,11 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
     setFilters(reset);
     filtersInitialized.current = true;
 
+    // ✅ Reset region set flag too
+    regionSetAfterSuburbRef.current = false;
+
     startTransition(() => {
-      updateAllFiltersAndURL(reset); // ✅ pass clean reset
+      updateAllFiltersAndURL(reset); // ✅ push reset filters to URL
     });
   };
 
@@ -812,32 +817,32 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
     }
   }, [pathname]);
 
-  // useEffect(() => {
-  //   if (!selectedStateName || !selectedRegionName || !states.length) return;
+  useEffect(() => {
+    if (!selectedStateName || !selectedRegionName || !states.length) return;
 
-  //   const matchedState = states.find(
-  //     (s) =>
-  //       s.name.toLowerCase() === selectedStateName.toLowerCase() ||
-  //       s.value.toLowerCase() === selectedStateName.toLowerCase()
-  //   );
+    const matchedState = states.find(
+      (s) =>
+        s.name.toLowerCase() === selectedStateName.toLowerCase() ||
+        s.value.toLowerCase() === selectedStateName.toLowerCase()
+    );
 
-  //   if (!matchedState) return;
+    if (!matchedState) return;
 
-  //   const matchedRegion = matchedState.regions?.find(
-  //     (r) =>
-  //       r.name.toLowerCase() === selectedRegionName.toLowerCase() ||
-  //       r.value.toLowerCase() === selectedRegionName.toLowerCase()
-  //   );
+    const matchedRegion = matchedState.regions?.find(
+      (r) =>
+        r.name.toLowerCase() === selectedRegionName.toLowerCase() ||
+        r.value.toLowerCase() === selectedRegionName.toLowerCase()
+    );
 
-  //   if (matchedRegion?.suburbs?.length) {
-  //     setFilteredSuburbs(matchedRegion.suburbs);
-  //   } else {
-  //     // Only clear if we are switching region
-  //     if (filteredSuburbs.length) {
-  //       setFilteredSuburbs([]);
-  //     }
-  //   }
-  // }, [selectedStateName, selectedRegionName, states]);
+    if (matchedRegion?.suburbs?.length) {
+      setFilteredSuburbs(matchedRegion.suburbs);
+    } else {
+      // Only clear if we are switching region
+      if (filteredSuburbs.length) {
+        setFilteredSuburbs([]);
+      }
+    }
+  }, [selectedStateName, selectedRegionName, states]);
 
   useEffect(() => {
     if (!suburbClickedRef.current) return;
@@ -1221,8 +1226,8 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
       query.set("acustom_fromyears", final.from_year.toString());
     if (final.to_year) query.set("acustom_toyears", final.to_year.toString());
     query.set("page", "1");
-
-    const finalURL = query.toString() ? `${slugPath}?${query}` : slugPath;
+    const safeSlugPath = slugPath.endsWith("/") ? slugPath : `${slugPath}/`;
+    const finalURL = query.toString() ? `${slugPath}?${query}` : safeSlugPath;
 
     if (lastPushedURLRef.current !== finalURL) {
       lastPushedURLRef.current = finalURL;
@@ -1508,12 +1513,15 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
                     setSelectedCategory(cat.slug);
                     setSelectedCategoryName(cat.name);
                     setCategoryOpen(false);
-                    const updatedFilters = buildUpdatedFilters(currentFilters, {
+                    const updatedFilters: Filters = {
+                      ...currentFilters,
                       category: cat.slug,
-                    });
+                    };
                     setFilters(updatedFilters);
                     filtersInitialized.current = true;
-                    //                 onFilterChange(updatedFilters);
+                    startTransition(() => {
+                      updateAllFiltersAndURL(updatedFilters); // ✅ this triggers the API + URL update
+                    });
                   }}
                 >
                   {cat.name}
@@ -1585,8 +1593,23 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
                 </span>
                 <BiChevronDown
                   onClick={(e) => {
-                    e.stopPropagation(); // prevent parent click from firing
-                    setStateOpen((prev) => !prev);
+                    e.stopPropagation();
+                    const region = states
+                      .find(
+                        (s) =>
+                          s.name.toLowerCase().trim() ===
+                          selectedStateName?.toLowerCase().trim()
+                      )
+                      ?.regions?.find(
+                        (r) =>
+                          r.name.toLowerCase().trim() ===
+                          selectedRegionName?.toLowerCase().trim()
+                      );
+
+                    if (region?.suburbs) {
+                      setFilteredSuburbs(region.suburbs); // preload
+                    }
+                    setStateOpen((prev) => !prev); // toggle dropdown
                   }}
                   style={arrowStyle(stateOpen)}
                 />
@@ -1626,7 +1649,7 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
                       setFilteredSuburbs(region.suburbs || []);
 
                       setSelectedSuburbName(null);
-                      setStateOpen(true);
+                      setStateOpen(false);
                       const updatedFilters: Filters = {
                         ...currentFilters,
                         state: selectedStateName || currentFilters.state,
