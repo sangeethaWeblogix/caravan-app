@@ -708,13 +708,15 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
       location: null,
     };
 
-    // Clear all UI state
+    // ✅ Clear all UI states explicitly
     setSelectedCategory(null);
     setSelectedCategoryName(null);
     setSelectedMake(null);
     setSelectedMakeName(null);
     setSelectedModel(null);
     setSelectedModelName(null);
+
+    // ✅ This block is key to reset location
     setSelectedState(null);
     setSelectedStateName(null);
     setSelectedRegionName(null);
@@ -722,7 +724,8 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
     setSelectedPostcode(null);
     setFilteredRegions([]);
     setFilteredSuburbs([]);
-    setLocationInput("");
+    setLocationInput(""); // <-- Reset visible field
+
     setAtmFrom(null);
     setAtmTo(null);
     setMinPrice(null);
@@ -737,8 +740,11 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
     setFilters(reset);
     filtersInitialized.current = true;
 
+    // ✅ Reset region set flag too
+    regionSetAfterSuburbRef.current = false;
+
     startTransition(() => {
-      updateAllFiltersAndURL(reset); // ✅ pass clean reset
+      updateAllFiltersAndURL(reset); // ✅ push reset filters to URL
     });
   };
 
