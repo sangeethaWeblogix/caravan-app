@@ -1220,8 +1220,8 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
       query.set("acustom_fromyears", final.from_year.toString());
     if (final.to_year) query.set("acustom_toyears", final.to_year.toString());
     query.set("page", "1");
-
-    const finalURL = query.toString() ? `${slugPath}?${query}` : slugPath;
+    const safeSlugPath = slugPath.endsWith("/") ? slugPath : `${slugPath}/`;
+    const finalURL = query.toString() ? `${slugPath}?${query}` : safeSlugPath;
 
     if (lastPushedURLRef.current !== finalURL) {
       lastPushedURLRef.current = finalURL;
