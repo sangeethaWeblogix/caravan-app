@@ -202,35 +202,6 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
     loadFilters();
   }, []);
   const urlJustUpdatedRef = useRef(false);
-
-  const handleATMChange = (newFrom: number | null, newTo: number | null) => {
-    setAtmFrom(newFrom);
-    setAtmTo(newTo);
-
-    const updatedFilters: Filters = {
-      ...filters,
-      minKg: newFrom ?? undefined,
-      maxKg: newTo ?? undefined,
-    };
-
-    setFilters(updatedFilters);
-    filtersInitialized.current = true;
-
-    startTransition(() => {
-      updateAllFiltersAndURL(updatedFilters);
-    });
-  };
-  useEffect(() => {
-    if (!filtersInitialized.current) {
-      setAtmFrom(
-        currentFilters.minKg !== undefined ? Number(currentFilters.minKg) : null
-      );
-      setAtmTo(
-        currentFilters.maxKg !== undefined ? Number(currentFilters.maxKg) : null
-      );
-    }
-  }, [currentFilters.minKg, currentFilters.maxKg]);
-
   // correct -2
   useEffect(() => {
     setAtmFrom(
@@ -860,7 +831,7 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
       !selectedSuburbName ||
       !selectedPostcode ||
       !selectedStateName ||
-      !selectedRegionName ||
+      !selectedRegionName || // ✅ Add this to ensure region is ready
       !locationInput
     )
       return;
@@ -868,7 +839,7 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
     suburbFilterReadyRef.current = true;
 
     const updatedFilters = {
-      ...currentFilters,
+      ...currentFilters, // ❌ This drops filters like category/make already in state
       make: selectedMake || currentFilters.make,
       model: selectedModel || currentFilters.model,
       category: selectedCategory || currentFilters.category,
@@ -889,41 +860,6 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
     selectedRegionName,
     locationInput,
   ]);
-
-  //   if (
-  //     !suburbFilterReadyRef.current ||
-  //     !selectedSuburbName ||
-  //     !selectedPostcode ||
-  //     !selectedStateName ||
-  //     !selectedRegionName || // ✅ Add this to ensure region is ready
-  //     !locationInput
-  //   )
-  //     return;
-
-  //   suburbFilterReadyRef.current = true;
-
-  //   const updatedFilters = {
-  //     ...currentFilters, // ❌ This drops filters like category/make already in state
-  //     make: selectedMake || currentFilters.make,
-  //     model: selectedModel || currentFilters.model,
-  //     category: selectedCategory || currentFilters.category,
-  //     suburb: selectedSuburbName.toLowerCase(),
-  //     pincode: selectedPostcode || currentFilters.pincode,
-  //     state: selectedStateName,
-  //     region: selectedRegionName || currentFilters.region,
-  //   };
-
-  //   setFilters(updatedFilters);
-  //   onFilterChange(updatedFilters);
-  //   filtersInitialized.current = true;
-  //   suburbClickedRef.current = false;
-  // }, [
-  //   selectedSuburbName,
-  //   selectedPostcode,
-  //   selectedStateName,
-  //   selectedRegionName,
-  //   locationInput,
-  // ]);
 
   useEffect(() => {
     if (selectedMake && makes.length > 0 && !selectedMakeName) {
@@ -2001,7 +1937,18 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
               value={atmFrom?.toString() || ""}
               onChange={(e) => {
                 const val = e.target.value ? parseInt(e.target.value) : null;
-                handleATMChange(val, atmTo); // ✅ pass current `atmTo`
+                setAtmFrom(val);
+
+                const updatedFilters: Filters = {
+                  ...currentFilters,
+                  minKg: val ?? undefined,
+                  maxKg: atmTo ?? undefined,
+                };
+                setFilters(updatedFilters);
+                filtersInitialized.current = true;
+                startTransition(() => {
+                  updateAllFiltersAndURL();
+                });
               }}
             >
               <option value="">Min</option>
@@ -2021,7 +1968,19 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
               value={atmTo?.toString() || ""}
               onChange={(e) => {
                 const val = e.target.value ? parseInt(e.target.value) : null;
-                handleATMChange(atmFrom, val); // ✅ pass current `atmFrom`
+                setAtmTo(val);
+
+                const updatedFilters: Filters = {
+                  ...currentFilters,
+                  minKg: atmFrom ?? undefined,
+                  maxKg: val ?? undefined,
+                };
+
+                setFilters(updatedFilters);
+                filtersInitialized.current = true;
+                startTransition(() => {
+                  updateAllFiltersAndURL();
+                });
               }}
             >
               <option value="">Max</option>
@@ -2170,7 +2129,7 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
         )}
       </div>
       {/* 8883944599
-                     9524163042 */}
+                    9524163042 */}
       {/* Condition Accordion */}
       <div className="cs-full_width_section">
         <div

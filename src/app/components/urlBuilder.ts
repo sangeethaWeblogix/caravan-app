@@ -1,3 +1,5 @@
+// utils/parseFilters.ts
+
 export interface Filters {
   category?: string;
   condition?: string;
@@ -22,13 +24,6 @@ const conditionMap: Record<string, string> = {
   "near-new": "Near New",
 };
 
-function capitalizeWords(str: string): string {
-  return str
-    .toLowerCase()
-    .replace(/\b\w/g, (char) => char.toUpperCase())
-    .trim();
-}
-
 export function parseSlugToFilters(slugParts: string[]): Filters {
   const filters: Filters = {};
 
@@ -39,22 +34,22 @@ export function parseSlugToFilters(slugParts: string[]): Filters {
       const slug = part.replace("-condition", "").toLowerCase();
       filters.condition = conditionMap[slug] || slug;
     } else if (part.endsWith("-state")) {
-      filters.state = capitalizeWords(
-        part.replace("-state", "").replace(/-/g, " ")
-      );
+      filters.state = part
+        .replace("-state", "")
+        .replace(/-/g, " ")
+        .toLowerCase();
     } else if (part.endsWith("-region")) {
-      filters.region = capitalizeWords(
-        part.replace("-region", "").replace(/-/g, " ")
-      );
+      filters.region = part
+        .replace("-region", "") // remove the suffix
+        .replace(/-/g, " ") // convert hyphens to spaces
+        .toLowerCase(); // make all lowercase
     } else if (part.endsWith("-suburb")) {
-      filters.suburb = capitalizeWords(
-        part.replace("-suburb", "").replace(/-/g, " ")
-      );
+      filters.suburb = part.replace("-suburb", "").replace(/-/g, " ");
     } else if (/^\d{4}$/.test(part)) {
       filters.pincode = part;
     } else if (part.includes("-kg-atm")) {
       if (part.startsWith("between-")) {
-        const match = part.match(/between-(\d+)-(\d+)-kg-atm/);
+        const match = part.match(/between-(\d+)-kg-(\d+)-kg-atm/);
         if (match) {
           filters.minKg = match[1];
           filters.maxKg = match[2];
