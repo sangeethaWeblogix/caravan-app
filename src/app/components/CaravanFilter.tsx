@@ -1248,7 +1248,7 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
             }}
             style={{
               cursor: "pointer",
-              transform: stateOpen ? "rotate(180deg)" : "",
+              transform: stateLocationOpen ? "rotate(180deg)" : "",
             }}
           />{" "}
         </div>
@@ -1271,8 +1271,33 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
                 </span>
                 <BiChevronDown
                   onClick={(e) => {
-                    e.stopPropagation(); // prevent parent click from firing
-                    setStateLocationOpen((prev) => !prev);
+                    e.stopPropagation();
+
+                    setStateOpen((prev) => {
+                      const next = !prev;
+
+                      if (next) {
+                        const region = states
+                          .find(
+                            (s) =>
+                              s.name.toLowerCase().trim() ===
+                              selectedStateName?.toLowerCase().trim()
+                          )
+                          ?.regions?.find(
+                            (r) =>
+                              r.name.toLowerCase().trim() ===
+                              selectedRegionName?.toLowerCase().trim()
+                          );
+
+                        if (region?.suburbs) {
+                          setFilteredSuburbs(region.suburbs);
+                        }
+
+                        setStateLocationOpen(false); // prevent state dropdown opening
+                      }
+
+                      return next;
+                    });
                   }}
                   style={arrowStyle(stateOpen)}
                 />
@@ -1281,7 +1306,7 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
           </div>
         )}
         {/* REGION */}
-        {selectedRegionName && (
+        {selectedRegionName && !stateLocationOpen && (
           <div
             className="filter-accordion-item"
             style={accordionStyle(!selectedSuburbName)}
@@ -1300,22 +1325,32 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
                 <BiChevronDown
                   onClick={(e) => {
                     e.stopPropagation();
-                    const region = states
-                      .find(
-                        (s) =>
-                          s.name.toLowerCase().trim() ===
-                          selectedStateName?.toLowerCase().trim()
-                      )
-                      ?.regions?.find(
-                        (r) =>
-                          r.name.toLowerCase().trim() ===
-                          selectedRegionName?.toLowerCase().trim()
-                      );
 
-                    if (region?.suburbs) {
-                      setFilteredSuburbs(region.suburbs); // preload
-                    }
-                    setStateOpen((prev) => !prev); // toggle dropdown
+                    setStateOpen((prev) => {
+                      const next = !prev;
+
+                      if (next) {
+                        const region = states
+                          .find(
+                            (s) =>
+                              s.name.toLowerCase().trim() ===
+                              selectedStateName?.toLowerCase().trim()
+                          )
+                          ?.regions?.find(
+                            (r) =>
+                              r.name.toLowerCase().trim() ===
+                              selectedRegionName?.toLowerCase().trim()
+                          );
+
+                        if (region?.suburbs) {
+                          setFilteredSuburbs(region.suburbs);
+                        }
+
+                        setStateLocationOpen(false); // prevent state dropdown opening
+                      }
+
+                      return next;
+                    });
                   }}
                   style={arrowStyle(stateOpen)}
                 />
@@ -1332,6 +1367,7 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
             </span>
           </div>
         )}
+
         {/* 🔽 REGION LIST */}
         {mounted &&
           selectedStateName &&
