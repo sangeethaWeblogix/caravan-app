@@ -319,15 +319,15 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
       .catch(console.error);
   }, [selectedMake]);
 
-  useEffect(() => {
-    if (!selectedMakeName && filters.make && makes.length > 0) {
-      const matched = makes.find((m) => m.slug === filters.make);
-      if (matched) {
-        setSelectedMake(matched.slug);
-        setSelectedMakeName(matched.name);
-      }
-    }
-  }, [filters.make, makes, selectedMakeName]);
+  // useEffect(() => {
+  //   if (!selectedMakeName && filters.make && makes.length > 0) {
+  //     const matched = makes.find((m) => m.slug === filters.make);
+  //     if (matched) {
+  //       setSelectedMake(matched.slug);
+  //       setSelectedMakeName(matched.name);
+  //     }
+  //   }
+  // }, [filters.make, makes, selectedMakeName]);
 
   console.log("filters", filters);
   console.log(selectedRegion, filteredRegions);
@@ -381,6 +381,29 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
     borderRadius: "4px",
     backgroundColor: isSelected ? "#e8f0fe" : "transparent",
   });
+  const resetMakeFilters = () => {
+    setSelectedMake(null);
+    setSelectedMakeName(null);
+    setSelectedModel(null);
+    setSelectedModelName(null);
+    setModel([]);
+    setModelOpen(false);
+
+    const updatedFilters: Filters = {
+      ...currentFilters,
+      make: undefined,
+      model: undefined,
+    };
+
+    filtersInitialized.current = true;
+    setFilters(updatedFilters);
+    console.log("✅ Cleaned filters after timeout", updatedFilters);
+
+    startTransition(() => {
+      updateAllFiltersAndURL(updatedFilters);
+    });
+    // Allow React to flush UI state
+  };
 
   const resetStateFilters = () => {
     console.log("❌ State Reset Triggered");
@@ -539,14 +562,6 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
     // });
   };
 
-  console.log(
-    "output selected",
-    selectedPostcode,
-    selectedSuburbName,
-    selectedStateName,
-    selectedRegionName,
-    locationInput
-  );
   useEffect(() => {
     if (
       filters.suburb &&
@@ -556,9 +571,6 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
       setLocationInput(`${filters.suburb} ${filters.pincode}`);
     }
   }, [filters.suburb, filters.pincode, locationInput]);
-
-  const slugify = (value: string | null | undefined) =>
-    value?.toLowerCase().replace(/\s+/g, "-").trim() || "";
 
   const resetFilters = () => {
     const reset: Filters = {
@@ -582,46 +594,45 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
       location: null,
     };
 
-    // ✅ Clear all UI states explicitly
+    // Clear UI states
     setSelectedCategory(null);
     setSelectedCategoryName(null);
     setSelectedMake(null);
     setSelectedMakeName(null);
     setSelectedModel(null);
     setSelectedModelName(null);
-
-    // ✅ This block is key to reset location
+    setSelectedConditionName(null);
+    setSelectedSleepName(null);
+    setModel([]);
+    setFilteredRegions([]);
+    setFilteredSuburbs([]);
+    setLocationInput("");
     setSelectedState(null);
     setSelectedStateName(null);
     setSelectedRegionName(null);
     setSelectedSuburbName(null);
     setSelectedPostcode(null);
-    setFilteredRegions([]);
-    setFilteredSuburbs([]);
-    setLocationInput(""); // <-- Reset visible field
-
-    setAtmFrom(null);
-    setAtmTo(null);
     setMinPrice(null);
     setMaxPrice(null);
+    setAtmFrom(null);
+    setAtmTo(null);
     setYearFrom(null);
     setYearTo(null);
     setLengthFrom(null);
     setLengthTo(null);
-    setSelectedConditionName(null);
-    setSelectedSleepName(null);
 
-    setFilters(reset);
     filtersInitialized.current = true;
-    resetSuburbFilters();
-    resetRegionFilters();
-    resetStateFilters();
-    // ✅ Reset region set flag too
+    makeInitializedRef.current = false;
     regionSetAfterSuburbRef.current = false;
     suburbClickedRef.current = false;
 
+    // ✅ Fix: Call parent state update
+    onFilterChange(reset);
+
+    setFilters(reset);
+
     startTransition(() => {
-      updateAllFiltersAndURL(reset); // ✅ push reset filters to URL
+      updateAllFiltersAndURL(reset);
     });
   };
 
@@ -779,19 +790,19 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
     locationInput,
   ]);
 
-  useEffect(() => {
-    if (selectedMake && makes.length > 0 && !selectedMakeName) {
-      const match = makes.find((m) => m.slug === selectedMake);
-      if (match) {
-        setSelectedMakeName(match.name);
+  // useEffect(() => {
+  //   if (selectedMake && makes.length > 0 && !selectedMakeName) {
+  //     const match = makes.find((m) => m.slug === selectedMake);
+  //     if (match) {
+  //       setSelectedMakeName(match.name);
 
-        // ✅ Trigger full filter+URL sync here
-        startTransition(() => {
-          updateAllFiltersAndURL(); // Push slug with current filters
-        });
-      }
-    }
-  }, [selectedMake, makes, selectedMakeName]);
+  //       // ✅ Trigger full filter+URL sync here
+  //       startTransition(() => {
+  //         updateAllFiltersAndURL(); // Push slug with current filters
+  //       });
+  //     }
+  //   }
+  // }, [selectedMake, makes, selectedMakeName]);
 
   const regionSetAfterSuburbRef = useRef(false);
 
@@ -816,7 +827,12 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
   }, [locationInput]);
 
   useEffect(() => {
-    if (currentFilters.category && !selectedCategory && categories.length > 0) {
+    if (
+      currentFilters.category &&
+      !selectedCategory &&
+      categories.length > 0 &&
+      !filtersInitialized.current
+    ) {
       const cat = categories.find((c) => c.slug === currentFilters.category);
       if (cat) {
         setSelectedCategory(cat.slug);
@@ -897,36 +913,42 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
   const makeInitializedRef = useRef(false); // ✅ add at top of component
 
   useEffect(() => {
+    // Block hydration if we already initialized or make was reset
     if (
-      !makeInitializedRef.current &&
-      !selectedMake &&
-      pathname.includes("/listings/") &&
-      makes.length > 0
+      makeInitializedRef.current || // already hydrated
+      selectedMake || // already selected in UI
+      !pathname.includes("/listings/") || // not in listings page
+      !makes.length || // no make list
+      !currentFilters.make // ❌ make no longer in filters after reset
     ) {
-      const segments = pathname.split("/listings/")[1]?.split("/") || [];
+      return;
+    }
 
-      const matchedMakeSlug = segments.find((segment) =>
-        makes.some((m) => m.slug === segment)
-      );
+    const segments = pathname.split("/listings/")[1]?.split("/") || [];
 
-      if (matchedMakeSlug) {
-        const matched = makes.find((m) => m.slug === matchedMakeSlug);
-        if (matched) {
-          setSelectedMake(matched.slug);
-          setSelectedMakeName(matched.name);
-          makeInitializedRef.current = true;
+    const matchedMakeSlug = segments.find((segment) =>
+      makes.some((m) => m.slug === segment)
+    );
 
-          // Optional: Update filters
-          const updatedFilters: Filters = {
-            ...currentFilters,
-            make: matched.slug,
-          };
-          setFilters(updatedFilters);
-          onFilterChange(updatedFilters); // ✅ single API call
-        }
+    if (matchedMakeSlug) {
+      const matched = makes.find((m) => m.slug === matchedMakeSlug);
+      if (matched) {
+        setSelectedMake(matched.slug);
+        setSelectedMakeName(matched.name);
+
+        makeInitializedRef.current = true;
+
+        // Optional: sync filters
+        const updatedFilters: Filters = {
+          ...currentFilters,
+          make: matched.slug,
+        };
+
+        setFilters(updatedFilters);
+        onFilterChange(updatedFilters);
       }
     }
-  }, [pathname, selectedMake, makes]);
+  }, [pathname, selectedMake, makes, currentFilters.make]);
 
   const hasCategoryBeenSetRef = useRef(false);
 
@@ -1141,6 +1163,23 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
 
+  const resetCategoryFilter = () => {
+    setSelectedCategory(null);
+    setSelectedCategoryName(null);
+
+    const updatedFilters: Filters = {
+      ...currentFilters,
+      category: undefined,
+    };
+
+    setFilters(updatedFilters);
+    filtersInitialized.current = true;
+
+    startTransition(() => {
+      updateAllFiltersAndURL(updatedFilters); // Trigger API + URL sync
+    });
+  };
+
   return (
     <div className="filter-card mobile-search">
       <div className="card-title align-items-center d-flex justify-content-between hidden-xs">
@@ -1160,25 +1199,7 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
         {selectedCategoryName && (
           <div className="filter-chip">
             <span>{selectedCategoryName}</span>
-            <span
-              className="filter-chip-close"
-              onClick={() => {
-                setSelectedCategory(null);
-                setSelectedCategoryName(null);
-
-                const updatedFilters: Filters = {
-                  ...currentFilters,
-                  category: undefined,
-                };
-
-                setFilters(updatedFilters);
-                //                 onFilterChange(updatedFilters);
-
-                startTransition(() => {
-                  updateAllFiltersAndURL();
-                });
-              }}
-            >
+            <span className="filter-chip-close" onClick={resetCategoryFilter}>
               ×
             </span>
           </div>
@@ -1502,41 +1523,7 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
         {selectedMakeName && (
           <div className="filter-chip">
             <span>{selectedMakeName}</span>
-            <span
-              className="filter-chip-close"
-              onClick={() => {
-                setSelectedMake(null);
-                setSelectedMakeName(null);
-                setSelectedModel(null);
-                setSelectedModelName(null);
-                setModel([]); // ✅ also reset the model list
-                setModelOpen(false); // ✅ close model dropdown
-
-                const updatedFilters: Filters = {
-                  ...currentFilters,
-                  make: undefined,
-                  model: undefined,
-                };
-
-                setFilters(updatedFilters);
-                // onFilterChange(updatedFilters);
-
-                // ✅ Remove make & model from slug
-                const segments = pathname.split("/").filter(Boolean);
-                const newSegments = segments.filter(
-                  (s) =>
-                    s !== selectedMake && // old make
-                    s !== selectedModel && // old model
-                    !makes.some((m) => m.slug === s) && // any known make slug
-                    !model.some((mod) => mod.slug === s) // any known model slug
-                );
-
-                const newPath = `/${newSegments.join("/")}`;
-                router.push(
-                  newPath + (searchParams.toString() ? `?${searchParams}` : "")
-                );
-              }}
-            >
+            <span className="filter-chip-close" onClick={resetMakeFilters}>
               ×
             </span>
           </div>
@@ -1562,23 +1549,11 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
                     // ✅ Immediately open model dropdown
                     setModelOpen(true); // <== Force open immediately
 
-                    // ✅ Fetch models async (don't wait for this to open dropdown)
-                    fetchModelsByMake(make.slug)
-                      .then((models) => {
-                        setModel(models || []);
-                      })
-                      .catch(console.error);
-
                     // ✅ Update filters
                     const updatedFilters: Filters = {
                       ...currentFilters,
                       make: make.slug,
                       model: undefined,
-                      category: selectedCategory || currentFilters.category,
-                      state: selectedStateName || currentFilters.state,
-                      region: selectedRegionName || currentFilters.region,
-                      suburb: selectedSuburbName || currentFilters.suburb,
-                      pincode: selectedPostcode || currentFilters.pincode,
                     };
 
                     setFilters(updatedFilters);
@@ -1586,24 +1561,9 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
                     filtersInitialized.current = true;
 
                     // ✅ Update URL
-                    const slugParts: string[] = [];
-                    if (make.slug) slugParts.push(make.slug);
-                    if (selectedCategory)
-                      slugParts.push(`${selectedCategory}-category`);
-                    if (selectedStateName)
-                      slugParts.push(`${slugify(selectedStateName)}-state`);
-
-                    const query: Record<string, string> = {};
-                    if (yearFrom) query.acustom_fromyears = yearFrom.toString();
-                    if (yearTo) query.acustom_toyears = yearTo.toString();
-
-                    const queryString = new URLSearchParams(query).toString();
-                    const slugPath = `/listings/${slugParts.join("/")}`;
-                    const fullURL = queryString
-                      ? `${slugPath}?${queryString}`
-                      : slugPath;
-
-                    router.push(fullURL); // ✅ Trigger URL update
+                    startTransition(() => {
+                      updateAllFiltersAndURL(updatedFilters); // ✅ this triggers the API + URL update
+                    });
                   }}
                 >
                   {make.name}
