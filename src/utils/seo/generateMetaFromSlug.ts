@@ -1,27 +1,24 @@
-// utils/seo/generateMetaFromSlug.ts
+// app/listings/[[...slug]]/generateMetaFromSlug.ts
 import { fetchListings } from "@/api/listings/api";
-import { parseSlugToFilters } from "../../components/urlBuilder";
+import { parseSlugToFilters } from "../../app/components/urlBuilder";
 import { Metadata } from "next";
 
-/**
- * Generate dynamic metadata from slug parts
- */
 export async function generateMetaFromSlug(
   slugParts: string[] = []
 ): Promise<Metadata> {
   const filters = parseSlugToFilters(slugParts);
   const response = await fetchListings({ ...filters, page: 1 });
-  console.log("server data", response);
-  const metaTitle = response?.seo?.metatitle || "Caravan Listings";
-  const metaDescription =
+
+  const title = response?.seo?.metatitle || "Caravan Listings";
+  const description =
     response?.seo?.metadescription || "Browse all available caravans.";
-  console.log("server meta", metaTitle);
+  console.log("metaa", title, description);
   return {
-    title: metaTitle,
-    description: metaDescription,
+    title,
+    description,
     openGraph: {
-      title: metaTitle,
-      description: metaDescription,
+      title,
+      description,
       images: [
         {
           url: "/favicon.ico",
@@ -33,8 +30,8 @@ export async function generateMetaFromSlug(
     },
     twitter: {
       card: "summary_large_image",
-      title: metaTitle,
-      description: metaDescription,
+      title,
+      description,
       images: [
         {
           url: "/favicon.ico",
