@@ -1139,16 +1139,16 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
         setSelectedRegion(matchedRegion.value);
         regionSetAfterSuburbRef.current = true;
 
-        // const updatedFilters: Filters = {
-        //   ...filters,
-        //   state: selectedStateName || matchedState?.name,
-        //   region: matchedRegion.name,
-        //   suburb: selectedSuburbName,
-        //   pincode: selectedPostcode ?? "",
-        // };
+        const updatedFilters: Filters = {
+          ...filters,
+          state: selectedStateName || matchedState?.name,
+          region: matchedRegion.name,
+          suburb: selectedSuburbName,
+          pincode: selectedPostcode ?? "",
+        };
 
-        // // setFilters(updatedFilters);
-        // // filtersInitialized.current = true;
+        setFilters(updatedFilters);
+        filtersInitialized.current = true;
 
         // // startTransition(() => {
         // //   updateAllFiltersAndURL(updatedFilters);
