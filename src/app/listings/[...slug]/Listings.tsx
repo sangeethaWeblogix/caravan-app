@@ -1,4 +1,4 @@
-import { withDynamicSlugMeta } from "./withDynamicSlugMeta";
+import { withDynamicSlugMeta } from "../../../utils/seo/withDynamicSlugMeta";
 import ListingsPage from "@/app/components/ListContent/Listings";
 import { parseSlugToFilters } from "../../components/urlBuilder";
 import { useMemo } from "react";

@@ -8,6 +8,12 @@ import Navbar from "./navbar/Navbar";
 import Footer from "./footer/Footer";
 import React from "react";
 
+export const metadata = {
+  metadataBase: new URL(
+    process.env.NEXT_PUBLIC_SITE_URL || "https://caravan-app-6c2f.vercel.app"
+  ),
+};
+
 export default function RootLayout({
   children,
 }: {
