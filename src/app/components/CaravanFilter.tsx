@@ -204,7 +204,6 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
     };
     loadFilters();
   }, []);
-  const urlJustUpdatedRef = useRef(false);
 
   const handleATMChange = (newFrom: number | null, newTo: number | null) => {
     setAtmFrom(newFrom);
@@ -315,23 +314,10 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
         };
 
         setFilters(updatedFilters);
-        onFilterChange(updatedFilters);
+        // onFilterChange(updatedFilters);
       })
       .catch(console.error);
   }, [selectedMake]);
-
-  // useEffect(() => {
-  //   if (!selectedMakeName && filters.make && makes.length > 0) {
-  //     const matched = makes.find((m) => m.slug === filters.make);
-  //     if (matched) {
-  //       setSelectedMake(matched.slug);
-  //       setSelectedMakeName(matched.name);
-  //     }
-  //   }
-  // }, [filters.make, makes, selectedMakeName]);
-
-  console.log("filters", filters);
-  console.log(selectedRegion, filteredRegions);
 
   const [locationSuggestions, setLocationSuggestions] = useState<
     LocationSuggestion[]
@@ -340,8 +326,6 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
   const toggle = (setter: Dispatch<SetStateAction<boolean>>) => {
     setter((prev) => !prev);
   };
-
-  console.log("Active filters at API call:", filters);
 
   const [isPending, startTransition] = useTransition();
   console.log(isPending);
@@ -611,75 +595,7 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
     });
   };
 
-  // locataion useeffe
-  // useEffect(() => {
-  //   if (currentFilters.suburb && !selectedSuburbName) {
-  //     setSelectedSuburbName(currentFilters.suburb);
-  //   }
-  //   if (currentFilters.pincode && !selectedPostcode) {
-  //     setSelectedPostcode(currentFilters.pincode);
-  //   }
-  //   if (currentFilters.state && !selectedStateName) {
-  //     setSelectedStateName(currentFilters.state);
-  //   }
-  //   if (currentFilters.region && !selectedRegionName) {
-  //     setSelectedRegionName(currentFilters.region);
-  //   }
-  // }, [
-  //   currentFilters.suburb,
-  //   currentFilters.pincode,
-  //   currentFilters.state,
-  //   currentFilters.region,
-  //   selectedSuburbName,
-  //   selectedPostcode,
-  //   selectedStateName,
-  //   selectedRegionName,
-  // ]);
-
-  // useEffect(() => {
-  //   if (
-  //     selectedSuburbName &&
-  //     selectedStateName &&
-  //     selectedPostcode &&
-  //     selectedRegionName
-  //   ) {
-  //     setLocationInput(`${selectedSuburbName} ${selectedPostcode}`);
-  //   }
-  // }, [
-  //   selectedSuburbName,
-  //   selectedStateName,
-  //   selectedPostcode,
-  //   selectedRegionName,
-  // ]);
-
   console.log("🔁 suburb Render triggered — filteredSuburbs:", filteredSuburbs);
-  // correct-3
-  // useEffect(() => {
-  //   const slug = pathname.split("/listings/")[1];
-  //   const segments = slug?.split("/") || [];
-
-  //   const suburbSegment = segments.find((s) => s.endsWith("-suburb"));
-  //   const regionSegment = segments.find((s) => s.endsWith("-region"));
-  //   const stateSegment = segments.find((s) => s.endsWith("-state"));
-
-  //   if (regionSegment) {
-  //     const region = regionSegment.replace("-region", "").replace(/-/g, " ");
-  //     setSelectedRegionName(region);
-  //     setSelectedRegion(region);
-  //   }
-
-  //   if (suburbSegment) {
-  //     const suburb = suburbSegment.replace("-suburb", "").replace(/-/g, " ");
-  //     setSelectedSuburbName(suburb);
-  //     setLocationInput(suburb);
-  //   }
-
-  //   if (stateSegment) {
-  //     const state = stateSegment.replace("-state", "").replace(/-/g, " ");
-  //     setSelectedStateName(state);
-  //     setSelectedState(state);
-  //   }
-  // }, [pathname]);
 
   useEffect(() => {
     if (!selectedStateName || !selectedRegionName || !states.length) return;
@@ -718,15 +634,6 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
     currentFilters.suburb,
     currentFilters.pincode,
   ]);
-
-  // useEffect(() => {
-  //   if (!suburbClickedRef.current) return;
-
-  //   console.log(
-  //     "🏘️ Suburb Render triggered – filteredSuburbs:",
-  //     filteredSuburbs
-  //   );
-  // }, [filteredSuburbs]);
 
   const suburbFilterReadyRef = useRef(false);
   suburbFilterReadyRef.current = true;
@@ -777,20 +684,6 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
     locationInput,
   ]);
 
-  // useEffect(() => {
-  //   if (selectedMake && makes.length > 0 && !selectedMakeName) {
-  //     const match = makes.find((m) => m.slug === selectedMake);
-  //     if (match) {
-  //       setSelectedMakeName(match.name);
-
-  //       // ✅ Trigger full filter+URL sync here
-  //       startTransition(() => {
-  //         updateAllFiltersAndURL(); // Push slug with current filters
-  //       });
-  //     }
-  //   }
-  // }, [selectedMake, makes, selectedMakeName]);
-
   const regionSetAfterSuburbRef = useRef(false);
 
   useEffect(() => {
@@ -836,16 +729,6 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
       setYearTo(parseInt(toYearParam));
     }
   }, [searchParams]);
-
-  // useEffect(() => {
-  //   if (
-  //     currentFilters.state &&
-  //     !selectedStateName &&
-  //     filtersInitialized.current
-  //   ) {
-  //     setSelectedStateName(currentFilters.state);
-  //   }
-  // }, [currentFilters.state, selectedStateName, filtersInitialized.current]);
 
   useEffect(() => {
     if (
@@ -945,11 +828,6 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
     return true;
   };
 
-  const setIfChanged = <T,>(
-    setter: React.Dispatch<React.SetStateAction<T>>,
-    next: T
-  ) => setter((prev) => (shallowEqual(prev, next) ? prev : next));
-
   useEffect(() => {
     if (!hasCategoryBeenSetRef.current && selectedCategory) {
       hasCategoryBeenSetRef.current = true;
@@ -998,11 +876,6 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
 
     const slugPath = buildSlugFromFilters(filters);
     const query = new URLSearchParams();
-
-    // if (filters.from_year)
-    //   query.set("acustom_fromyears", filters.from_year.toString());
-    // if (filters.to_year)
-    //   query.set("acustom_toyears", filters.to_year.toString());
 
     if (!searchParams.has("page")) {
       const page = searchParams.get("page");
@@ -1180,14 +1053,6 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
     }
   }, [selectedStateName, selectedSuburbName]);
 
-  // once a suburb is chosen → keep all panels closed
-  // useEffect(() => {
-  //   if (selectedSuburbName) {
-  //     setStateRegionOpen(false);
-  //     setStateSuburbOpen(false);
-  //   }
-  // }, [selectedSuburbName]);
-  // put this near the top (below types)
   const slug = (s: string) => s.trim().toLowerCase().replace(/\s+/g, "-");
 
   const findSuggestionFor = (
@@ -1851,11 +1716,11 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
                   to_price: maxPrice ?? undefined,
                 };
 
+                setFilters(updatedFilters);
+                filtersInitialized.current = true;
                 startTransition(() => {
                   updateAllFiltersAndURL();
                 });
-                setFilters(updatedFilters);
-                filtersInitialized.current = true;
               }}
             >
               <option value="">Min</option>
@@ -2022,11 +1887,6 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
                   sleeps: undefined,
                 };
                 setFilters(updatedFilters);
-                //                 onFilterChange(updatedFilters);
-
-                setFilters(updatedFilters);
-                // onFilterChange(updatedFilters);
-                //                 onFilterChange(updatedFilters);
 
                 startTransition(() => {
                   updateAllFiltersAndURL(updatedFilters); // ✅ pass it here
@@ -2064,7 +1924,6 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
                   };
 
                   setFilters(updatedFilters);
-                  // onFilterChange(updatedFilters);
                   filtersInitialized.current = true;
 
                   startTransition(() => {
@@ -2155,8 +2014,6 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
                 };
 
                 setFilters(updatedFilters);
-                // onFilterChange(updatedFilters);
-                //                 onFilterChange(updatedFilters);
 
                 startTransition(() => {
                   updateAllFiltersAndURL(updatedFilters); // ✅ pass it here
@@ -2248,7 +2105,6 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
                   to_length: undefined,
                 };
                 setFilters(updatedFilters);
-                //                 onFilterChange(updatedFilters);
 
                 // Remove slug segments related to length
                 const segments = pathname.split("/").filter(Boolean);
