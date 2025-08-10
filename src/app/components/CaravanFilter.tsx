@@ -794,24 +794,20 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
   const regionSetAfterSuburbRef = useRef(false);
 
   useEffect(() => {
-    const delayDebounce = setTimeout(() => {
-      if (locationInput.length >= 2) {
-        // Extract only the suburb name (assuming it's the first word in the input)
-        const suburbName = locationInput.split(" ")[0]; // Takes only the first word
-
-        // Call the API with just the suburb
-        fetchLocations(suburbName)
-          .then((data) => {
-            setLocationSuggestions(data); // ← keep full object
-          })
-          .catch(console.error);
-      } else {
-        setLocationSuggestions([]);
-      }
+    const q = locationInput.trim();
+    if (q.length < 2) {
+      setLocationSuggestions([]);
+      return;
+    }
+    const t = setTimeout(() => {
+      // If you want only the suburb token, do it here
+      const suburb = q.split(" ")[0];
+      fetchLocations(suburb)
+        .then((data) => setLocationSuggestions(data))
+        .catch(console.error);
     }, 300);
-
-    return () => clearTimeout(delayDebounce);
-  }, [locationInput]);
+    return () => clearTimeout(t);
+  }, [locationInput]); // <-- do NOT include suggestions or filters here
 
   useEffect(() => {
     if (
@@ -938,6 +934,21 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
   }, [pathname, selectedMake, makes, currentFilters.make]);
 
   const hasCategoryBeenSetRef = useRef(false);
+  // --- helpers ---
+  const shallowEqual = (a: any, b: any) => {
+    if (a === b) return true;
+    if (!a || !b) return false;
+    const ak = Object.keys(a),
+      bk = Object.keys(b);
+    if (ak.length !== bk.length) return false;
+    for (const k of ak) if (a[k] !== b[k]) return false;
+    return true;
+  };
+
+  const setIfChanged = <T,>(
+    setter: React.Dispatch<React.SetStateAction<T>>,
+    next: T
+  ) => setter((prev) => (shallowEqual(prev, next) ? prev : next));
 
   useEffect(() => {
     if (!hasCategoryBeenSetRef.current && selectedCategory) {
@@ -1008,17 +1019,23 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
       lastPushedURLRef.current = finalURL;
       startTransition(() => {
         router.push(finalURL);
-        onFilterChange(filters);
       });
     }
   }, [filters]);
-
+  const lastSentFiltersRef = useRef<Filters | null>(null);
   // ✅ Update all filters and URL with validation
   const updateAllFiltersAndURL = (overrideFilters?: Filters) => {
     const final = overrideFilters ?? filters;
 
-    setFilters(final);
+    // 1) Set local filters only if changed
+    setFilters((prev) => (shallowEqual(prev, final) ? prev : final));
     filtersInitialized.current = true;
+
+    // 2) Notify parent only if changed (prevents loops)
+    if (!shallowEqual(lastSentFiltersRef.current || {}, final)) {
+      lastSentFiltersRef.current = final;
+      onFilterChange(final);
+    }
 
     const slugPath = buildSlugFromFilters(final);
     const query = new URLSearchParams();
@@ -1035,7 +1052,6 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
 
       startTransition(() => {
         router.push(finalURL);
-        onFilterChange(final); // ✅ single clean API call
       });
     }
   };
@@ -1483,7 +1499,8 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
         {stateSuburbOpen && selectedStateName && selectedRegionName && (
           <div className="filter-accordion-items">
             {Array.isArray(filteredSuburbs) && filteredSuburbs.length === 0 ? (
-              <p style={{ marginLeft: 20 }}>❌ No suburbs available</p>
+              // <p style={{ marginLeft: 20 }}>❌ No suburbs available</p>
+              <p style={{ marginLeft: 20 }}></p>
             ) : (
               filteredSuburbs.map((suburb, idx) => (
                 <div
