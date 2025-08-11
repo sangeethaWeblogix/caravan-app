@@ -1,22 +1,23 @@
 import ListingsPage from "@/app/components/ListContent/Listings";
 import { parseSlugToFilters } from "../../components/urlBuilder";
 import { withDynamicSlugMeta } from "../../../utils/seo/withDynamicSlugMeta";
-// app/listings/[[...slug]]/page.tsx   ← use [[...slug]] if you want /listings to work too
 
+// ✅ This wires dynamic metadata into <head>
 export const generateMetadata = withDynamicSlugMeta();
 
-export default async function Page({
+export default function Listings({
   params,
   searchParams,
 }: {
-  params: Promise<{ slug?: string[] }>;
-  searchParams: Promise<Record<string, string | string[] | undefined>>;
+  params: { slug?: string[] }; // ← use `slug` (matches [[...slug]])
+  searchParams?: { [key: string]: string | string[] | undefined };
 }) {
-  const { slug = [] } = await params;
-  const sp = await searchParams;
+  const slugParts = params.slug ?? []; // ← not Filters
+  const filters = parseSlugToFilters(slugParts);
 
-  const filters = parseSlugToFilters(slug);
-  const page = String(sp?.page ?? "1");
+  const paged = Array.isArray(searchParams?.paged)
+    ? (searchParams!.paged[0] as string)
+    : (searchParams?.paged as string) ?? "1";
 
-  return <ListingsPage {...filters} page={page} />;
+  return <ListingsPage {...filters} page={paged} />;
 }

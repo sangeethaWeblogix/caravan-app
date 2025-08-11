@@ -6,6 +6,7 @@ import React, {
   useEffect,
   useRef,
   useTransition,
+  useMemo,
 } from "react";
 import { BiChevronDown } from "react-icons/bi";
 import { usePathname, useRouter } from "next/navigation";
@@ -596,7 +597,14 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
   };
 
   console.log("🔁 suburb Render triggered — filteredSuburbs:", filteredSuburbs);
+  // 1) Make a stable key for `states`
+  const statesKey = useMemo(() => {
+    if (!Array.isArray(states)) return "";
+    // Use stable, cheap fields; avoid dumping whole objects
+    return states.map((s) => `${s.value}:${s.regions?.length ?? 0}`).join(",");
+  }, [states]);
 
+  // 2) Keep your original effect body unchanged
   useEffect(() => {
     if (!selectedStateName || !selectedRegionName || !states.length) return;
 
@@ -617,12 +625,11 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
     if (matchedRegion?.suburbs?.length) {
       setFilteredSuburbs(matchedRegion.suburbs);
     } else {
-      // Only clear if we are switching region
-      if (filteredSuburbs.length) {
-        setFilteredSuburbs([]);
-      }
+      if (filteredSuburbs.length) setFilteredSuburbs([]);
     }
-  }, [selectedStateName, selectedRegionName, states]);
+    // 3) ✅ Fixed-length deps
+  }, [selectedStateName, selectedRegionName, statesKey]);
+
   useEffect(() => {
     if (currentFilters.state) setSelectedStateName(currentFilters.state);
     if (currentFilters.region) setSelectedRegionName(currentFilters.region); // only set if present

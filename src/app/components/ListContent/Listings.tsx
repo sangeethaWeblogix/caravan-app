@@ -103,6 +103,8 @@ interface Props extends Filters {
 export default function ListingsPage({ page, ...incomingFilters }: Props) {
   const [initialFilters, setInitialFilters] = useState<Filters>({});
   const filtersInitializedRef = useRef(false);
+  const lastRequestKeyRef = useRef<string>("");
+  const inFlightKeyRef = useRef<string>("");
 
   const [filtersReady, setFiltersReady] = useState(false);
   const [filters, setFilters] = useState<Filters>(initialFilters);
@@ -142,21 +144,21 @@ export default function ListingsPage({ page, ...incomingFilters }: Props) {
     }
   }, [router]);
   // Update pagination when page URL param changes
-  useEffect(() => {
-    const pageParam = searchParams.get("page");
-    const page = parseInt(pageParam || "1", 10);
-    if (!filtersReady) return; // ✅ Prevent early fetch
+  // useEffect(() => {
+  //   const pageParam = searchParams.get("page");
+  //   const page = parseInt(pageParam || "1", 10);
+  //   if (!filtersReady) return; // ✅ Prevent early fetch
 
-    if (pagination.current_page === page) return;
+  //   if (pagination.current_page === page) return;
 
-    setPagination((prev) => ({
-      ...prev,
-      current_page: page,
-    }));
+  //   setPagination((prev) => ({
+  //     ...prev,
+  //     current_page: page,
+  //   }));
 
-    loadListings(page, filtersRef.current);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchParams, pagination, filtersReady]);
+  //   loadListings(page, filtersRef.current);
+  //   // eslint-disable-next-line react-hooks/exhaustive-deps
+  // }, [searchParams, pagination, filtersReady]);
 
   console.log("✅ Filters about to be applied:", filtersRef.current);
 
@@ -375,13 +377,70 @@ export default function ListingsPage({ page, ...incomingFilters }: Props) {
     }
   };
   const noResultsRedirectingRef = useRef(false);
+  // useEffect(() => {
+  //   if (noResultsRedirectingRef.current) return; // ✅ Skip if just redirected
+  //   if (filtersReady && hasSearched) {
+  //     const currentPage = parseInt(searchParams.get("page") || "1", 10);
+  //     loadListings(currentPage, filtersRef.current);
+  //   }
+  // }, [filters, hasSearched]);
+  // ✅ single fetch trigger — runs when URL changes
   useEffect(() => {
-    if (noResultsRedirectingRef.current) return; // ✅ Skip if just redirected
-    if (filtersReady && hasSearched) {
-      const currentPage = parseInt(searchParams.get("page") || "1", 10);
-      loadListings(currentPage, filtersRef.current);
+    if (!filtersInitializedRef.current) return;
+
+    const path = typeof window !== "undefined" ? window.location.pathname : "";
+    const slugParts = path.split("/listings/")[1]?.split("/") || [];
+    const parsedFromURL = parseSlugToFilters(slugParts);
+
+    // keep our refs in sync with the URL
+    const pageFromURL = parseInt(searchParams.get("page") || "1", 10);
+    filtersRef.current = { ...parsedFromURL, ...incomingFilters };
+    setFilters(filtersRef.current);
+
+    // dedupe key (page + filters)
+    const requestKey = JSON.stringify({
+      page: pageFromURL,
+      filters: filtersRef.current,
+    });
+
+    if (
+      lastRequestKeyRef.current === requestKey ||
+      inFlightKeyRef.current === requestKey
+    ) {
+      return; // already fetched / in flight for this exact state
     }
-  }, [filters, hasSearched]);
+
+    lastRequestKeyRef.current = requestKey;
+    inFlightKeyRef.current = requestKey;
+
+    setPagination((prev) => ({
+      ...prev,
+      current_page: pageFromURL,
+    }));
+
+    loadListings(pageFromURL, filtersRef.current)
+      .catch(() => {})
+      .finally(() => {
+        // clear inflight only if nothing else replaced the key
+        if (inFlightKeyRef.current === requestKey) {
+          inFlightKeyRef.current = "";
+        }
+      });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]);
+  useEffect(() => {
+    if (!filtersInitializedRef.current) {
+      const path =
+        typeof window !== "undefined" ? window.location.pathname : "";
+      const slugParts = path.split("/listings/")[1]?.split("/") || [];
+      const parsed = parseSlugToFilters(slugParts);
+
+      setInitialFilters(parsed);
+      filtersRef.current = parsed;
+      filtersInitializedRef.current = true;
+      setFiltersReady(true); // let the URL watcher effect do the fetching
+    }
+  }, []);
 
   console.log("metaaa", metaTitle);
   return (
