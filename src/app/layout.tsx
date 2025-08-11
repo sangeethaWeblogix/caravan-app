@@ -7,12 +7,13 @@ import "@fortawesome/fontawesome-free/css/all.min.css";
 import Navbar from "./navbar/Navbar";
 import Footer from "./footer/Footer";
 import React from "react";
+import { Metadata } from "next";
 
-export const metadata = {
-  metadataBase: new URL(
-    process.env.NEXT_PUBLIC_SITE_URL || "https://caravan-app-6c2f.vercel.app"
-  ),
-};
+// export const metadata: Metadata = {
+//   title: { default: "Caravan Listings", template: "%s | Caravan" },
+//   description: "Browse all available caravans.",
+//   icons: { icon: "/favicon.ico" },
+// };
 
 export default function RootLayout({
   children,

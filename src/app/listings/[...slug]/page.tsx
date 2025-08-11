@@ -3,17 +3,18 @@ import { parseSlugToFilters } from "../../components/urlBuilder";
 import { metaFromSlug } from "../../../utils/seo/metaFromSlug";
 import { Metadata } from "next";
 
-// ✅ This wires dynamic metadata into <head>
 type Params = { slug?: string[] };
 type SearchParams = { [k: string]: string | string[] | undefined };
 
-// ✅ Correct Next.js signature: no Promises here
+// Use async and await the params
 export async function generateMetadata({
   params,
 }: {
-  params: Params;
+  params: Promise<Params>;
 }): Promise<Metadata> {
-  return metaFromSlug(params.slug ?? []);
+  // Await the resolved value of params
+  const { slug = [] } = await params;
+  return metaFromSlug(slug); // Pass the slug to your helper function
 }
 
 export default async function Listings({
@@ -23,15 +24,14 @@ export default async function Listings({
   params: Promise<Params>;
   searchParams: Promise<SearchParams>;
 }) {
-  const resolvedParams = await params;
-  const resolvedSearchParams = await searchParams;
+  // Await both params and searchParams before using them
+  const [{ slug = [] }, sp] = await Promise.all([params, searchParams]);
 
-  const slugParts = resolvedParams.slug ?? [];
-  const filters = parseSlugToFilters(slugParts);
+  const filters = parseSlugToFilters(slug);
 
-  const paged = Array.isArray(resolvedSearchParams?.paged)
-    ? (resolvedSearchParams!.paged[0] as string)
-    : (resolvedSearchParams?.paged as string) ?? "1";
+  const paged = Array.isArray(sp?.paged)
+    ? (sp!.paged[0] as string)
+    : (sp?.paged as string) ?? "1";
 
   return <ListingsPage {...filters} page={paged} />;
 }
