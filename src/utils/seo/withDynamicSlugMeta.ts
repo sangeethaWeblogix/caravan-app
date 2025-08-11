@@ -1,12 +1,10 @@
-import { generateMetaFromSlug } from "./generateMetaFromSlug";
+import { metaFromSlug } from "./metaFromSlug";
+
+type Params = { slug?: string[] };
 
 export function withDynamicSlugMeta() {
-  return async function generateMetadata({
-    params,
-  }: {
-    params: Promise<{ slug?: string[] }>;
-  }) {
-    const { slug = [] } = await params;
-    return generateMetaFromSlug(slug);
+  return async ({ params }: { params: Promise<Params> }) => {
+    const resolvedParams = await params;
+    return metaFromSlug(resolvedParams.slug ?? []);
   };
 }
