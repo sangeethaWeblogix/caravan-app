@@ -1,32 +1,37 @@
-import React from "react";
-import Home from "./home";
-import { Metadata } from "next";
+// app/listings/[...slug]/page.tsx
+import type { Metadata } from "next";
+import ListingsPage from "@/app/components/ListContent/Listings";
+import { parseSlugToFilters } from "@/app/components/urlBuilder";
+import { metaFromSlug } from "@/utils/seo/metaFromSlug";
 
-export async function generateMetadata(): Promise<Metadata> {
-  const metaTitle = "Caravan For Sale ";
-  const metaDescription = "Browse all available caravans across Australia.";
+type Params = { slug?: string[] };
+type SearchParams = { [k: string]: string | string[] | undefined };
 
-  return {
-    title: metaTitle,
-    description: metaDescription,
-    openGraph: {
-      title: metaTitle,
-      description: metaDescription,
-    },
-    twitter: {
-      card: "summary_large_image",
-      title: metaTitle,
-      description: metaDescription,
-    },
-  };
+// ✅ Await params in generateMetadata
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<Params>;
+}): Promise<Metadata> {
+  const { slug = [] } = await params;
+  return metaFromSlug(slug);
 }
 
-const page = () => {
-  return (
-    <div>
-      <Home />
-    </div>
-  );
-};
+export default async function Listings({
+  params,
+  searchParams,
+}: {
+  params: Promise<Params>;
+  searchParams: Promise<SearchParams>;
+}) {
+  // ✅ Resolve both in parallel
+  const [{ slug = [] }, sp] = await Promise.all([params, searchParams]);
 
-export default page;
+  const filters = parseSlugToFilters(slug);
+
+  const paged = Array.isArray(sp?.paged)
+    ? (sp!.paged[0] as string)
+    : (sp?.paged as string) ?? "1";
+
+  return <ListingsPage {...filters} page={paged} />;
+}

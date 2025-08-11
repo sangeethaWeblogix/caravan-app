@@ -1,18 +1,18 @@
+// utils/seo/metaFromSlug.ts
 import { fetchListings } from "@/api/listings/api";
-import { parseSlugToFilters } from "../../app/components/urlBuilder";
-import { Metadata } from "next";
+import { parseSlugToFilters } from "@/app/components/urlBuilder";
+import type { Metadata } from "next";
 
 export async function metaFromSlug(
   slugParts: string[] = []
 ): Promise<Metadata> {
   const filters = parseSlugToFilters(slugParts);
-  const response = await fetchListings({ ...filters, page: 1 });
+  const res = await fetchListings({ ...filters, page: 1 });
 
-  const title = response?.seo?.metatitle || "Caravan Listings";
+  const title = res?.seo?.metatitle || "Caravan Listings";
   const description =
-    response?.seo?.metadescription || "Browse all available caravans.";
+    res?.seo?.metadescription || "Browse all available caravans.";
 
-  console.log("metta", title, description);
   return {
     title,
     description,
