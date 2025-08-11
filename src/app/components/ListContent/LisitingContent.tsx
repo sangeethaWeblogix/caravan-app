@@ -1,8 +1,8 @@
 "use client";
 import Image from "next/image";
 import Link from "next/link";
-import { Swiper, SwiperSlide } from "swiper/react";
-import { Navigation } from "swiper/modules";
+// import { Swiper, SwiperSlide } from "swiper/react";
+// import { Navigation } from "swiper/modules";
 import "swiper/css";
 import "swiper/css/navigation";
 import "../../listings/listings.css";
@@ -114,7 +114,7 @@ export default function ListingContent({
                 {product.link ? (
                   <Link href={product.link}>
                     <div>
-                      <Swiper
+                      {/* <Swiper
                         navigation
                         modules={[Navigation]}
                         className="mySwiper"
@@ -138,7 +138,7 @@ export default function ListingContent({
                             )}
                           </div>
                         </SwiperSlide>
-                      </Swiper>
+                      </Swiper> */}
                     </div>
                   </Link>
                 ) : (

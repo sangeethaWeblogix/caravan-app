@@ -7,7 +7,6 @@ import "@fortawesome/fontawesome-free/css/all.min.css";
 import Navbar from "./navbar/Navbar";
 import Footer from "./footer/Footer";
 import React from "react";
-import { Metadata } from "next";
 
 // export const metadata: Metadata = {
 //   title: { default: "Caravan Listings", template: "%s | Caravan" },
