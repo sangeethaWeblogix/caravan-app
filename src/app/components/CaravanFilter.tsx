@@ -526,11 +526,11 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
     // startTransition(() => updateAllFiltersAndURL(updatedFilters));
   };
 
-  useEffect(() => {
-    if (!selectedSuggestion && filters.suburb && filters.pincode) {
-      setLocationInput(`${filters.suburb} ${filters.pincode}`);
-    }
-  }, [selectedSuggestion, filters.suburb, filters.pincode]);
+  // useEffect(() => {
+  //   if (!selectedSuggestion && filters.suburb && filters.pincode) {
+  //     setLocationInput(`${filters.suburb} ${filters.pincode}`);
+  //   }
+  // }, [selectedSuggestion, filters.suburb, filters.pincode]);
 
   const resetFilters = () => {
     const reset: Filters = {
@@ -605,6 +605,14 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
   }, [states]);
 
   // 2) Keep your original effect body unchanged
+  // put this near other refs
+  const prevSuburbsKeyRef = useRef<string>("");
+
+  // helper to make a stable signature of a suburbs array
+  const suburbsKey = (subs?: Suburb[]) =>
+    (subs ?? []).map((s) => `${s.name}|${s.value}`).join("||");
+
+  // ✅ only sets state when the suburbs list actually changed
   useEffect(() => {
     if (!selectedStateName || !selectedRegionName || !states.length) return;
 
@@ -613,7 +621,6 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
         s.name.toLowerCase() === selectedStateName.toLowerCase() ||
         s.value.toLowerCase() === selectedStateName.toLowerCase()
     );
-
     if (!matchedState) return;
 
     const matchedRegion = matchedState.regions?.find(
@@ -622,12 +629,14 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
         r.value.toLowerCase() === selectedRegionName.toLowerCase()
     );
 
-    if (matchedRegion?.suburbs?.length) {
-      setFilteredSuburbs(matchedRegion.suburbs);
-    } else {
-      if (filteredSuburbs.length) setFilteredSuburbs([]);
+    const nextSubs = matchedRegion?.suburbs ?? [];
+    const nextKey = suburbsKey(nextSubs);
+
+    if (prevSuburbsKeyRef.current !== nextKey) {
+      prevSuburbsKeyRef.current = nextKey;
+      setFilteredSuburbs(nextSubs);
     }
-    // 3) ✅ Fixed-length deps
+    // 👇 DON'T write else { setFilteredSuburbs([]) } here repeatedly.
   }, [selectedStateName, selectedRegionName, statesKey]);
 
   useEffect(() => {
@@ -643,7 +652,6 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
   ]);
 
   const suburbFilterReadyRef = useRef(false);
-  suburbFilterReadyRef.current = true;
   useEffect(() => {
     if (
       !selectedRegionName &&
@@ -1096,33 +1104,67 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
     });
     return byText || null;
   };
+  const isUserTypingRef = useRef(false);
+  const lastQueryRef = useRef("");
+  const locKey = useMemo(
+    () =>
+      [
+        selectedSuburbName ?? "",
+        selectedRegionName ?? "",
+        selectedStateName ?? "",
+        selectedPostcode ?? "",
+      ].join("|"),
+    [
+      selectedSuburbName,
+      selectedRegionName,
+      selectedStateName,
+      selectedPostcode,
+    ]
+  );
+
+  const hydratedKeyRef = useRef("");
+
   useEffect(() => {
-    if (!selectedSuburbName || !selectedStateName || !selectedRegionName)
+    if (!selectedSuburbName || !selectedRegionName || !selectedStateName)
       return;
 
-    const postcode = selectedPostcode || null;
+    // run once per unique combo
+    if (hydratedKeyRef.current === locKey) return;
+    hydratedKeyRef.current = locKey; // mark early to prevent re-entry
 
-    fetchLocations(selectedSuburbName)
-      .then((data) => {
+    let cancelled = false;
+
+    (async () => {
+      try {
+        const data = await fetchLocations(selectedSuburbName);
         const match = findSuggestionFor(
           selectedSuburbName,
           selectedRegionName,
           selectedStateName,
-          postcode,
+          selectedPostcode || null,
           data || []
         );
-        if (match) {
-          setSelectedSuggestion(match); // keep the full row
-          setLocationInput(match.short_address); // show “Suburb 2650”
+        if (!match || cancelled) return;
+
+        // set only if different
+        if (!selectedSuggestion || selectedSuggestion.key !== match.key) {
+          setSelectedSuggestion(match);
         }
-      })
-      .catch(console.error);
-  }, [
-    selectedSuburbName,
-    selectedRegionName,
-    selectedStateName,
-    selectedPostcode,
-  ]);
+        if (locationInput !== match.short_address) {
+          isUserTypingRef.current = false; // programmatic update
+          setLocationInput(match.short_address);
+        }
+      } catch (e) {
+        if (!cancelled) console.error(e);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+    // 👇 only locKey; this prevents re-running just because we set state above
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [locKey]);
 
   return (
     <div className="filter-card mobile-search">
