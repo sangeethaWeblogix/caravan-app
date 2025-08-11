@@ -12,6 +12,7 @@ export async function metaFromSlug(
   const description =
     response?.seo?.metadescription || "Browse all available caravans.";
 
+  console.log("metta", title, description);
   return {
     title,
     description,

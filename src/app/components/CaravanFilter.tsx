@@ -88,11 +88,6 @@ interface Model {
   name: string;
   slug: string;
 }
-type Region = {
-  name: string;
-  value: string;
-  suburbs?: Suburb[];
-};
 
 type Suburb = {
   name: string;
@@ -114,7 +109,7 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
   const [states, setStates] = useState<StateOption[]>([]);
   const [makeOpen, setMakeOpen] = useState(false);
   const [modelOpen, setModelOpen] = useState(false);
-  const [filteredRegions, setFilteredRegions] = useState<Region[]>([]);
+  // const [filteredRegions, setFilteredRegions] = useState<Region[]>([]);
   const [filteredSuburbs, setFilteredSuburbs] = useState<Suburb[]>([]);
   const [filters, setFilters] = useState<Filters>({});
   const [conditionOpen, setConditionOpen] = useState(false);
@@ -134,7 +129,6 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
     null
   );
   const suburbClickedRef = useRef(false);
-  const preventResetRef = useRef(false);
   const [selectedConditionName, setSelectedConditionName] = useState<
     string | null
   >(null);
@@ -401,7 +395,7 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
     setSelectedRegionName(null);
     setSelectedSuburbName(null);
     setSelectedPostcode(null);
-    setFilteredRegions([]);
+    // setFilteredRegions([]);
     setFilteredSuburbs([]);
     setLocationInput("");
     setStateRegionOpen(false);
@@ -436,7 +430,7 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
     if (noLocationInFilters && selectedStateName) {
       setSelectedState(null);
       setSelectedStateName(null);
-      setFilteredRegions([]);
+      // setFilteredRegions([]);
       setSelectedRegionName(null);
       setSelectedSuburbName(null);
       setFilteredSuburbs([]);
@@ -523,7 +517,7 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
 
     setFilters(updatedFilters);
     // (push when you want)
-    // startTransition(() => updateAllFiltersAndURL(updatedFilters));
+    startTransition(() => updateAllFiltersAndURL(updatedFilters));
   };
 
   // useEffect(() => {
@@ -564,7 +558,7 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
     setSelectedConditionName(null);
     setSelectedSleepName(null);
     setModel([]);
-    setFilteredRegions([]);
+    // setFilteredRegions([]);
     setFilteredSuburbs([]);
     setLocationInput("");
     setSelectedState(null);
@@ -833,16 +827,49 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
 
   const hasCategoryBeenSetRef = useRef(false);
   // --- helpers ---
-  const shallowEqual = (a: any, b: any) => {
-    if (a === b) return true;
-    if (!a || !b) return false;
-    const ak = Object.keys(a),
-      bk = Object.keys(b);
-    if (ak.length !== bk.length) return false;
-    for (const k of ak) if (a[k] !== b[k]) return false;
-    return true;
+  // List only the keys you actually care about for equality + URL
+  const FILTER_KEYS: (keyof Filters)[] = [
+    "category",
+    "make",
+    "model",
+    "condition",
+    "sleeps",
+    "state",
+    "region",
+    "suburb",
+    "pincode",
+    "location",
+    "from_price",
+    "to_price",
+    "minKg",
+    "maxKg",
+    "from_year",
+    "to_year",
+    "from_length",
+    "to_length",
+  ];
+
+  const normalizeFilters = (f: Filters): Filters => {
+    // convert empty strings to undefined, trim strings
+    const out: Filters = { ...f };
+    for (const k of FILTER_KEYS) {
+      const v = out[k];
+      if (typeof v === "string") {
+        const t = v.trim();
+        out[k] = (t === "" ? undefined : t) as never;
+      }
+    }
+    return out;
   };
 
+  const filtersEqual = (a?: Filters | null, b?: Filters | null): boolean => {
+    if (a === b) return true;
+    if (!a || !b) return false;
+    for (const k of FILTER_KEYS) {
+      if (a[k] !== b[k]) return false;
+    }
+    return true;
+  };
   useEffect(() => {
     if (!hasCategoryBeenSetRef.current && selectedCategory) {
       hasCategoryBeenSetRef.current = true;
@@ -912,35 +939,33 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
   }, [filters]);
   const lastSentFiltersRef = useRef<Filters | null>(null);
   // ✅ Update all filters and URL with validation
-  const updateAllFiltersAndURL = (overrideFilters?: Filters) => {
-    const final = overrideFilters ?? filters;
+  const updateAllFiltersAndURL = (override?: Filters) => {
+    const nextRaw: Filters = override ?? filters;
+    const next: Filters = normalizeFilters(nextRaw);
 
-    // 1) Set local filters only if changed
-    setFilters((prev) => (shallowEqual(prev, final) ? prev : final));
+    // 1) set local filters only if changed
+    setFilters((prev) => (filtersEqual(prev, next) ? (prev as Filters) : next));
     filtersInitialized.current = true;
 
-    // 2) Notify parent only if changed (prevents loops)
-    if (!shallowEqual(lastSentFiltersRef.current || {}, final)) {
-      lastSentFiltersRef.current = final;
-      onFilterChange(final);
+    // 2) notify parent only if changed
+    if (!filtersEqual(lastSentFiltersRef.current, next)) {
+      lastSentFiltersRef.current = next;
+      onFilterChange(next);
     }
 
-    const slugPath = buildSlugFromFilters(final);
+    // 3) build URL once
+    const slugPath = buildSlugFromFilters(next);
     const query = new URLSearchParams();
-
-    if (final.from_year)
-      query.set("acustom_fromyears", final.from_year.toString());
-    if (final.to_year) query.set("acustom_toyears", final.to_year.toString());
+    if (next.from_year) query.set("acustom_fromyears", String(next.from_year));
+    if (next.to_year) query.set("acustom_toyears", String(next.to_year));
     query.set("page", "1");
+
     const safeSlugPath = slugPath.endsWith("/") ? slugPath : `${slugPath}/`;
     const finalURL = query.toString() ? `${slugPath}?${query}` : safeSlugPath;
 
     if (lastPushedURLRef.current !== finalURL) {
       lastPushedURLRef.current = finalURL;
-
-      startTransition(() => {
-        router.push(finalURL);
-      });
+      router.push(finalURL);
     }
   };
 
@@ -1030,8 +1055,8 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
   console.log("yy selectedState", selectedStateName);
   console.log("yy selectedRegion", selectedRegion);
   console.log("subbb", filteredSuburbs);
-  const [mounted, setMounted] = useState(false);
-  useEffect(() => setMounted(true), []);
+  // const [mounted, setMounted] = useState(false);
+  // useEffect(() => setMounted(true), []);
 
   const resetCategoryFilter = () => {
     setSelectedCategory(null);
@@ -1105,7 +1130,6 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
     return byText || null;
   };
   const isUserTypingRef = useRef(false);
-  const lastQueryRef = useRef("");
   const locKey = useMemo(
     () =>
       [
@@ -1325,7 +1349,7 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
                   setSelectedRegionName(null);
                   setSelectedSuburbName(null);
 
-                  setFilteredRegions(state.regions || []);
+                  // setFilteredRegions(state.regions || []);
                   setFilteredSuburbs([]);
 
                   // Open Region immediately

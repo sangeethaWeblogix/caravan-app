@@ -1,5 +1,4 @@
 import { metaFromSlug } from "./metaFromSlug";
-import type { Metadata } from "next";
 
 type Params = { slug?: string[] };
 
