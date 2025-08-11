@@ -5,19 +5,25 @@ import { withDynamicSlugMeta } from "../../../utils/seo/withDynamicSlugMeta";
 // ✅ This wires dynamic metadata into <head>
 export const generateMetadata = withDynamicSlugMeta();
 
-export default function Listings({
+type Params = { slug?: string[] };
+type SearchParams = { [key: string]: string | string[] | undefined };
+
+export default async function Listings({
   params,
   searchParams,
 }: {
-  params: { slug?: string[] }; // ← use `slug` (matches [[...slug]])
-  searchParams?: { [key: string]: string | string[] | undefined };
+  params: Promise<Params>;
+  searchParams: Promise<SearchParams>;
 }) {
-  const slugParts = params.slug ?? []; // ← not Filters
+  const resolvedParams = await params;
+  const resolvedSearchParams = await searchParams;
+
+  const slugParts = resolvedParams.slug ?? [];
   const filters = parseSlugToFilters(slugParts);
 
-  const paged = Array.isArray(searchParams?.paged)
-    ? (searchParams!.paged[0] as string)
-    : (searchParams?.paged as string) ?? "1";
+  const paged = Array.isArray(resolvedSearchParams?.paged)
+    ? (resolvedSearchParams!.paged[0] as string)
+    : (resolvedSearchParams?.paged as string) ?? "1";
 
   return <ListingsPage {...filters} page={paged} />;
 }
