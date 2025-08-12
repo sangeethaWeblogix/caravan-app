@@ -75,11 +75,12 @@ export default function ListingContent({
 }: Props) {
   const imageUrl = "public/favicon.ico";
   const [filters] = useState<Filters>({});
-  console.log();
+
   const handleSortChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const orderby = e.target.value;
     onFilterChange({ orderby }); // Pass the updated filter to the parent
   };
+  console.log("orderrrr", filters.orderby);
 
   return (
     <>
@@ -124,11 +125,11 @@ export default function ListingContent({
                       value={filters.orderby}
                     >
                       <option value="featured">Featured</option>
-                      <option value="price_asc">Price (Low to High)</option>
-                      <option value="price_desc">Price (High to Low)</option>
+                      <option value="price">Price (Low to High)</option>
+                      <option value="price-desc">Price (High to Low)</option>
 
-                      <option value="year_desc">Year Made (High to Low)</option>
-                      <option value="year_asc">Year Made (Low to High)</option>
+                      <option value="year-desc">Year Made (High to Low)</option>
+                      <option value="year-asc">Year Made (Low to High)</option>
                     </select>
                     <input type="hidden" name="paged" value={filters.orderby} />
                   </div>
@@ -148,30 +149,30 @@ export default function ListingContent({
                   <Link href={product.link}>
                     <div>
                       {/* <Swiper
-                         navigation
-                         modules={[Navigation]}
-                         className="mySwiper"
-                       >
-                         <SwiperSlide>
-                           <div className="swiper-zoom-container">
-                             {product.image && product.image.trim() !== "" ? (
-                               <Image
-                                 src={product.image}
-                                 alt="Caravan"
-                                 width={1593}
-                                 height={1195}
-                               />
-                             ) : (
-                               <Image
-                                 src="/images/img.png"
-                                 alt="Fallback Caravan"
-                                 width={1593}
-                                 height={1195}
-                               />
-                             )}
-                           </div>
-                         </SwiperSlide>
-                       </Swiper> */}
+                        navigation
+                        modules={[Navigation]}
+                        className="mySwiper"
+                      >
+                        <SwiperSlide>
+                          <div className="swiper-zoom-container">
+                            {product.image && product.image.trim() !== "" ? (
+                              <Image
+                                src={product.image}
+                                alt="Caravan"
+                                width={1593}
+                                height={1195}
+                              />
+                            ) : (
+                              <Image
+                                src="/images/img.png"
+                                alt="Fallback Caravan"
+                                width={1593}
+                                height={1195}
+                              />
+                            )}
+                          </div>
+                        </SwiperSlide>
+                      </Swiper> */}
                     </div>
                   </Link>
                 ) : (
