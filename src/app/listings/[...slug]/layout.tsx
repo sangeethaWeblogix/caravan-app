@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import { ReactNode } from "react";
+
+// Filters Interface
 interface Filters {
   page?: number;
   category?: string;
@@ -20,29 +22,71 @@ interface Filters {
   model?: string;
   postcode?: string;
   orderby?: string;
+  atm?: string;
 }
 
 // Function to fetch and generate metadata
 export async function generateMetadata({
   params,
 }: {
-  params: { slug: string[] };
+  params: Promise<{ slug: string[] }>;
 }): Promise<Metadata> {
   // Await the params to make sure they are fully resolved
   const { slug } = await params; // Await params to resolve the slug
-  const filters: Filters = {};
+
+  const [
+    categorySlug,
+    makeSlug,
+    minPrice,
+    maxPrice,
+    minKg,
+    maxKg,
+    condition,
+    sleeps,
+    state,
+    region,
+    suburb,
+    acustom_fromyears,
+    acustom_toyears,
+    from_length,
+    to_length,
+    model,
+    postcode,
+    orderby,
+    atm,
+  ] = slug; // Destructure the slug after awaiting params
+
+  const filters: Filters = {
+    page: 1, // Default page number
+    category: categorySlug,
+    make: makeSlug,
+    minPrice,
+    maxPrice,
+    minKg,
+    maxKg,
+    condition,
+    sleeps,
+    state,
+    region,
+    suburb,
+    acustom_fromyears,
+    acustom_toyears,
+    from_length,
+    to_length,
+    model,
+    postcode,
+    orderby,
+    atm,
+  };
+
   try {
-    // Log the slug for debugging
-    console.log("Slug from params:", slug);
     const params = new URLSearchParams();
     params.append("page", filters.page?.toString() || "1");
 
     if (filters.category) params.append("category", filters.category);
     if (filters.make) params.append("make", filters.make);
     if (filters.orderby) params.append("orderby", filters.orderby);
-
     if (filters.postcode) params.append("pincode", filters.postcode);
-
     if (filters.state) params.append("state", filters.state);
     if (filters.region) params.append("region", filters.region);
     if (filters.suburb) params.append("suburb", filters.suburb);
@@ -53,66 +97,75 @@ export async function generateMetadata({
     if (filters.from_length)
       params.append("from_length", `${filters.from_length}`);
     if (filters.to_length) params.append("to_length", `${filters.to_length}`);
-
     if (filters.acustom_fromyears)
       params.append("acustom_fromyears", filters.acustom_fromyears);
     if (filters.acustom_toyears)
       params.append("acustom_toyears", filters.acustom_toyears);
-    if (filters.model) params.append("model", filters.model); // ✅ Add this
+    if (filters.model) params.append("model", filters.model);
     if (filters.condition)
       params.append(
         "condition",
         filters.condition.toLowerCase().replace(/\s+/g, "-")
       );
     if (filters.sleeps) params.append("sleep", filters.sleeps);
-    // Fetch the API data using the slug if necessary
+
     const groupResponse = await fetch(
-      `https://www.caravansforsale.com.au/wp-json/cfs/v1/new-list?${params.toString()}` // Assuming the API can filter based on `slug`
+      `https://www.caravansforsale.com.au/wp-json/cfs/v1/new-list?${params.toString()}`
     );
 
-    // Log the response status and the raw response data for debugging
+    // Log response status
     console.log("Response Status:", groupResponse);
 
-    // Check if the response is OK before parsing
     if (!groupResponse.ok) {
       throw new Error(
         `Failed to fetch data with status: ${groupResponse.status}`
       );
     }
 
-    // Parse the response as JSON
     const groupData = await groupResponse.json();
-
-    // Log the actual data from the API
     console.log("Fetched Group Data:", groupData);
 
-    const groups = groupData.seo; // Assuming `groupData.seo` contains SEO data
+    const groups = groupData?.seo || {};
     console.log("Fetched Group SEO Data:", groups);
 
-    // Return the metadata object
+    // Use fallback values if `seo` data is missing or incomplete
+    const title = groups.metatitle || "Default Title - Caravans for Sale";
+    const description =
+      groups.metadescription ||
+      "Browse the latest caravans available for sale.";
+    const keywords =
+      groups.metakeyword || "caravans, trailers, new caravans, used caravans";
+
     return {
-      title: groups.metatitle,
-      description: groups.metadescription,
-      keywords: groups.metakeyword,
+      title,
+      description,
+      keywords,
       openGraph: {
-        title: groups.metatitle,
-        description: groups.metadescription,
+        title,
+        description,
         images: [
           {
-            url: "https://peoplepluspress.s3.amazonaws.com/image/string/pppp.jpg", // Example image URL
+            url: "https://peoplepluspress.s3.amazonaws.com/image/string/pppp.jpg", // Fallback image
           },
         ],
       },
     };
   } catch (error) {
-    // Log any errors encountered during the fetch process
     console.error("Failed to fetch data", error);
 
-    // Return default metadata in case of error
     return {
-      title: "PeoplePlus - Latest Indian News, Trends, and Insights",
-      description:
-        "Get the latest Indian news, trends, and insights from PeoplePlus Press. Stay informed on politics, business, technology, and more.",
+      title: "Default Title - Caravans for Sale",
+      description: "Browse the latest caravans available for sale.",
+      keywords: "caravans, trailers, new caravans, used caravans",
+      openGraph: {
+        title: "Default Title",
+        description: "Browse our latest caravans for sale.",
+        images: [
+          {
+            url: "/default-image.jpg", // Default fallback image
+          },
+        ],
+      },
     };
   }
 }
