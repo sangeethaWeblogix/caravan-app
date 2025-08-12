@@ -16,6 +16,7 @@ export interface Filters {
   sleeps?: string;
   make?: string;
   model?: string;
+  orderby?: string;
 }
 
 const conditionMap: Record<string, string> = {

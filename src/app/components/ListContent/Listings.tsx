@@ -71,6 +71,7 @@ export interface Filters {
   region?: string;
   suburb?: string;
   pincode?: string;
+  orderby?: string;
 }
 
 interface Props {
@@ -116,7 +117,7 @@ export default function ListingsPage({ page, ...incomingFilters }: Props) {
   const [models, setModels] = useState<MakeOption[]>([]);
   const [metaTitle, setMetaTitle] = useState("");
   const [metaDescription, setMetaDescription] = useState("");
-  const [metaImage, setMetaImage] = useState("/favicon.ico"); // Default fallback image
+  // const [metaImage, setMetaImage] = useState("/favicon.ico"); // Default fallback image
 
   const [stateOptions, setStateOptions] = useState<StateOption[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -132,6 +133,9 @@ export default function ListingsPage({ page, ...incomingFilters }: Props) {
     per_page: 12, // The number of items per page
     total_products: 0,
   });
+
+  console.log("orderby", filters.orderby);
+
   useEffect(() => {
     if (!filtersInitializedRef.current && router) {
       const path =
@@ -143,22 +147,6 @@ export default function ListingsPage({ page, ...incomingFilters }: Props) {
       filtersInitializedRef.current = true;
     }
   }, [router]);
-  // Update pagination when page URL param changes
-  // useEffect(() => {
-  //   const pageParam = searchParams.get("page");
-  //   const page = parseInt(pageParam || "1", 10);
-  //   if (!filtersReady) return; // ✅ Prevent early fetch
-
-  //   if (pagination.current_page === page) return;
-
-  //   setPagination((prev) => ({
-  //     ...prev,
-  //     current_page: page,
-  //   }));
-
-  //   loadListings(page, filtersRef.current);
-  //   // eslint-disable-next-line react-hooks/exhaustive-deps
-  // }, [searchParams, pagination, filtersReady]);
 
   console.log("✅ Filters about to be applied:", filtersRef.current);
 
@@ -189,6 +177,7 @@ export default function ListingsPage({ page, ...incomingFilters }: Props) {
           region: appliedFilters.region,
           suburb: appliedFilters.suburb,
           postcode: appliedFilters.pincode,
+          orderby: appliedFilters.orderby,
         });
 
         const hasFilters = Object.values(appliedFilters).some(
@@ -207,7 +196,7 @@ export default function ListingsPage({ page, ...incomingFilters }: Props) {
           setPagination(response.pagination);
           setMetaDescription(response.seo?.metadescription);
           setMetaTitle(response.seo?.metatitle);
-          setMetaImage(response.seo?.metaimage || "/favicon.ico");
+          // setMetaImage(response.seo?.metaimage || "/favicon.ico");
         } else if (hasFilters) {
           // ✅ No results found, show "no results" and redirect after delay
           setProducts([]);
@@ -259,7 +248,7 @@ export default function ListingsPage({ page, ...incomingFilters }: Props) {
     // ✅ Force ready on first render
     setFiltersReady(true);
   }, []);
-
+  console.log("Orderby filter:", filters.orderby);
   const handleFilterChange = useCallback((newFilters: Filters) => {
     const mergedFilters = { ...filtersRef.current, ...newFilters };
     console.log("🔗 Merging filters", mergedFilters);
@@ -276,72 +265,11 @@ export default function ListingsPage({ page, ...incomingFilters }: Props) {
       total_products: 0,
     });
     setFiltersReady(true);
+    updateURLWithFilters(mergedFilters, pageFromURL);
     // loadListings(pageFromURL, mergedFilters);
     console.log("🔗 calling updateURLWithFilters");
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-
-  // ✨ Add this useEffect at the bottom of your component
-  useEffect(() => {
-    console.log("Updating meta tags", metaTitle);
-    console.log("Updating meta des", metaDescription);
-    console.log(
-      "Updating meta image",
-
-      metaImage
-    );
-
-    if (metaTitle) {
-      document.title = metaTitle; // Update the page title dynamically
-    }
-
-    // Update description meta tag
-    let descTag = document.querySelector("meta[name='description']");
-    if (!descTag) {
-      descTag = document.createElement("meta");
-      descTag.setAttribute("name", "description");
-      document.head.appendChild(descTag);
-    }
-    descTag.setAttribute(
-      "content",
-      metaDescription || "Browse caravans for sale"
-    );
-
-    // Update Open Graph meta tags
-    let ogTitle = document.querySelector("meta[property='og:title']");
-    if (!ogTitle) {
-      ogTitle = document.createElement("meta");
-      ogTitle.setAttribute("property", "og:title");
-      document.head.appendChild(ogTitle);
-    }
-    ogTitle.setAttribute("content", metaTitle || "");
-
-    let ogDesc = document.querySelector("meta[property='og:description']");
-    if (!ogDesc) {
-      ogDesc = document.createElement("meta");
-      ogDesc.setAttribute("property", "og:description");
-      document.head.appendChild(ogDesc);
-    }
-    ogDesc.setAttribute("content", metaDescription || "");
-
-    // For og:image and twitter:image, use the current metaImage (fallback to /favicon.ico if not set)
-    const imageUrl = metaImage || "/favicon.ico"; // This points to the favicon.ico in the public folder
-    let ogImg = document.querySelector("meta[property='og:image']");
-    if (!ogImg) {
-      ogImg = document.createElement("meta");
-      ogImg.setAttribute("property", "og:image");
-      document.head.appendChild(ogImg);
-    }
-    ogImg.setAttribute("content", imageUrl);
-
-    let twImg = document.querySelector("meta[name='twitter:image']");
-    if (!twImg) {
-      twImg = document.createElement("meta");
-      twImg.setAttribute("name", "twitter:image");
-      document.head.appendChild(twImg);
-    }
-    twImg.setAttribute("content", imageUrl); // Fallback image if not provided
-  }, [metaTitle, metaDescription, metaImage]); // Trigger this useEffect whenever any of these values change
 
   const updateURLWithFilters = (filters: Filters, page: number) => {
     const slug = buildSlugFromFilters(filters); // no ?page=1 inside it
@@ -349,11 +277,10 @@ export default function ListingsPage({ page, ...incomingFilters }: Props) {
 
     if (filters.from_year)
       query.set("acustom_fromyears", filters.from_year.toString());
-
     if (filters.to_year)
       query.set("acustom_toyears", filters.to_year.toString());
-
     // ✅ Only add page if greater than 1
+
     if (page > 1) {
       query.set("page", page.toString());
     }
@@ -366,7 +293,7 @@ export default function ListingsPage({ page, ...incomingFilters }: Props) {
     if (pagination.current_page < pagination.total_pages) {
       const nextPage = pagination.current_page + 1;
       console.log("🟢 Triggering updateURLWithFilters with page:", nextPage);
-      updateURLWithFilters(filtersRef.current, nextPage); // triggers useEffect to fetch correct page
+      updateURLWithFilters(filtersRef.current, nextPage);
     }
   };
 
@@ -502,6 +429,7 @@ export default function ListingsPage({ page, ...incomingFilters }: Props) {
                   onPrev={handlePrevPage}
                   metaDescription={metaDescription}
                   metaTitle={metaTitle}
+                  onFilterChange={handleFilterChange}
                 />
               )}
 

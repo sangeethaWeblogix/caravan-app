@@ -19,6 +19,7 @@ interface Filters {
   to_length?: string;
   model?: string;
   postcode?: string;
+  orderby?: string;
 }
 
 export const fetchListings = async (filters: Filters = {}) => {
@@ -37,6 +38,7 @@ export const fetchListings = async (filters: Filters = {}) => {
     region,
     suburb,
     postcode,
+    orderby,
   } = filters;
 
   const params = new URLSearchParams();
@@ -64,6 +66,7 @@ export const fetchListings = async (filters: Filters = {}) => {
   if (condition)
     params.append("condition", condition.toLowerCase().replace(/\s+/g, "-"));
   if (filters.sleeps) params.append("sleep", filters.sleeps);
+  if (orderby) params.append("orderby", orderby); // Add the orderby to the URL
 
   const res = await fetch(`${API_BASE}/new-list?${params.toString()}`);
 

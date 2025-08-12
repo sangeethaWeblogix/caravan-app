@@ -30,5 +30,6 @@ export function buildUpdatedFilters(
     from_length: updates.from_length ?? currentFilters.from_length,
     to_length: updates.to_length ?? currentFilters.to_length,
     location: updates.location ?? currentFilters.location,
+    orderby: updates.orderby ?? currentFilters.orderby,
   };
 }
