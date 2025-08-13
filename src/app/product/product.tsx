@@ -1,14 +1,16 @@
 'use client';
 
-import './product.css'
 import { useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
+import CaravanDetailModal from './CaravanDetailModal';
+import './product.css';
 
 export default function CaravanDetail() {
-  const [activeTab, setActiveTab] = useState('specifications');
+  const [activeTab, setActiveTab] = useState<'specifications' | 'description'>('specifications');
+  const [showModal, setShowModal] = useState(false);
 
-  const handleBackClick = (e:any) => {
+  const handleBackClick = (e: React.MouseEvent) => {
     e.preventDefault();
     window.history.back();
   };
@@ -20,11 +22,10 @@ export default function CaravanDetail() {
           <div className="row justify-content-center">
             {/* Left Column */}
             <div className="col-xl-8 col-lg-8 col-md-12">
-              {/* Back Buttons */}
+              {/* Back Button */}
               <Link href="#" onClick={handleBackClick} className="back_to_search back_to_search_btn">
                 <i className="bi bi-chevron-left fs-6"></i> Back to Search
               </Link>
-              
 
               {/* Product Info */}
               <div className="product-info left-info">
@@ -46,61 +47,38 @@ export default function CaravanDetail() {
                   <h6 className="category">Location - South Australia</h6>
                 </div>
               </div>
-
-              {/* Image Gallery (Thumbnails can be made interactive with Swiper or similar later) */}
+              
+              {/* Image Gallery */}
               <div className="caravan_slider_visible">
-                
-                  <div className="slider_thumb_vertical image_container">
-                    <div className="image_mop">
-                    {/* Thumbnails */}
+                <button className="hover_link Click-here" onClick={() => setShowModal(true)}></button>
+                <div className="slider_thumb_vertical image_container">
+                  <div className="image_mop">
                     {[1, 2, 3, 4].map((i) => (
                       <div className="image_item" key={i}>
                         <div className="background_thumb">
-                          <Image
-                            src={`/images/thumb-${i}.jpg`} // replace with dynamic path
-                            width={128}
-                            height={96}
-                            alt={`Thumbnail ${i}`}
-                          />
+                          <Image src={`/images/thumb-${i}.jpg`} width={128} height={96} alt={`Thumb ${i}`} />
                         </div>
                         <div className="img">
-                          <Image
-                            src={`/images/thumb-${i}.jpg`} // replace with dynamic path
-                            width={128}
-                            height={96}
-                            alt={`Thumbnail ${i}`}
-                          />
+                          <Image src={`/images/thumb-${i}.jpg`} width={128} height={96} alt={`Thumb ${i}`} />
                         </div>
                       </div>
                     ))}
                     <span className="caravan__image_count"><span>8+</span></span>
-                    </div>
                   </div>
-                  {/* Large Image */}
-                  <div className="lager_img_view image_container">
-                    <div className="background_thumb">
-<Image
-                      src="/images/large.jpg"
-                      width={800}
-                      height={600}
-                      alt="Large Image"
-                      className="img-fluid"
-                    />
-                    </div>
-                    <a href=''>
-                    <Image
-                      src="/images/large.jpg"
-                      width={800}
-                      height={600}
-                      alt="Large Image"
-                      className="img-fluid"
-                    />
-                    </a>
+                </div>
+
+                {/* Large Image */}
+                <div className="lager_img_view image_container">
+                  <div className="background_thumb">
+                    <Image src="/images/large.jpg" width={800} height={600} alt="Large" className="img-fluid" />
                   </div>
-                
+                  <a href="#">
+                    <Image src="/images/large.jpg" width={800} height={600} alt="Large" className="img-fluid" />
+                  </a>
+                </div>
               </div>
 
-              {/* Product Tabs */}
+              {/* Tabs */}
               <section className="product-details">
                 <ul className="nav nav-pills">
                   <li className="nav-item">
@@ -124,8 +102,9 @@ export default function CaravanDetail() {
                 <div className="tab-content mt-3">
                   {activeTab === 'specifications' && (
                     <div className="tab-pane fade show active">
-                      <div className="additional-info">
-                      <ul className="list-unstyled text-start">
+                      <div className="content-info text-center pb-0">
+                        <div className="additional-info">
+                      <ul>
                         <li><strong>Type:</strong> Touring</li>
                         <li><strong>Make:</strong> Aura</li>
                         <li><strong>Year:</strong> 2022</li>
@@ -139,6 +118,7 @@ export default function CaravanDetail() {
                         <li><strong>Location:</strong> South Australia</li>
                       </ul>
                       </div>
+                      </div>
                     </div>
                   )}
                   {activeTab === 'description' && (
@@ -150,72 +130,75 @@ export default function CaravanDetail() {
                 </div>
               </section>
 
-              {/* Bottom Banner Section */}
+              {/* Community Section */}
               <section className="community product_dt_lower style-5 pt-4">
                 <div className="content">
-                <div className="heading">
-                  <h3>Caravan Marketplace Advantage</h3>
-                  <p>As Australia's new comprehensive caravan listing site, our site helps you get superior service, guaranteed deals and the best shot at a great price from top quality manufacturers.</p>
-                </div>
-                <div className="card_flex d-flex flex-wrap">
-                  <div className="commun-card">
-                    <div className="icon"><img src="/images/low-price.svg" alt="price" /></div>
-                    <div className="inf"><p>Help potential buyers every month get exclusive deals from quality caravan manufactuers</p></div>
+                  <div className="heading">
+                    <h3>Caravan Marketplace Advantage</h3>
+                    <p>We help you get superior service, guaranteed deals, and access to top manufacturers.</p>
                   </div>
-                  <div className="commun-card">
-                    <div className="icon"><img src="/images/deal.svg" alt="deal" /></div>
-                    <div className="inf"><p>Our expert team is looking for deals from multiple caravan manufacturer to showcase them if and when available</p></div>
+                  <div className="card_flex d-flex flex-wrap">
+                    {[
+                      { img: 'low-price', text: 'Get exclusive deals from top caravan manufacturers.' },
+                      { img: 'deal', text: 'Our expert team sources deals from across the market.' },
+                      { img: 'special_deal', text: 'Access insights and hidden gems in the industry.' }
+                    ].map((item, i) => (
+                      <div className="commun-card" key={i}>
+                        <div className="icon">
+                          <Image src={`/images/${item.img}.svg`} alt={item.img} width={32} height={32} />
+                        </div>
+                        <div className="inf">
+                          <p>{item.text}</p>
+                        </div>
+                      </div>
+                    ))}
                   </div>
-                  <div className="commun-card">
-                    <div className="icon"><img src="/images/special_deal.svg" alt="special" /></div>
-                    <div className="inf"><p>Provide valuable resources & insights about the industry including the best caravans in every category that you may not have heard of.</p></div>
+                  <div className="contact_dealer mt-3">
+                    <button className="btn btn-primary" onClick={() => setShowModal(true)}>Contact Dealer</button>
                   </div>
-                </div>
-                <div className="contact_dealer mt-3">
-                  <a href="javascript:void(0);" className="btn btn-primary">Contact Dealer</a>
-                </div>
                 </div>
               </section>
 
               {/* Mobile Bottom Bar */}
               <div className="fixed-bottom-bar d-lg-none">
-                <a className="btn btn-primary w-100 mb-2" href="#">Send Enquiry</a>
+                <button className="btn btn-primary w-100 mb-2" onClick={() => setShowModal(true)}>Send Enquiry</button>
                 <p className="terms_text small">
-                  By clicking 'Send Enquiry', you agree to our <Link href="/privacy-collection-statement">Collection Statement</Link>, <Link href="/privacy-policy">Privacy Policy</Link> and <Link href="/terms-conditions">Terms and Conditions</Link>.
+                  By clicking 'Send Enquiry', you agree to our
+                  <Link href="/privacy-collection-statement"> Collection Statement</Link>,{' '}
+                  <Link href="/privacy-policy">Privacy Policy</Link>, and{' '}
+                  <Link href="/terms-conditions">Terms and Conditions</Link>.
                 </p>
               </div>
             </div>
 
-            {/* Right Column (Sidebar) */}
+            {/* Right Sidebar */}
             <div className="col-xl-4 col-lg-4 d-none d-lg-block">
               <div className="product-info-sidebar sticky-top" style={{ top: '80px' }}>
                 <div className="contactSeller__container">
-                  <div className="internalContainer">
-                <div className="price_section" style={{
-    boxShadow: '0px 4px 15px #0000000d',
-    border: '1px solid #ddd',
-    display: 'block',
-  }} >
-                        <div className="divide-2">
-                          <div className="price_section border-0">
-                            <div className="price-shape">
-                              <span className="current">
-                                <span className="woocommerce-Price-amount amount">
-                                  <bdi>
-                                    <span className="woocommerce-Price-currencySymbol">&#36;</span>89,990 </bdi>
-                                </span>
-                              </span>
-                            </div>
-                          </div>
-                        </div>
-                        <div className="contact_dealer">
-                          <a className="modal-open" data-modal="modal-1" href="javascript:void(0);">Contact Dealer</a>
-                        </div>
-                      </div>
-                </div>
+                  <div className="price_section" style={{ boxShadow: '0px 4px 15px #0000000d', display: 'block', border: '1px solid #ddd' }}>
+                    <div className="divide-2">
+                      <div className="price_section border-0">
+                    <div className="price-shape">
+                      <span className="current">
+                        <span className="woocommerce-Price-amount amount">
+                          <bdi><span className="woocommerce-Price-currencySymbol">$</span>89,990</bdi>
+                        </span>
+                      </span>
+                    </div>
+                    </div>
+                    </div>
+                    <div className="contact_dealer mt-2">
+                      <button className="btn btn-primary " onClick={() => setShowModal(true)}>Contact Dealer</button>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
+
+            {/* Modal */}
+            {showModal && (
+              <CaravanDetailModal isOpen={showModal} onClose={() => setShowModal(false)} />
+            )}
           </div>
         </div>
       </div>
