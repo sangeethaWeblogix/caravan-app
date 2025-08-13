@@ -1,5 +1,5 @@
 /* ✅ ALL @import MUST come first */
-@import url("https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100..900;1,100..900&display=swap");
 
 
 /* ✅ CSS rules can start after @import */
@@ -18,7 +18,7 @@
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: "Poppins", Arial, Helvetica, sans-serif !important;
+  font-family: "Montserrat  ", Arial, Helvetica, sans-serif !important;
 }
 
 a, span, img {
@@ -35,6 +35,76 @@ img {
     max-height: 100%;
     height: auto;
     width: auto;
+}
+
+.navbar.style-4.header-white {
+    background: #fff;
+    position: relative;
+    z-index: 999;
+}
+.header-white .hamb-line {
+  background-color: #333333;
+}
+.navbar.style-4.header-white .navbar-nav .nav-item .nav-link {
+  color: #333333;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+.home_top {
+  background-color: #f2f2f2;
+  border-bottom: solid 1px #e1e1e1;
+  border-top: solid 1px #e1e1e1;
+  padding-top: 55px;
+  padding-bottom: 55px;
+}
+
+.home_top h1 {
+  font-weight: 500;
+  color: #ec7200;
+  font-size: 50px;
+  margin-bottom: 5px;
+}
+
+.home_top p {
+  margin-bottom: 30px;
+}
+
+.home_top .btn {
+  display: block;
+  background: transparent;
+  border: 2px solid #333333;
+  text-transform: uppercase;
+  font-size: 18px;
+  color: #333 !important;
+}
+
+.home_top .btn:hover {
+  background: #ec7200;
+  border-color: #ec7200 !important;
+}
+
+.navbar.style-4.header-white .sidenav {
+  background-color: #fcfcfc;
+}
+
+.btn {
+    padding: 12px 30px;
+    position: relative;
+    overflow: hidden;
+    text-align: center;
+    font-weight: 500;
+    display: -webkit-inline-box;
+    display: -ms-inline-flexbox;
+    display: inline-flex;
+    text-align: center;
+    -webkit-box-pack: center;
+    -ms-flex-pack: center;
+    justify-content: center;
+}
+
+.btn:hover {
+    background: #f58333;
+    border-color: transparent!important;
 }
 
 /*media hidden */
@@ -308,7 +378,7 @@ img {
 
 .product-page .product-card .info .category .fa-map-marker-alt {
     font-size: 12px;
-    margin-right: 2px;
+    margin-right: 4px;
 }
 
 .product-page .product-card .info .title {

@@ -396,7 +396,7 @@ export default function ListingsPage({ page, ...incomingFilters }: Props) {
         />
       </Head>
 
-      <section className="services section-padding pb-30 style-1">
+      <section className="services bg-gray-100 section-padding pb-30 style-1">
         <div className="container">
           <div className="content">
             <div className="text-sm text-gray-600 header">

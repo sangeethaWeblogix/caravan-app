@@ -84,8 +84,9 @@ const FeaturedProductsSlider = () => {
             <Link href={product.link} className="mb-3">
               <div className="product-card">
                 <div className="img">
+ 
                   <Image src={product.image} alt={product.title} height={100} width={100} />
-                </div>
+                 </div>
                 <div className="product_de">
                   <div className="info">
                     <h6 className="category">
