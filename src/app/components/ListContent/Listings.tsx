@@ -253,6 +253,12 @@ export default function ListingsPage({ page, ...incomingFilters }: Props) {
     console.log("order", newFilters);
     const mergedFilters = { ...filtersRef.current, ...newFilters };
     console.log("🔗 Merging filters", mergedFilters);
+    if (
+      "orderby" in newFilters &&
+      (newFilters.orderby === undefined || newFilters.orderby === "")
+    ) {
+      delete mergedFilters.orderby;
+    }
     setHasSearched(true);
     setFiltersReady(true);
     setFilters(mergedFilters);

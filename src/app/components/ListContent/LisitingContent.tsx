@@ -257,7 +257,7 @@ export default function ListingContent({
                     <div className="price">
                       <div className="vehicleThumbDetails__part__price">
                         {/* If regular price is 0, show POA */}
-                        {parseFloat(product.regular_price) === 0 ? (
+                        {Number(product.regular_price) === 0 ? (
                           <span className="woocommerce-Price-amount amount">
                             <bdi>POA</bdi>
                           </span>
@@ -276,7 +276,16 @@ export default function ListingContent({
                           </>
                         ) : (
                           <span className="woocommerce-Price-amount amount">
-                            <bdi>{product.regular_price}</bdi>
+                            <bdi>
+                              {parseFloat(
+                                String(product.regular_price).replace(
+                                  /[^0-9.]/g,
+                                  ""
+                                )
+                              ) === 0
+                                ? "POA"
+                                : product.regular_price}
+                            </bdi>{" "}
                           </span>
                         )}
                       </div>
