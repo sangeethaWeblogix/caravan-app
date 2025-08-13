@@ -1,7 +1,8 @@
+// src/app/listings/[...slug]/layout.tsx
 import type { Metadata } from "next";
 import { ReactNode } from "react";
 
-// Filters Interface
+/* ---------------------------------- Types --------------------------------- */
 interface Filters {
   page?: number;
   category?: string;
@@ -25,14 +26,24 @@ interface Filters {
   atm?: string;
 }
 
-// Function to fetch and generate metadata
+/* ------------------------------ Helper: parse ----------------------------- */
+function parseJsonSafe(text: string) {
+  if (!/^\s*[{[]/.test(text)) return null;
+  try {
+    return JSON.parse(text);
+  } catch {
+    return null;
+  }
+}
+
+/* ----------------------- Server: generate metadata ------------------------ */
 export async function generateMetadata({
   params,
 }: {
-  params: Promise<{ slug: string[] }>;
+  // If your project expects Promise here, keep as Promise. Otherwise change to `{ slug?: string[] }`
+  params: Promise<{ slug?: string[] }>;
 }): Promise<Metadata> {
-  // Await the params to make sure they are fully resolved
-  const { slug } = await params; // Await params to resolve the slug
+  const { slug = [] } = await params;
 
   const [
     categorySlug,
@@ -54,10 +65,10 @@ export async function generateMetadata({
     postcode,
     orderby,
     atm,
-  ] = slug; // Destructure the slug after awaiting params
+  ] = slug;
 
   const filters: Filters = {
-    page: 1, // Default page number
+    page: 1,
     category: categorySlug,
     make: makeSlug,
     minPrice,
@@ -80,55 +91,62 @@ export async function generateMetadata({
   };
 
   try {
-    const params = new URLSearchParams();
-    params.append("page", filters.page?.toString() || "1");
-
-    if (filters.category) params.append("category", filters.category);
-    if (filters.make) params.append("make", filters.make);
-    if (filters.orderby) params.append("orderby", filters.orderby);
-    if (filters.postcode) params.append("pincode", filters.postcode);
-    if (filters.state) params.append("state", filters.state);
-    if (filters.region) params.append("region", filters.region);
-    if (filters.suburb) params.append("suburb", filters.suburb);
-    if (filters.minPrice) params.append("from_price", `${filters.minPrice}`);
-    if (filters.maxPrice) params.append("to_price", `${filters.maxPrice}`);
-    if (filters.minKg) params.append("from_atm", `${filters.minKg}kg`);
-    if (filters.maxKg) params.append("to_atm", `${filters.maxKg}kg`);
-    if (filters.from_length)
-      params.append("from_length", `${filters.from_length}`);
-    if (filters.to_length) params.append("to_length", `${filters.to_length}`);
+    // Build query string (avoid shadowing `params`)
+    const qs = new URLSearchParams();
+    qs.append("page", String(filters.page ?? 1));
+    if (filters.category) qs.append("category", filters.category);
+    if (filters.make) qs.append("make", filters.make);
+    if (filters.orderby) qs.append("orderby", filters.orderby);
+    if (filters.postcode) qs.append("pincode", filters.postcode);
+    if (filters.state) qs.append("state", filters.state);
+    if (filters.region) qs.append("region", filters.region);
+    if (filters.suburb) qs.append("suburb", filters.suburb);
+    if (filters.minPrice) qs.append("from_price", `${filters.minPrice}`);
+    if (filters.maxPrice) qs.append("to_price", `${filters.maxPrice}`);
+    if (filters.minKg) qs.append("from_atm", `${filters.minKg}kg`);
+    if (filters.maxKg) qs.append("to_atm", `${filters.maxKg}kg`);
+    if (filters.from_length) qs.append("from_length", `${filters.from_length}`);
+    if (filters.to_length) qs.append("to_length", `${filters.to_length}`);
     if (filters.acustom_fromyears)
-      params.append("acustom_fromyears", filters.acustom_fromyears);
+      qs.append("acustom_fromyears", filters.acustom_fromyears);
     if (filters.acustom_toyears)
-      params.append("acustom_toyears", filters.acustom_toyears);
-    if (filters.model) params.append("model", filters.model);
+      qs.append("acustom_toyears", filters.acustom_toyears);
+    if (filters.model) qs.append("model", filters.model);
     if (filters.condition)
-      params.append(
+      qs.append(
         "condition",
         filters.condition.toLowerCase().replace(/\s+/g, "-")
       );
-    if (filters.sleeps) params.append("sleep", filters.sleeps);
+    if (filters.sleeps) qs.append("sleep", filters.sleeps);
 
-    const groupResponse = await fetch(
-      `https://www.caravansforsale.com.au/wp-json/cfs/v1/new-list?${params.toString()}`
-    );
+    const url = `https://www.caravansforsale.com.au/wp-json/cfs/v1/new-list?${qs.toString()}`;
 
-    // Log response status
-    console.log("Response Status:", groupResponse);
+    const groupResponse = await fetch(url, {
+      cache: "no-store",
+      headers: { Accept: "application/json" },
+    });
+
+    // Basic diagnostics to see what's returned
+    const contentType = groupResponse.headers.get("content-type") || "";
+    const statusInfo = `${groupResponse.status} ${groupResponse.statusText}`;
+    const raw = await groupResponse.text();
+
+    console.log("SEO fetch URL:", url);
+    console.log("Status:", statusInfo);
+    console.log("Content-Type:", contentType);
+    console.log("Body preview:", raw.slice(0, 180));
 
     if (!groupResponse.ok) {
-      throw new Error(
-        `Failed to fetch data with status: ${groupResponse.status}`
-      );
+      throw new Error(`HTTP error: ${statusInfo}`);
     }
 
-    const groupData = await groupResponse.json();
-    console.log("Fetched Group Data:", groupData);
+    const groupData = parseJsonSafe(raw);
+    if (!groupData) {
+      // Server returned SQL/HTML error or some non-JSON body
+      throw new Error("Endpoint did not return JSON");
+    }
 
-    const groups = groupData?.seo || {};
-    console.log("Fetched Group SEO Data:", groups);
-
-    // Use fallback values if `seo` data is missing or incomplete
+    const groups = groupData?.seo ?? {};
     const title = groups.metatitle || "Default Title - Caravans for Sale";
     const description =
       groups.metadescription ||
@@ -145,14 +163,14 @@ export async function generateMetadata({
         description,
         images: [
           {
-            url: "https://peoplepluspress.s3.amazonaws.com/image/string/pppp.jpg", // Fallback image
+            url: "https://peoplepluspress.s3.amazonaws.com/image/string/pppp.jpg",
           },
         ],
       },
     };
-  } catch (error) {
-    console.error("Failed to fetch data", error);
-
+  } catch (err) {
+    console.error("Failed to build metadata:", err);
+    // Safe fallback so page still renders
     return {
       title: "Default Title - Caravans for Sale",
       description: "Browse the latest caravans available for sale.",
@@ -160,17 +178,13 @@ export async function generateMetadata({
       openGraph: {
         title: "Default Title",
         description: "Browse our latest caravans for sale.",
-        images: [
-          {
-            url: "/default-image.jpg", // Default fallback image
-          },
-        ],
+        images: [{ url: "/default-image.jpg" }],
       },
     };
   }
 }
 
-// Layout component
+/* --------------------------------- Layout --------------------------------- */
 export default function Layout({ children }: { children: ReactNode }) {
   return <div>{children}</div>;
 }

@@ -179,7 +179,7 @@ export default function ListingsPage({ page, ...incomingFilters }: Props) {
           postcode: appliedFilters.pincode,
           orderby: appliedFilters.orderby,
         });
-
+        console.log("appl", appliedFilters);
         const hasFilters = Object.values(appliedFilters).some(
           (val) => val !== undefined && val !== null && val !== ""
         );
@@ -250,6 +250,7 @@ export default function ListingsPage({ page, ...incomingFilters }: Props) {
   }, []);
   console.log("Orderby filter:", filters.orderby);
   const handleFilterChange = useCallback((newFilters: Filters) => {
+    console.log("order", newFilters);
     const mergedFilters = { ...filtersRef.current, ...newFilters };
     console.log("🔗 Merging filters", mergedFilters);
     setHasSearched(true);
@@ -274,7 +275,7 @@ export default function ListingsPage({ page, ...incomingFilters }: Props) {
   const updateURLWithFilters = (filters: Filters, page: number) => {
     const slug = buildSlugFromFilters(filters); // no ?page=1 inside it
     const query = new URLSearchParams();
-
+    if (filters.orderby) query.set("orderby", String(filters.orderby)); // ✅ add this
     if (filters.from_year)
       query.set("acustom_fromyears", filters.from_year.toString());
     if (filters.to_year)
@@ -304,14 +305,7 @@ export default function ListingsPage({ page, ...incomingFilters }: Props) {
     }
   };
   const noResultsRedirectingRef = useRef(false);
-  // useEffect(() => {
-  //   if (noResultsRedirectingRef.current) return; // ✅ Skip if just redirected
-  //   if (filtersReady && hasSearched) {
-  //     const currentPage = parseInt(searchParams.get("page") || "1", 10);
-  //     loadListings(currentPage, filtersRef.current);
-  //   }
-  // }, [filters, hasSearched]);
-  // ✅ single fetch trigger — runs when URL changes
+
   useEffect(() => {
     if (!filtersInitializedRef.current) return;
 
@@ -319,42 +313,47 @@ export default function ListingsPage({ page, ...incomingFilters }: Props) {
     const slugParts = path.split("/listings/")[1]?.split("/") || [];
     const parsedFromURL = parseSlugToFilters(slugParts);
 
-    // keep our refs in sync with the URL
+    // ✅ read query params (orderby, years, etc.)
     const pageFromURL = parseInt(searchParams.get("page") || "1", 10);
-    filtersRef.current = { ...parsedFromURL, ...incomingFilters };
+    const orderbyQP = searchParams.get("orderby") || undefined;
+    // const fromYearsQP = searchParams.get("acustom_fromyears") || undefined;
+    // const toYearsQP = searchParams.get("acustom_toyears") || undefined;
+
+    // ✅ include them in filtersRef/current
+    filtersRef.current = {
+      ...parsedFromURL,
+      ...incomingFilters,
+      orderby: orderbyQP, // ✅ crucial: makes requestKey change
+      // from_year: fromYearsQP ?? parsedFromURL.from_year,
+      // to_year: toYearsQP ?? parsedFromURL.to_year,
+    };
     setFilters(filtersRef.current);
 
-    // dedupe key (page + filters)
     const requestKey = JSON.stringify({
       page: pageFromURL,
-      filters: filtersRef.current,
+      filters: filtersRef.current, // now includes orderby
     });
 
     if (
       lastRequestKeyRef.current === requestKey ||
       inFlightKeyRef.current === requestKey
     ) {
-      return; // already fetched / in flight for this exact state
+      return;
     }
 
     lastRequestKeyRef.current = requestKey;
     inFlightKeyRef.current = requestKey;
 
-    setPagination((prev) => ({
-      ...prev,
-      current_page: pageFromURL,
-    }));
+    setPagination((prev) => ({ ...prev, current_page: pageFromURL }));
 
     loadListings(pageFromURL, filtersRef.current)
       .catch(() => {})
       .finally(() => {
-        // clear inflight only if nothing else replaced the key
-        if (inFlightKeyRef.current === requestKey) {
-          inFlightKeyRef.current = "";
-        }
+        if (inFlightKeyRef.current === requestKey) inFlightKeyRef.current = "";
       });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams]);
+
   useEffect(() => {
     if (!filtersInitializedRef.current) {
       const path =
@@ -430,6 +429,7 @@ export default function ListingsPage({ page, ...incomingFilters }: Props) {
                   metaDescription={metaDescription}
                   metaTitle={metaTitle}
                   onFilterChange={handleFilterChange}
+                  currentFilters={filters}
                 />
               )}
 
