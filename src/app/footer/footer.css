@@ -59,7 +59,51 @@ footer.style-8 .content .logo-social .socials a:hover {
 }
 
 .foot p {
-  color: #a3a3a3;
+    color: #a3a3a3;
+    font-size: 14px;
+    line-height: 1.7;
+}
+
+.new_font .foot-title.foot_xs {
+    justify-content: start;
+}
+
+.new_font .menu {
+    display: block;
+    padding: 0;
+}
+
+.new_font .menu li {
+    margin-bottom: 5px;
+    list-style: none;
+}
+
+.new_font .menu li+li {
+    margin-left: 0;
+}
+
+.new_font .menu li a:before {
+  content:none
+}
+
+.new_font footer.style-8 .content .logo-social {
+    padding-bottom: 0;
+}
+.foot-title.foot_xs {
+    font-size: 16px;
+    font-weight: 500;
+    margin-bottom: 12px;
+    margin-top: 0;
+    text-transform: uppercase;
+    color: #a3a3a3;
+    height: 40px;
+    padding-right: 26px;
+    border-bottom: 1px solid #8e8e8e;
+    display: flex;
+    align-items: center;
+    position: relative;
+    padding-bottom: 5px;
+    padding-top: 5px;
 }
 
 /* --------------- to_top button --------------- */

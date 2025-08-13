@@ -3,7 +3,7 @@ import Image from 'next/image';
 export default function OffRoadCaravans2025() {
   return (
     <div className='blog-page style-5 color-4'>
-    <section className="all-news section-padding pt-50 blog bg-transparent single_blog style-3">
+    <section className="all-news bg-light-gray section-padding pt-50 blog bg-transparent single_blog style-3">
       <div className="container">
         <div className="blog-details-slider mb-30">
           <div className="content-card">
