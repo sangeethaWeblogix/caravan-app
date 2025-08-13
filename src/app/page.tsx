@@ -1,5 +1,4 @@
- import React from "react";
-import Home from "./home";
+ import Home from "./home";
 import { Metadata } from "next";
  
 export async function generateMetadata(): Promise<Metadata> {
