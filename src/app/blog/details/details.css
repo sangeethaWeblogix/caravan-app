@@ -342,6 +342,12 @@ form.submitting .newsletter-content .wpcf7-spinner {
     border-top: none;
 }
 
+.bg-light-gray {
+    background-color: #f2f2f2;
+  border-bottom: solid 1px #e1e1e1;
+  border-top: solid 1px #e1e1e1;
+}
+
 .faq.style-3 .accordion-item .accordion-collapse .accordion-body {
     color: #000000;
     padding-bottom: 30px;

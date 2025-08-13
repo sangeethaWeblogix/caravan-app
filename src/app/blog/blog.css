@@ -78,3 +78,9 @@
 .pagination.style-5 span.current {
     background: #ebebeb;
 }
+
+.bg-light-gray {
+    background-color: #f2f2f2;
+  border-bottom: solid 1px #e1e1e1;
+  border-top: solid 1px #e1e1e1;
+}
