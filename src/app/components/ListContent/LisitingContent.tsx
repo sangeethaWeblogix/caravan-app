@@ -62,6 +62,7 @@ interface Props {
   metaTitle: string; // Add metaTitle prop
   metaDescription: string; // Add metaDescription prop
   onFilterChange: (filters: Filters) => void;
+  currentFilters: Filters;
 }
 
 export default function ListingContent({
@@ -72,6 +73,7 @@ export default function ListingContent({
   metaTitle,
   metaDescription,
   onFilterChange,
+  currentFilters,
 }: Props) {
   const imageUrl = "public/favicon.ico";
   const [filters] = useState<Filters>({});
@@ -120,17 +122,21 @@ export default function ListingContent({
                       name="orderby"
                       className="orderby form-select"
                       aria-label="Shop order"
-                      onChange={handleSortChange}
-                      value={filters.orderby}
+                      onChange={(e) =>
+                        onFilterChange({
+                          orderby: e.target.value || "featured",
+                        })
+                      }
+                      value={currentFilters.orderby ?? "featured"} // <— default to "featured"
                     >
                       <option value="featured">Featured</option>
                       <option value="price_asc">Price (Low to High)</option>
                       <option value="price_desc">Price (High to Low)</option>
-
                       <option value="year_desc">Year Made (High to Low)</option>
                       <option value="year_asc">Year Made (Low to High)</option>
                     </select>
-                    <input type="hidden" name="paged" value={filters.orderby} />
+
+                    {/* <input type="hidden" name="paged" value={filters.orderby} /> */}
                   </div>
                 </form>
               </div>
@@ -251,7 +257,7 @@ export default function ListingContent({
                     <div className="price">
                       <div className="vehicleThumbDetails__part__price">
                         {/* If regular price is 0, show POA */}
-                        {parseFloat(product.regular_price) === 0 ? (
+                        {Number(product.regular_price) === 0 ? (
                           <span className="woocommerce-Price-amount amount">
                             <bdi>POA</bdi>
                           </span>
@@ -270,7 +276,16 @@ export default function ListingContent({
                           </>
                         ) : (
                           <span className="woocommerce-Price-amount amount">
-                            <bdi>{product.regular_price}</bdi>
+                            <bdi>
+                              {parseFloat(
+                                String(product.regular_price).replace(
+                                  /[^0-9.]/g,
+                                  ""
+                                )
+                              ) === 0
+                                ? "POA"
+                                : product.regular_price}
+                            </bdi>{" "}
                           </span>
                         )}
                       </div>

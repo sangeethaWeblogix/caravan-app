@@ -1,4 +1,4 @@
-import React from "react";
+ import React from "react";
 import Home from "./home";
 import { Metadata } from "next";
  
