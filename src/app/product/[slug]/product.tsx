@@ -17,7 +17,7 @@ type ProductData = {
 };
 export default function ClientLogger({ data }: { data: any }) {
   const [activeImage, setActiveImage] = useState<string>("");
-  console.log("slug de ", data);
+  console.log("slug de ", data, activeImage);
   const product = (data?.data?.product_details ?? {}) as ProductData;
   const pd = data?.data ?? {}; // full product object (top-level)
   const productDetails = pd.product_details ?? {};
@@ -94,9 +94,6 @@ export default function ClientLogger({ data }: { data: any }) {
     const initial = pd.main_image || images[0] || "/images/img.png";
     setActiveImage(initial);
   }, [pd.main_image, images]);
-
-  const thumbs = images.slice(0, 3); // first three thumbs
-  const moreCount = Math.max(images.length - 3, 0);
 
   const handleBackClick = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -311,7 +308,7 @@ export default function ClientLogger({ data }: { data: any }) {
                   Send Enquiry
                 </button>
                 <p className="terms_text small">
-                  By clicking 'Send Enquiry', you agree to our
+                  By clicking &apos;Send Enquiry&apos;, you agree to our
                   <Link href="/privacy-collection-statement">
                     {" "}
                     Collection Statement

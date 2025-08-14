@@ -1128,9 +1128,7 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
     const query = new URLSearchParams();
     if (next.from_year) query.set("acustom_fromyears", String(next.from_year));
     if (next.to_year) query.set("acustom_toyears", String(next.to_year));
-    if (typeof next.radius_kms === "number") {
-      query.set("radius_kms", String(next.radius_kms)); // ✅ always include
-    }
+
     query.set("page", "1");
 
     const safeSlugPath = slugPath.endsWith("/") ? slugPath : `${slugPath}/`;

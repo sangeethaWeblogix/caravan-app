@@ -1,9 +1,8 @@
-'use client';
+"use client";
 
-import Image from 'next/image';
-import Link from 'next/link';
-import { useState } from 'react';
-import './dealerlist.css';
+import Image from "next/image";
+import Link from "next/link";
+import "./dealerlist.css";
 
 export default function CaravanDealersPage() {
   return (
@@ -13,9 +12,9 @@ export default function CaravanDealersPage() {
         className="services top_search_filter style-1"
         style={{
           backgroundImage:
-            'url(https://www.caravansforsale.com.au/wp-content/uploads/2024/11/banner_cover_dealer.jpg)',
-          backgroundPosition: 'center',
-          backgroundSize: 'cover',
+            "url(https://www.caravansforsale.com.au/wp-content/uploads/2024/11/banner_cover_dealer.jpg)",
+          backgroundPosition: "center",
+          backgroundSize: "cover",
         }}
       >
         <div className="container">
@@ -23,7 +22,9 @@ export default function CaravanDealersPage() {
             <div className="col-lg-12">
               <div className="section-head text-center">
                 <div className="dealer_sbox dealer-aus-sec">
-                  <h1 className="divide-orange pb-10">Caravan Dealers in Australia</h1>
+                  <h1 className="divide-orange pb-10">
+                    Caravan Dealers in Australia
+                  </h1>
                   <h4>Find Best Caravan Dealers Near You</h4>
                   <form>
                     <div className="search">
@@ -60,9 +61,11 @@ export default function CaravanDealersPage() {
       <section className="quick_stlink section-padding">
         <div className="container">
           <ul className="category_icon">
-            {['nsw', 'qld', 'vic', 'sa', 'wa', 'tas'].map((state) => (
+            {["nsw", "qld", "vic", "sa", "wa", "tas"].map((state) => (
               <li key={state}>
-                <Link href={`https://www.caravansforsale.com.au/caravan-dealers/${state}`}>
+                <Link
+                  href={`https://www.caravansforsale.com.au/caravan-dealers/${state}`}
+                >
                   <div className="item-image"></div>
                   <span>{state.toUpperCase()}</span>
                 </Link>
@@ -102,11 +105,11 @@ export default function CaravanDealersPage() {
                     </div>
                     <div className="dealer_about">
                       <p>
-                        QLD Caravan Clearance Centre (QCCC) is located in the middle
-                        of Gympie, QLD and is your go to caravan dealer. With over
-                        15 years experience in the industry the passionate and
-                        friendly QCCC team will help you find your dream caravan at
-                        the right price.
+                        QLD Caravan Clearance Centre (QCCC) is located in the
+                        middle of Gympie, QLD and is your go to caravan dealer.
+                        With over 15 years experience in the industry the
+                        passionate and friendly QCCC team will help you find
+                        your dream caravan at the right price.
                       </p>
                     </div>
                   </div>
@@ -114,17 +117,23 @@ export default function CaravanDealersPage() {
                     <div className="dealer_info_right">
                       <h4>Brands We Sell</h4>
                       <ul>
-                        {['Nextgen', 'Franklin', 'Hilltop', 'New Age', 'Newgen'].map(
-                          (brand) => (
-                            <li key={brand}>
-                              <Link
-                                href={`https://www.caravansforsale.com.au/listings/${brand.toLowerCase().replace(' ', '-')}`}
-                              >
-                                {brand}
-                              </Link>
-                            </li>
-                          )
-                        )}
+                        {[
+                          "Nextgen",
+                          "Franklin",
+                          "Hilltop",
+                          "New Age",
+                          "Newgen",
+                        ].map((brand) => (
+                          <li key={brand}>
+                            <Link
+                              href={`https://www.caravansforsale.com.au/listings/${brand
+                                .toLowerCase()
+                                .replace(" ", "-")}`}
+                            >
+                              {brand}
+                            </Link>
+                          </li>
+                        ))}
                         <li className="view_profile_tbn">
                           <Link href="https://www.caravansforsale.com.au/dealers/qld-caravan-clearance-centre/gympie-qld-4570/">
                             View Profile
@@ -146,7 +155,7 @@ export default function CaravanDealersPage() {
             <div className="col-lg-3">
               <div
                 className="listing-sidebar-banner-container"
-                style={{ position: 'sticky', top: '80px' }}
+                style={{ position: "sticky", top: "80px" }}
               ></div>
             </div>
           </div>
