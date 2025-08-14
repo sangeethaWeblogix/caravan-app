@@ -7,7 +7,6 @@ import "swiper/css";
 import "swiper/css/navigation";
 import "../../listings/listings.css";
 import Head from "next/head";
-import { useState } from "react";
 import { toSlug } from "../../../utils/seo/slug";
 interface Product {
   id: number;
@@ -145,7 +144,6 @@ export default function ListingContent({
         <div className="dealers-section product-type">
           {products?.map((product) => {
             const href = getHref(product);
-            const canLink = !!href;
             return (
               <article
                 className="vehicleSearch html general null pro"

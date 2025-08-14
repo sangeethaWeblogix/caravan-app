@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { Navigation, Pagination } from "swiper/modules";
 import "swiper/css";
@@ -96,8 +95,8 @@ const CaravanDetailModal = ({
                         ))}
 
                         <p className="terms_text">
-                          By clicking 'Send Enquiry', you agree to Caravan
-                          Marketplace{" "}
+                          By clicking &apos;Send Enquiry&apos;, you agree to
+                          Caravan Marketplace{" "}
                           <a
                             href="/privacy-collection-statement"
                             target="_blank"

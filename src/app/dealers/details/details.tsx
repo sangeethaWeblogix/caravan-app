@@ -3,7 +3,6 @@
 import React from "react";
 import Image from "next/image";
 import Link from "next/link";
-import dynamic from "next/dynamic";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { Navigation } from "swiper/modules";
 import "swiper/css";
@@ -37,8 +36,8 @@ const DealerSection = () => {
                   <div className="dealer_about">
                     <p>
                       Welcome to the Golf Super Centre, the mecca for caravan
-                      enthusiasts! Their main dealership has the biggest range of
-                      Golf Caravans, Campers and Maxxi’s on display.
+                      enthusiasts! Their main dealership has the biggest range
+                      of Golf Caravans, Campers and Maxxi’s on display.
                     </p>
                     {/* ... (other content can follow same structure) */}
 
@@ -46,7 +45,9 @@ const DealerSection = () => {
                     <ul>
                       <li>Avan: Innovative and stylish caravans.</li>
                       <li>Golf: Durable and versatile models.</li>
-                      <li>Jayco: Wide range of family and adventure options.</li>
+                      <li>
+                        Jayco: Wide range of family and adventure options.
+                      </li>
                       <li>SWIFT: Compact and luxurious.</li>
                     </ul>
 
@@ -63,7 +64,9 @@ const DealerSection = () => {
                       </div>
                     </div>
                     <div className="side-tags">
-                      <h6 className="title mb-2">Type of Caravans we most sell</h6>
+                      <h6 className="title mb-2">
+                        Type of Caravans we most sell
+                      </h6>
                       <div className="content">
                         <Link href="/listings/luxury-category">Luxury</Link>
                       </div>
@@ -84,7 +87,10 @@ const DealerSection = () => {
                         href="https://www.golfsupercentre.com.au/"
                         target="_blank"
                         rel="noopener noreferrer"
-                      > https://www.golfsupercentre.com.au/</a>
+                      >
+                        {" "}
+                        https://www.golfsupercentre.com.au/
+                      </a>
                     </p>
 
                     <div className="dealer_map">
@@ -111,7 +117,8 @@ const DealerSection = () => {
                           "Saturday",
                         ].map((day, i) => (
                           <li key={i}>
-                            <strong>{day}:</strong>{" "}9:00 am - {day === "Saturday" ? "4:00 pm" : "5:00 pm"}
+                            <strong>{day}:</strong> 9:00 am -{" "}
+                            {day === "Saturday" ? "4:00 pm" : "5:00 pm"}
                           </li>
                         ))}
                       </ul>
@@ -146,7 +153,8 @@ const DealerSection = () => {
                   1024: { slidesPerView: 3 },
                 }}
               >
-                {[ // Example listings array
+                {[
+                  // Example listings array
                   {
                     title:
                       "2023 Golf Tourer 556 Touring with Toilet and Shower",
@@ -157,8 +165,7 @@ const DealerSection = () => {
                     link: "/product/2023-golf-tourer-556-touring-with-toilet-and-shower-single-axle/",
                   },
                   {
-                    title:
-                      "2023 Golf Tourer 650 Touring Family with Bunk Beds",
+                    title: "2023 Golf Tourer 650 Touring Family with Bunk Beds",
                     location: "Queensland",
                     image:
                       "https://www.caravansforsale.com.au/wp-content/uploads/2024/08/golf-tourer-650-2023-new-on-road-caravan-4505-main-1.jpg",
@@ -166,8 +173,7 @@ const DealerSection = () => {
                     link: "/product/2023-golf-tourer-650-touring-family-with-bunk-beds-cafe-lounge/",
                   },
                   {
-                    title:
-                      "2023 Golf Tourer 650 Touring Family with Bunk Beds",
+                    title: "2023 Golf Tourer 650 Touring Family with Bunk Beds",
                     location: "Queensland",
                     image:
                       "https://www.caravansforsale.com.au/wp-content/uploads/2024/08/golf-tourer-650-2023-new-on-road-caravan-4505-main-1.jpg",
@@ -175,8 +181,7 @@ const DealerSection = () => {
                     link: "/product/2023-golf-tourer-650-touring-family-with-bunk-beds-cafe-lounge/",
                   },
                   {
-                    title:
-                      "2023 Golf Tourer 650 Touring Family with Bunk Beds",
+                    title: "2023 Golf Tourer 650 Touring Family with Bunk Beds",
                     location: "Queensland",
                     image:
                       "https://www.caravansforsale.com.au/wp-content/uploads/2024/08/golf-tourer-650-2023-new-on-road-caravan-4505-main-1.jpg",
@@ -205,7 +210,6 @@ const DealerSection = () => {
                           </div>
                           <ul className="vehicleDetailsWithIcons simple">
                             <li>
-                              
                               <span className="attribute3">New</span>
                             </li>
                           </ul>
@@ -241,9 +245,7 @@ const DealerSection = () => {
         </div>
       </div>
     </section>
-    
   );
 };
 
 export default DealerSection;
-

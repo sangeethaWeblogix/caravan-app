@@ -5,7 +5,6 @@ import { fetchListings } from "../../../api/listings/api";
 import Listing from "./LisitingContent";
 import CaravanFilter from "../CaravanFilter";
 import SkeletonListing from "../skelton";
-import Footer from "../Footer";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { buildSlugFromFilters } from "../slugBuilter";
