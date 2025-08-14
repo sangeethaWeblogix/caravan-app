@@ -1,11 +1,11 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  trailingSlash: true, // ✅ forces all URLs to end with '/'
+  trailingSlash: true,
   images: {
-    domains: [
-      "www.dev.caravansforsale.com.au",
-      "www.caravansforsale.com.au", // ✅ add this line
+    remotePatterns: [
+      { protocol: "https", hostname: "www.dev.caravansforsale.com.au" },
+      { protocol: "https", hostname: "www.caravansforsale.com.au" },
     ],
   },
 };
