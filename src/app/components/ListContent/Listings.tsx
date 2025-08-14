@@ -26,6 +26,7 @@ interface Product {
   condition: string;
   sleep?: string;
   categories?: string[];
+  slug?: string;
 }
 
 interface Pagination {
@@ -231,6 +232,7 @@ export default function ListingsPage({ page, ...incomingFilters }: Props) {
     },
     [] // ✅ keep as-is
   );
+  console.log("data pr", products);
 
   useEffect(() => {
     if (!hasSearched && filtersReady) {
@@ -439,7 +441,6 @@ export default function ListingsPage({ page, ...incomingFilters }: Props) {
                 />
               )}
 
-              <Footer />
               <div className="col-lg-3 rightbar-stick"></div>
             </div>
           </div>
