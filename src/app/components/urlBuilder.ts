@@ -40,10 +40,11 @@ export function parseSlugToFilters(slugParts: string[]): Filters {
         .replace(/-/g, " ")
         .toLowerCase();
     } else if (part.endsWith("-region")) {
+      // region can be present in URL, but we'll drop it later if suburb exists
       filters.region = part
-        .replace("-region", "") // remove the suffix
-        .replace(/-/g, " ") // convert hyphens to spaces
-        .toLowerCase(); // make all lowercase
+        .replace("-region", "")
+        .replace(/-/g, " ")
+        .toLowerCase();
     } else if (part.endsWith("-suburb")) {
       filters.suburb = part.replace("-suburb", "").replace(/-/g, " ");
     } else if (/^\d{4}$/.test(part)) {
@@ -81,15 +82,11 @@ export function parseSlugToFilters(slugParts: string[]): Filters {
         const match = part.match(
           /between-(\d+)-and-(\d+)-people-sleeping-capacity/
         );
-        if (match) {
-          filters.sleeps = `${match[1]}-people`;
-        }
+        if (match) filters.sleeps = `${match[1]}-people`;
       } else {
         const raw = part.replace("-people-sleeping-capacity", "");
         const cleaned = raw.replace(/^over-/, "").replace(/^under-/, "");
-        if (!isNaN(Number(cleaned))) {
-          filters.sleeps = `${cleaned}-people`;
-        }
+        if (!isNaN(Number(cleaned))) filters.sleeps = `${cleaned}-people`;
       }
     } else if (/^over-\d+$/.test(part)) {
       filters.from_price = part.replace("over-", "");
@@ -108,27 +105,10 @@ export function parseSlugToFilters(slugParts: string[]): Filters {
     }
   });
 
+  // ✅ if suburb present, ignore region
+  if (filters.suburb) {
+    delete filters.region;
+  }
+
   return filters;
-}
-
-export function parsePathnameToFilters(pathname: string): Filters {
-  const slugParts = pathname.split("/listings/")[1]?.split("/") || [];
-  return parseSlugToFilters(slugParts);
-}
-
-export function refineMakeModel(
-  filters: Filters,
-  knownMakes: string[],
-  knownModels: string[]
-): Filters {
-  const refined = { ...filters };
-
-  if (refined.make && !knownMakes.includes(refined.make)) {
-    refined.make = undefined;
-  }
-  if (refined.model && !knownModels.includes(refined.model)) {
-    refined.model = undefined;
-  }
-
-  return refined;
 }

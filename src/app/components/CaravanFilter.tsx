@@ -211,13 +211,20 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
 
   const hydrateLocation = (next: Filters): Filters => {
     const out = { ...next };
+
+    // keep state for context, but NEVER send/slug region if suburb set
     if (out.suburb) {
+      out.region = undefined; // ✅ kill region when suburb exists
+      // keep state if needed:
+      if (!out.state && selectedStateName) out.state = selectedStateName;
+    } else {
+      // only when there is no suburb, we can hydrate region/state
       if (!out.region && selectedRegionName) out.region = selectedRegionName;
       if (!out.state && selectedStateName) out.state = selectedStateName;
     }
+
     return out;
   };
-
   useEffect(() => {
     const loadFilters = async () => {
       const res = await fetchProductList();
