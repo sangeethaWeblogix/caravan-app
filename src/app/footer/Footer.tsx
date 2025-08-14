@@ -38,16 +38,15 @@ const Footer = () => {
               <div className="col-lg-3">
                 <h6 className="foot-title foot_xs">About Us</h6>
                 <ul className="menu footer_xs">
-                  <li><Link href={`${siteUrl}/caravan-dealers/`}>Caravan Dealers</Link></li>
-                  <li><Link href={`${siteUrl}/listings/`}>For Sale</Link></li>
-                  <li><Link href={`${siteUrl}/caravan-manufacturers/all/`}>Manufacturer Range</Link></li>
-                  <li><Link href={`${siteUrl}/blog/`}>Blog</Link></li>
-                  <li><Link href={`${siteUrl}/terms-conditions/`}>Terms & Conditions</Link></li>
-                  <li><Link href={`${siteUrl}/privacy-policy/`}>Privacy Policy</Link></li>
-                  <li><Link href={`${siteUrl}/privacy-collection-statement/`}>Privacy Collection Statement</Link></li>
-                  <li className="hidden-xs"><Link href={`${siteUrl}/about-us/`}>About</Link></li>
-                  <li className="hidden-lg hidden-md hidden-sm"><Link href={`${siteUrl}/about-us/`}>About Caravan Marketplace</Link></li>
-                  <li><Link href={`${siteUrl}/contact/`}>Contact Us</Link></li>
+                  {/* <li><Link href={`${siteUrl}/caravan-dealers/`}>Caravan Dealers</Link></li> */}
+                  <li><Link href="/listings/">For Sale</Link></li>
+                  {/* <li><Link href={`${siteUrl}/caravan-manufacturers/all/`}>Manufacturer Range</Link></li> */}
+                  <li><Link href="/blog/">Blog</Link></li>
+                  <li><Link href="/terms-conditions/">Terms & Conditions</Link></li>
+                  <li><Link href="/privacy-policy/">Privacy Policy</Link></li>
+                  <li><Link href="/privacy-collection-statement/">Privacy Collection Statement</Link></li>
+                  <li><Link href="/about-us/">About</Link></li>
+                  <li><Link href="/contact/">Contact Us</Link></li>
                 </ul>
               </div>
 
