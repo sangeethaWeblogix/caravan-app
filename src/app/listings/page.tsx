@@ -1,5 +1,4 @@
 // src/app/listings/page.tsx
-
 import React, { Suspense } from "react";
 import Listing from "../components/ListContent/Listings"; // Adjust path as needed
 import { fetchListings } from "@/api/listings/api";
@@ -17,7 +16,7 @@ export async function generateMetadata(): Promise<Metadata> {
     "Browse all available caravans across Australia.";
 
   return {
-    title: metaTitle,
+    title: { absolute: metaTitle }, // ✅ Prevents global "| Caravan" suffix
     description: metaDescription,
     openGraph: {
       title: metaTitle,

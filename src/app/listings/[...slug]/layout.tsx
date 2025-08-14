@@ -40,7 +40,6 @@ function parseJsonSafe(text: string) {
 export async function generateMetadata({
   params,
 }: {
-  // If your project expects Promise here, keep as Promise. Otherwise change to `{ slug?: string[] }`
   params: Promise<{ slug?: string[] }>;
 }): Promise<Metadata> {
   const { slug = [] } = await params;
@@ -91,7 +90,6 @@ export async function generateMetadata({
   };
 
   try {
-    // Build query string (avoid shadowing `params`)
     const qs = new URLSearchParams();
     qs.append("page", String(filters.page ?? 1));
     if (filters.category) qs.append("category", filters.category);
@@ -126,7 +124,6 @@ export async function generateMetadata({
       headers: { Accept: "application/json" },
     });
 
-    // Basic diagnostics to see what's returned
     const contentType = groupResponse.headers.get("content-type") || "";
     const statusInfo = `${groupResponse.status} ${groupResponse.statusText}`;
     const raw = await groupResponse.text();
@@ -142,7 +139,6 @@ export async function generateMetadata({
 
     const groupData = parseJsonSafe(raw);
     if (!groupData) {
-      // Server returned SQL/HTML error or some non-JSON body
       throw new Error("Endpoint did not return JSON");
     }
 
@@ -151,13 +147,11 @@ export async function generateMetadata({
     const description =
       groups.metadescription ||
       "Browse the latest caravans available for sale.";
-    const keywords =
-      groups.metakeyword || "caravans, trailers, new caravans, used caravans";
 
+    // ✅ Make title absolute so it doesn’t append "| Caravan"
     return {
-      title,
+      title: { absolute: title },
       description,
-      keywords,
       openGraph: {
         title,
         description,
@@ -170,9 +164,8 @@ export async function generateMetadata({
     };
   } catch (err) {
     console.error("Failed to build metadata:", err);
-    // Safe fallback so page still renders
     return {
-      title: "Default Title - Caravans for Sale",
+      title: { absolute: "Default Title - Caravans for Sale" },
       description: "Browse the latest caravans available for sale.",
       keywords: "caravans, trailers, new caravans, used caravans",
       openGraph: {

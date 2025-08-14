@@ -1,11 +1,11 @@
- import React from "react";
+import React from "react";
 import Home from "./home";
 import { Metadata } from "next";
- 
+
 export async function generateMetadata(): Promise<Metadata> {
   const metaTitle = "Caravan For Sale ";
   const metaDescription = "Browse all available caravans across Australia.";
- 
+
   return {
     title: metaTitle,
     description: metaDescription,
@@ -20,13 +20,13 @@ export async function generateMetadata(): Promise<Metadata> {
     },
   };
 }
- 
+
 const page = () => {
   return (
-<div>
-<Home />
-</div>
+    <div>
+      <Home />
+    </div>
   );
 };
- 
+
 export default page;

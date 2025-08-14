@@ -73,6 +73,7 @@ export interface Filters {
   suburb?: string;
   pincode?: string;
   orderby?: string;
+  radius_kms?: number | string; // <- allow both
 }
 
 interface Props {
@@ -107,6 +108,7 @@ export default function ListingsPage({ page, ...incomingFilters }: Props) {
   const filtersInitializedRef = useRef(false);
   const lastRequestKeyRef = useRef<string>("");
   const inFlightKeyRef = useRef<string>("");
+  const DEFAULT_RADIUS = 50 as const;
 
   const [filtersReady, setFiltersReady] = useState(false);
   const [filters, setFilters] = useState<Filters>(initialFilters);
@@ -135,7 +137,15 @@ export default function ListingsPage({ page, ...incomingFilters }: Props) {
     total_products: 0,
   });
 
-  console.log("orderby", filters.orderby);
+  console.log("orderby", filters.radius_kms);
+  const asNumber = (v: unknown): number | undefined => {
+    if (typeof v === "number") return v;
+    if (typeof v === "string") {
+      const n = parseInt(v, 10);
+      return Number.isFinite(n) ? n : undefined;
+    }
+    return undefined;
+  };
 
   useEffect(() => {
     if (!filtersInitializedRef.current && router) {
@@ -159,6 +169,13 @@ export default function ListingsPage({ page, ...incomingFilters }: Props) {
       window.scrollTo({ top: 0, behavior: "smooth" });
 
       try {
+        // inside loadListings, just before calling fetchListings
+        const radiusNum = asNumber(appliedFilters.radius_kms);
+        const radiusParam =
+          typeof radiusNum === "number" && radiusNum !== DEFAULT_RADIUS
+            ? String(radiusNum) // API as string
+            : undefined;
+
         const response = await fetchListings({
           ...appliedFilters,
           page,
@@ -179,6 +196,7 @@ export default function ListingsPage({ page, ...incomingFilters }: Props) {
           suburb: appliedFilters.suburb,
           postcode: appliedFilters.pincode,
           orderby: appliedFilters.orderby,
+          radius_kms: radiusParam,
         });
         console.log("appl", appliedFilters);
         const hasFilters = Object.values(appliedFilters).some(
@@ -250,7 +268,7 @@ export default function ListingsPage({ page, ...incomingFilters }: Props) {
     // ✅ Force ready on first render
     setFiltersReady(true);
   }, []);
-  console.log("Orderby filter:", filters.orderby);
+  console.log("Orderby filter:", filters.radius_kms);
   const handleFilterChange = useCallback((newFilters: Filters) => {
     console.log("order", newFilters);
     const mergedFilters = { ...filtersRef.current, ...newFilters };
@@ -289,7 +307,10 @@ export default function ListingsPage({ page, ...incomingFilters }: Props) {
     if (filters.to_year)
       query.set("acustom_toyears", filters.to_year.toString());
     // ✅ Only add page if greater than 1
-
+    const r = Number(filters.radius_kms);
+    if (!Number.isNaN(r) && r !== DEFAULT_RADIUS) {
+      query.set("radius_kms", String(r));
+    }
     if (page > 1) {
       query.set("page", page.toString());
     }
@@ -324,6 +345,10 @@ export default function ListingsPage({ page, ...incomingFilters }: Props) {
     // ✅ read query params (orderby, years, etc.)
     const pageFromURL = parseInt(searchParams.get("page") || "1", 10);
     const orderbyQP = searchParams.get("orderby") || undefined;
+    const radiusQP = searchParams.get("radius_kms");
+    const radiusFromURL = radiusQP
+      ? Math.max(5, parseInt(radiusQP, 10))
+      : undefined;
     // const fromYearsQP = searchParams.get("acustom_fromyears") || undefined;
     // const toYearsQP = searchParams.get("acustom_toyears") || undefined;
 
@@ -331,7 +356,11 @@ export default function ListingsPage({ page, ...incomingFilters }: Props) {
     filtersRef.current = {
       ...parsedFromURL,
       ...incomingFilters,
-      orderby: orderbyQP, // ✅ crucial: makes requestKey change
+      orderby: orderbyQP,
+      radius_kms:
+        typeof radiusFromURL === "number" && radiusFromURL !== DEFAULT_RADIUS
+          ? radiusFromURL
+          : undefined, // ✅ crucial: makes requestKey change
       // from_year: fromYearsQP ?? parsedFromURL.from_year,
       // to_year: toYearsQP ?? parsedFromURL.to_year,
     };

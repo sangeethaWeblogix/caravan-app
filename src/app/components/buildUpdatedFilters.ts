@@ -31,5 +31,6 @@ export function buildUpdatedFilters(
     to_length: updates.to_length ?? currentFilters.to_length,
     location: updates.location ?? currentFilters.location,
     orderby: updates.orderby ?? currentFilters.orderby,
+    radius_kms: updates.radius_kms ?? currentFilters.radius_kms,
   };
 }

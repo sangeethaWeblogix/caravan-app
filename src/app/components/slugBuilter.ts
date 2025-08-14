@@ -6,7 +6,7 @@ export const buildSlugFromFilters = (
 ): string => {
   const slugify = (value: string | null | undefined) =>
     value?.toLowerCase().replace(/\s+/g, "-").trim() || "";
-
+  const DEFAULT_RADIUS = 50;
   const slugParts: string[] = [];
 
   if (filters.make) slugParts.push(filters.make);
@@ -16,15 +16,23 @@ export const buildSlugFromFilters = (
     slugParts.push(`${filters.condition.toLowerCase()}-condition`);
   if (filters.category) slugParts.push(`${filters.category}-category`);
 
-  if (filters.suburb) {
-    slugParts.push(`${filters.suburb.replace(/\s+/g, "-")}-suburb`);
-    if (filters.state) slugParts.push(`${slugify(filters.state)}-state`);
-    if (filters.pincode) slugParts.push(filters.pincode);
-  } else if (filters.state) {
-    slugParts.push(`${slugify(filters.state)}-state`);
-    if (filters.region) slugParts.push(`${slugify(filters.region)}-region`);
-  }
+  // if (filters.suburb) {
+  //   slugParts.push(`${filters.suburb.replace(/\s+/g, "-")}-suburb`);
+  //   if (filters.state) slugParts.push(`${slugify(filters.state)}-state`);
+  //   if (filters.pincode) slugParts.push(filters.pincode);
+  // } else if (filters.state) {
+  //   slugParts.push(`${slugify(filters.state)}-state`);
+  //   if (filters.region) slugParts.push(`${slugify(filters.region)}-region`);
+  // }
 
+  if (filters.state || filters.region || filters.suburb || filters.pincode) {
+    const segs: string[] = [];
+    if (filters.suburb) segs.push(`${slugify(filters.suburb)}-suburb`);
+    if (filters.region) segs.push(`${slugify(filters.region)}-region`);
+    if (filters.state) segs.push(`${slugify(filters.state)}-state`);
+    if (filters.pincode) segs.push(String(filters.pincode));
+    slugParts.push(segs.join("/"));
+  }
   // Length filter
   if (filters.from_length && filters.to_length)
     slugParts.push(
@@ -59,7 +67,15 @@ export const buildSlugFromFilters = (
   if (filters.from_year)
     query.set("acustom_fromyears", filters.from_year.toString());
   if (filters.to_year) query.set("acustom_toyears", filters.to_year.toString());
+  if (filters.radius_kms)
+    query.set("radius_kms", filters.radius_kms.toString());
 
+  // if (
+  //   typeof filters.radius_kms === "number" &&
+  //   filters.radius_kms !== DEFAULT_RADIUS
+  // ) {
+  //   query.set("radius_kms", String(filters.radius_kms));
+  // }
   // Add orderby filter (always included)
   // if (filters.orderby) {
   //   const orderByMap: { [key: string]: string } = {
