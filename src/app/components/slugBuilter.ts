@@ -61,13 +61,13 @@ export const buildSlugFromFilters = (
   if (filters.to_year) query.set("acustom_toyears", filters.to_year.toString());
 
   // Add orderby filter (always included)
-  if (filters.orderby) {
-    const orderByMap: { [key: string]: string } = {
-      priceasc: "price_asc",
-      pricedesc: "price_desc",
-    };
-    query.set("orderby", orderByMap[filters.orderby] || filters.orderby);
-  }
+  // if (filters.orderby) {
+  //   const orderByMap: { [key: string]: string } = {
+  //     priceasc: "price_asc",
+  //     pricedesc: "price_desc",
+  //   };
+  //   query.set("orderby", orderByMap[filters.orderby] || filters.orderby);
+  // }
   // ✅ Only include page > 1
   if (page && page > 1) {
     query.set("page", page.toString());
