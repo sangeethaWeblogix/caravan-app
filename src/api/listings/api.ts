@@ -21,6 +21,7 @@ interface Filters {
   postcode?: string;
   orderby?: string;
   slug?: string;
+  radius_kms?: string;
 }
 
 export const fetchListings = async (filters: Filters = {}) => {
@@ -41,12 +42,15 @@ export const fetchListings = async (filters: Filters = {}) => {
     postcode,
     orderby,
     slug,
+    radius_kms,
   } = filters;
 
   const params = new URLSearchParams();
   params.append("page", page.toString());
 
   if (category) params.append("category", category);
+  if (radius_kms) params.append("radius_kms", radius_kms);
+
   if (slug) params.append("category", slug);
 
   if (make) params.append("make", make);
