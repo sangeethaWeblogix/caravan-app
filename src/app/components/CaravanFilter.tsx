@@ -211,20 +211,16 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
 
   const hydrateLocation = (next: Filters): Filters => {
     const out = { ...next };
-
-    // keep state for context, but NEVER send/slug region if suburb set
     if (out.suburb) {
-      out.region = undefined; // ✅ kill region when suburb exists
-      // keep state if needed:
+      out.region = undefined; // only clear region when a suburb is chosen
       if (!out.state && selectedStateName) out.state = selectedStateName;
     } else {
-      // only when there is no suburb, we can hydrate region/state
-      if (!out.region && selectedRegionName) out.region = selectedRegionName;
+      if (!out.region && selectedRegionName) out.region = selectedRegionName; // 👈 keep region
       if (!out.state && selectedStateName) out.state = selectedStateName;
     }
-
     return out;
   };
+
   useEffect(() => {
     const loadFilters = async () => {
       const res = await fetchProductList();
@@ -478,7 +474,14 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
       });
     }, 0); // Allow React to flush UI state
   };
+  const suppressLocationAutoClearRef = useRef(false);
   useEffect(() => {
+    // 👇 prevent unintended region/state clearing when we explicitly reset only suburb
+    if (suppressLocationAutoClearRef.current) {
+      suppressLocationAutoClearRef.current = false;
+      return;
+    }
+
     const noLocationInFilters =
       !currentFilters.state &&
       !currentFilters.region &&
@@ -488,7 +491,6 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
     if (noLocationInFilters && selectedStateName) {
       setSelectedState(null);
       setSelectedStateName(null);
-      // setFilteredRegions([]);
       setSelectedRegionName(null);
       setSelectedSuburbName(null);
       setFilteredSuburbs([]);
@@ -552,6 +554,7 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
 
   const resetSuburbFilters = () => {
     // ✅ keep state & region
+    suppressLocationAutoClearRef.current = true; // 👈 tell the auto-clear effect to skip once
     setSelectedSuburbName(null);
     setSelectedPostcode(null);
     setLocationInput("");
@@ -573,7 +576,9 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
 
     const updatedFilters: Filters = {
       ...currentFilters,
-      // keep: state, region
+      // ✅ explicitly preserve state & region
+      state: selectedStateName || currentFilters.state,
+      region: selectedRegionName || currentFilters.region,
       suburb: undefined,
       pincode: undefined,
     };
@@ -581,7 +586,6 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
     setFilters(updatedFilters);
     filtersInitialized.current = true;
 
-    // single source of truth for parent + URL
     startTransition(() => {
       updateAllFiltersAndURL(updatedFilters);
     });
