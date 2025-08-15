@@ -191,6 +191,27 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
   const sleep = [1, 2, 3, 4, 5, 6, 7];
   const [selectedRegion, setSelectedRegion] = useState<string>();
   const [showSuggestions, setShowSuggestions] = useState(false);
+  // put near other utils
+  const AUS_ABBR: Record<string, string> = {
+    Victoria: "VIC",
+    "New South Wales": "NSW",
+    Queensland: "QLD",
+    "South Australia": "SA",
+    "Western Australia": "WA",
+    Tasmania: "TAS",
+    "Northern Territory": "NT",
+    "Australian Capital Territory": "ACT",
+  };
+
+  const buildShortAddress = (
+    suburb?: string | null,
+    state?: string | null,
+    postcode?: string | null
+  ) => {
+    const abbr = state ? AUS_ABBR[state] || state : "";
+    return [suburb, abbr, postcode].filter(Boolean).join(" ");
+  };
+
   useEffect(() => {
     if (!showSuggestions || !isUserTypingRef.current) return;
 
@@ -210,14 +231,37 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
   }, [locationInput, showSuggestions]);
 
   const hydrateLocation = (next: Filters): Filters => {
-    const out = { ...next };
-    if (out.suburb) {
-      out.region = undefined; // only clear region when a suburb is chosen
-      if (!out.state && selectedStateName) out.state = selectedStateName;
-    } else {
-      if (!out.region && selectedRegionName) out.region = selectedRegionName; // 👈 keep region
-      if (!out.state && selectedStateName) out.state = selectedStateName;
+    const out: Filters = { ...next };
+
+    // 1) Ensure state is present from UI if missing
+    if (!out.state && selectedStateName) {
+      out.state = selectedStateName;
     }
+
+    // 2) Validate region against the chosen state
+    const validRegion = getValidRegionName(
+      out.state || selectedStateName,
+      out.region,
+      states
+    );
+
+    if (out.region && !validRegion) {
+      // region provided but not valid for this state → drop it
+      delete out.region;
+    } else if (validRegion) {
+      // region valid → normalize to canonical region name
+      out.region = validRegion;
+    }
+
+    // 3) If suburb exists, we **don't** force a region.
+    //    If suburb is missing and region missing, that's fine too.
+
+    // 4) Normalize empty strings to undefined for cleanliness
+    if (typeof out.suburb === "string" && out.suburb.trim() === "")
+      delete out.suburb;
+    if (typeof out.pincode === "string" && out.pincode.trim() === "")
+      delete out.pincode;
+
     return out;
   };
 
@@ -254,6 +298,38 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
       updateAllFiltersAndURL(updatedFilters);
     });
   };
+  // ✅ validate region only if it exists under the given state
+  const getValidRegionName = (
+    stateName: string | null | undefined,
+    regionName: string | null | undefined,
+    allStates: StateOption[]
+  ): string | undefined => {
+    if (!stateName || !regionName) return undefined;
+    const st = allStates.find(
+      (s) =>
+        s.name.toLowerCase() === stateName.toLowerCase() ||
+        s.value.toLowerCase() === stateName.toLowerCase()
+    );
+    if (!st?.regions?.length) return undefined;
+    const reg = st.regions.find(
+      (r) =>
+        r.name.toLowerCase() === regionName.toLowerCase() ||
+        r.value.toLowerCase() === regionName.toLowerCase()
+    );
+    return reg?.name; // return canonical name if valid, else undefined
+  };
+  // useEffect(() => {
+  //   if (!selectedSuburbName || !selectedPostcode) return;
+  //   const shortAddr = buildShortAddress(
+  //     selectedSuburbName,
+  //     selectedStateName,
+  //     selectedPostcode
+  //   );
+  //   if (locationInput !== shortAddr) {
+  //     isUserTypingRef.current = false;
+  //     setLocationInput(shortAddr);
+  //   }
+  // }, [selectedSuburbName, selectedPostcode, selectedStateName]);
 
   useEffect(() => {
     if (!filtersInitialized.current) {
@@ -593,8 +669,10 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
   };
 
   const handleSearchClick = () => {
+    // If you don't want the auto-clear here, you can remove this call
     resetSuburbFilters();
-    alert("enter");
+
+    // ❌ remove any alert("enter")
     // user must pick a suggestion
     if (!suburbClickedRef.current || !selectedSuggestion) return;
 
@@ -624,22 +702,21 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
       if (m) postcode = m[0];
     }
 
-    // set UI selections
+    // ✅ validate region from suggestion against our states list
+    const regionFromSug = region; // parsed from suggestion
+    const validRegion = getValidRegionName(state, regionFromSug, states);
+
+    // set UI selections (normalize region to valid or clear it)
     setSelectedState(stateSlug);
     setSelectedStateName(state);
-    setSelectedRegionName(region);
+    setSelectedRegionName(validRegion || null); // ⬅️ only keep if valid
     setSelectedSuburbName(suburb);
     setSelectedPostcode(postcode || null);
 
-    // radius: only store when not default (50)
     const radiusForFilters =
       typeof radiusKms === "number" ? radiusKms : RADIUS_OPTIONS[0];
 
-    // 👇🏽 helpful console reads
-    console.log("🔎 handleSearch suburb ->", suburb, postcode);
-    console.log("🔎 handleSearch region/state ->", region, state);
-    console.log("🔎 handleSearch radius_kms ->", radiusForFilters);
-    // build filters
+    // ✅ build filters with validated region
     const updatedFilters = buildUpdatedFilters(currentFilters, {
       make: selectedMake || filters.make || currentFilters.make,
       model: selectedModel || filters.model || currentFilters.model,
@@ -647,19 +724,27 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
       suburb: suburb.toLowerCase(),
       pincode: postcode || undefined,
       state,
-      region,
-      radius_kms: typeof radiusKms === "number" ? radiusKms : RADIUS_OPTIONS[0], // 👈 include only when changed from 50
+      region: validRegion, // undefined if invalid → API gets state+suburb only
+      radius_kms: radiusForFilters,
     });
-    console.log("handleSearch filters sub 2", updatedFilters);
+
     setFilters(updatedFilters);
     filtersInitialized.current = true;
 
     // triggers URL update + onFilterChange (API payload)
     startTransition(() => updateAllFiltersAndURL(updatedFilters));
-    setSelectedSuggestion(null); // slider hide (because we render slider only if selectedSuggestion)
-    setLocationInput(""); // clear the input box
-    setShowSuggestions(false); // close dropdown
+
+    const shortAddr =
+      selectedSuggestion?.short_address ||
+      buildShortAddress(suburb, state, postcode);
+    isUserTypingRef.current = false;
+    setLocationInput(shortAddr);
+
+    setShowSuggestions(false);
     setRadiusKms(RADIUS_OPTIONS[0]);
+    setIsModalOpen(false);
+    setLocationSuggestions([]);
+    suburbClickedRef.current = false;
   };
 
   // useEffect(() => {
@@ -1323,8 +1408,7 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
   const hydratedKeyRef = useRef("");
 
   useEffect(() => {
-    if (!selectedSuburbName || !selectedRegionName || !selectedStateName)
-      return;
+    if (!selectedSuburbName || !selectedStateName) return;
 
     // run once per unique combo
     if (hydratedKeyRef.current === locKey) return;
@@ -1625,7 +1709,7 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
                   onClick={async () => {
                     const postcode = suburb.value?.match(/\d{4}$/)?.[0] || null;
 
-                    // fetch API for this suburb
+                    // fetch suggestion (optional – keeps your existing logic)
                     let match: LocationSuggestion | null = null;
                     try {
                       const res = await fetchLocations(suburb.name);
@@ -1638,7 +1722,7 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
                       );
                     } catch {}
 
-                    // fallback if API didn't return an exact row
+                    // build a fallback suggestion if API doesn't match
                     if (!match) {
                       const uSub = slug(suburb.name);
                       const uReg = slug(selectedRegionName || "");
@@ -1656,32 +1740,39 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
                         ]
                           .filter(Boolean)
                           .join(", "),
-                        // what we want to DISPLAY in the input
                         short_address: `${suburb.name}${
                           postcode ? ` ${postcode}` : ""
                         }`,
                       };
                     }
 
-                    // drive the UI/input via selectedSuggestion
-                    setSelectedSuggestion(match);
-                    setLocationInput(match.short_address); // for the chip below
+                    // ✅ validate region against the selected state
+                    const safeState =
+                      selectedStateName || currentFilters.state || null;
+                    const validRegion = getValidRegionName(
+                      safeState,
+                      selectedRegionName,
+                      states
+                    );
 
-                    suburbClickedRef.current = true;
+                    // drive UI
+                    setSelectedSuggestion(match);
+                    setLocationInput(match.short_address);
                     setSelectedSuburbName(suburb.name);
-                    setSelectedPostcode(postcode || "");
+                    setSelectedPostcode(postcode || null);
+                    setSelectedRegionName(validRegion || null); // drop invalid region in UI
 
                     // close panels
                     setStateLocationOpen(false);
                     setStateRegionOpen(false);
                     setStateSuburbOpen(false);
-                    setLocationInput(""); // ✅ clear input after selection
-                    // update filters
+
+                    // ✅ build filters (region only if valid)
                     const updatedFilters: Filters = hydrateLocation({
                       ...currentFilters,
-                      state: selectedStateName || currentFilters.state,
-                      region: selectedRegionName || currentFilters.region,
-                      suburb: suburb.name.toLowerCase(), // ✅ keep consistent with modal
+                      state: safeState || undefined,
+                      region: validRegion, // undefined if invalid
+                      suburb: suburb.name.toLowerCase(),
                       pincode: postcode || undefined,
                       radius_kms:
                         typeof radiusKms === "number" && radiusKms !== 50
@@ -1692,18 +1783,9 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
                     setFilters(updatedFilters);
                     filtersInitialized.current = true;
 
-                    // ✅ fire API immediately and sync dedupe cursor
+                    // fire API + URL sync
                     onFilterChange(updatedFilters);
                     lastSentFiltersRef.current = updatedFilters;
-
-                    // keep URL + internal sync
-                    startTransition(() =>
-                      updateAllFiltersAndURL(updatedFilters)
-                    );
-
-                    console.log("filter subbb,", updatedFilters);
-                    setFilters(updatedFilters);
-                    filtersInitialized.current = true;
                     startTransition(() =>
                       updateAllFiltersAndURL(updatedFilters)
                     );
@@ -1731,17 +1813,14 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
         />
 
         {/* ✅ Show selected suburb below input, like a pill with X */}
-        {selectedSuburbName &&
-          selectedStateName &&
-          selectedPostcode &&
-          selectedRegionName && (
-            <div className="filter-chip">
-              {locationInput}
-              <span className="filter-chip-close" onClick={resetSuburbFilters}>
-                ×
-              </span>
-            </div>
-          )}
+        {selectedSuburbName && selectedStateName && selectedPostcode && (
+          <div className="filter-chip">
+            {locationInput}
+            <span className="filter-chip-close" onClick={resetSuburbFilters}>
+              ×
+            </span>
+          </div>
+        )}
       </div>
 
       {/* Make Accordion */}
