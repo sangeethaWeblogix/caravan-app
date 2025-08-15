@@ -165,6 +165,7 @@ export async function generateMetadata({
     const description =
       seo.metadescription || "Browse the latest caravans available for sale.";
 
+    // ✅ Make title absolute so it doesn’t append "| Caravan"
     return {
       title: { absolute: title }, // prevent global suffix
       description,
