@@ -233,12 +233,12 @@ export default function ListingsPage({ page, ...incomingFilters }: Props) {
         } else {
           // fallback for blank or broken filter
           setProducts([]);
-          setPagination({
+          setPagination((prev) => ({
             current_page: 1,
             total_pages: 1,
-            per_page: pagination.per_page,
+            per_page: prev.per_page, // ✅ no stale closure
             total_products: 0,
-          });
+          }));
         }
       } catch (error) {
         console.error("❌ Failed to fetch listings:", error);
@@ -251,17 +251,23 @@ export default function ListingsPage({ page, ...incomingFilters }: Props) {
   );
   console.log("data pr", products);
 
+  // after
   useEffect(() => {
     if (!hasSearched && filtersReady) {
       filtersRef.current = { ...initialFilters, ...incomingFilters };
       setFilters(filtersRef.current);
-      // ✅ Call loadListings only on first render
       const currentPage = parseInt(searchParams.get("page") || "1", 10);
       loadListings(currentPage, filtersRef.current);
-
       setHasSearched(true);
     }
-  }, [filtersReady, hasSearched]);
+  }, [
+    filtersReady,
+    hasSearched,
+    initialFilters,
+    incomingFilters,
+    searchParams,
+    loadListings, // ✅ include everything used
+  ]);
 
   useEffect(() => {
     // ✅ Force ready on first render
@@ -297,27 +303,29 @@ export default function ListingsPage({ page, ...incomingFilters }: Props) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const updateURLWithFilters = (filters: Filters, page: number) => {
-    const slug = buildSlugFromFilters(filters); // no ?page=1 inside it
-    const query = new URLSearchParams();
-    if (filters.orderby) query.set("orderby", String(filters.orderby)); // ✅ add this
-    if (filters.from_year)
-      query.set("acustom_fromyears", filters.from_year.toString());
-    if (filters.to_year)
-      query.set("acustom_toyears", filters.to_year.toString());
-    // ✅ Only add page if greater than 1
-    const r = Number(filters.radius_kms);
-    if (!Number.isNaN(r) && r !== DEFAULT_RADIUS) {
-      query.set("radius_kms", String(r));
-    }
-    if (page > 1) {
-      query.set("page", page.toString());
-    }
+  const updateURLWithFilters = useCallback(
+    (filters: Filters, page: number) => {
+      const slug = buildSlugFromFilters(filters); // no ?page=1 inside it
+      const query = new URLSearchParams();
+      if (filters.orderby) query.set("orderby", String(filters.orderby)); // ✅ add this
+      if (filters.from_year)
+        query.set("acustom_fromyears", filters.from_year.toString());
+      if (filters.to_year)
+        query.set("acustom_toyears", filters.to_year.toString());
+      // ✅ Only add page if greater than 1
+      const r = Number(filters.radius_kms);
+      if (!Number.isNaN(r) && r !== DEFAULT_RADIUS) {
+        query.set("radius_kms", String(r));
+      }
+      if (page > 1) {
+        query.set("page", page.toString());
+      }
 
-    const finalURL = query.toString() ? `${slug}?${query}` : slug;
-    router.push(finalURL);
-  };
-
+      const finalURL = query.toString() ? `${slug}?${query}` : slug;
+      router.push(finalURL);
+    },
+    [router]
+  ); // ✅ include router
   const handleNextPage = () => {
     if (pagination.current_page < pagination.total_pages) {
       const nextPage = pagination.current_page + 1;

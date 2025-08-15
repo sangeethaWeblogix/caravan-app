@@ -642,7 +642,7 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
       pincode: postcode || undefined,
       state,
       region,
-      radius_kms: radiusForFilters, // 👈 include only when changed from 50
+      radius_kms: typeof radiusKms === "number" ? radiusKms : RADIUS_OPTIONS[0], // 👈 include only when changed from 50
     });
     console.log("handleSearch filters sub 2", updatedFilters);
     setFilters(updatedFilters);
@@ -678,7 +678,7 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
       from_year: undefined,
       to_year: undefined,
       location: null,
-      radius_kms: undefined,
+      radius_kms: RADIUS_OPTIONS[0], // ✅ 50 in payload
     };
 
     // Clear UI states
@@ -708,7 +708,6 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
     setLengthFrom(null);
     setLengthTo(null);
     setRadiusKms(RADIUS_OPTIONS[0]);
-
     filtersInitialized.current = true;
     makeInitializedRef.current = false;
     regionSetAfterSuburbRef.current = false;
@@ -732,7 +731,8 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
     if (radiusDebounceRef.current) clearTimeout(radiusDebounceRef.current);
     radiusDebounceRef.current = window.setTimeout(() => {
       const updated = buildUpdatedFilters(currentFilters, {
-        radius_kms: typeof radiusKms === "number" ? radiusKms : undefined,
+        radius_kms:
+          typeof radiusKms === "number" ? radiusKms : RADIUS_OPTIONS[0],
       });
       console.log(" commit ->", radiusKms, "km"); // 👈 commit log
       setFilters(updated);
@@ -1117,12 +1117,13 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
 
   // ✅ Update all filters and URL with validation
   const updateAllFiltersAndURL = (override?: Filters) => {
+    const DEFAULT_RADIUS = 50;
     const nextRaw: Filters = override ?? filters;
     const next: Filters = hydrateLocation(normalizeFilters(nextRaw));
     // 1) set local filters only if changed
     setFilters((prev) => (filtersEqual(prev, next) ? (prev as Filters) : next));
     filtersInitialized.current = true;
-
+    if (typeof next.radius_kms !== "number") next.radius_kms = DEFAULT_RADIUS;
     // 2) notify parent only if changed
     if (!filtersEqual(lastSentFiltersRef.current, next)) {
       lastSentFiltersRef.current = next;
@@ -1688,7 +1689,11 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
                       suburb: suburb.name,
                       pincode: postcode || undefined,
                       radius_kms:
-                        typeof radiusKms === "number" ? radiusKms : undefined, // ✅ keep
+                        typeof radiusKms === "number" && radiusKms !== 50
+                          ? radiusKms
+                          : undefined, // ✅ only include when > 50
+                      // radius_kms:
+                      //   typeof radiusKms === "number" ? radiusKms : undefined, // ✅ keep
                     });
                     console.log("filter subbb,", updatedFilters);
                     setFilters(updatedFilters);

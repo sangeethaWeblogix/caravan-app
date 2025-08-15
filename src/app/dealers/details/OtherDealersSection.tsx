@@ -2,6 +2,7 @@
 
 import React from "react";
 import Link from "next/link";
+import Image from "next/image";
 
 const otherDealers = [
   {
@@ -108,7 +109,12 @@ const OtherDealersSection = () => {
             <div className="col-lg-2" key={index}>
               <div className="other_dlogo">
                 <Link href={dealer.link}>
-                  <img src={dealer.img} alt={dealer.name} />
+                  <Image
+                    width={100}
+                    height={100}
+                    src={dealer.img}
+                    alt={dealer.name}
+                  />
                   <span>{dealer.name}</span>
                 </Link>
               </div>

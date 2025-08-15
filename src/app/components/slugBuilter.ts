@@ -67,15 +67,13 @@ export const buildSlugFromFilters = (
   if (filters.from_year)
     query.set("acustom_fromyears", filters.from_year.toString());
   if (filters.to_year) query.set("acustom_toyears", filters.to_year.toString());
-  if (filters.radius_kms)
-    query.set("radius_kms", filters.radius_kms.toString());
 
-  // if (
-  //   typeof filters.radius_kms === "number" &&
-  //   filters.radius_kms !== DEFAULT_RADIUS
-  // ) {
-  //   query.set("radius_kms", String(filters.radius_kms));
-  // }
+  if (
+    typeof filters.radius_kms === "number" &&
+    filters.radius_kms > DEFAULT_RADIUS
+  ) {
+    query.set("radius_kms", String(filters.radius_kms));
+  }
   // Add orderby filter (always included)
   // if (filters.orderby) {
   //   const orderByMap: { [key: string]: string } = {

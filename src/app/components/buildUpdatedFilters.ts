@@ -10,6 +10,12 @@ export function buildUpdatedFilters(
   currentFilters: Filters,
   updates: PartialUpdate
 ): Filters {
+  const nextRadius =
+    updates.radius_kms !== undefined && updates.radius_kms !== null
+      ? Number(updates.radius_kms) > 50
+        ? Number(updates.radius_kms)
+        : currentFilters.radius_kms ?? 50 // ignore ≤ 50; keep existing (fallback 50)
+      : currentFilters.radius_kms;
   return {
     ...currentFilters,
     category: updates.category ?? currentFilters.category,
@@ -31,6 +37,6 @@ export function buildUpdatedFilters(
     to_length: updates.to_length ?? currentFilters.to_length,
     location: updates.location ?? currentFilters.location,
     orderby: updates.orderby ?? currentFilters.orderby,
-    radius_kms: updates.radius_kms ?? currentFilters.radius_kms,
+    radius_kms: nextRadius, // ✅ only updates when > 50
   };
 }

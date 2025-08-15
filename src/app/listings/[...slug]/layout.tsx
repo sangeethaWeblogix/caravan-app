@@ -24,6 +24,7 @@ interface Filters {
   postcode?: string;
   orderby?: string;
   atm?: string;
+  radius_kms?: number | string; // <- allow both
 }
 
 /* ------------------------------ Helper: parse ----------------------------- */
@@ -64,6 +65,7 @@ export async function generateMetadata({
     postcode,
     orderby,
     atm,
+    radius_kms,
   ] = slug;
 
   const filters: Filters = {
@@ -87,12 +89,15 @@ export async function generateMetadata({
     postcode,
     orderby,
     atm,
+    radius_kms,
   };
 
   try {
     const qs = new URLSearchParams();
     qs.append("page", String(filters.page ?? 1));
     if (filters.category) qs.append("category", filters.category);
+    if (radius_kms) qs.append("radius_kms", radius_kms);
+
     if (filters.make) qs.append("make", filters.make);
     if (filters.orderby) qs.append("orderby", filters.orderby);
     if (filters.postcode) qs.append("pincode", filters.postcode);

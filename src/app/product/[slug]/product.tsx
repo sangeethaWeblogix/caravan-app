@@ -1,78 +1,203 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import CaravanDetailModal from "./CaravanDetailModal";
 import "./product.css";
+
+type Attribute = {
+  label?: string;
+  value?: string;
+  url?: string;
+  name?: string;
+  title?: string;
+  val?: string;
+  text?: string;
+};
+
+type Category = { name?: string; label?: string; value?: string } | string;
+interface ApiData {
+  product_details?: ProductData;
+  main_image?: string;
+  images?: string[];
+  categories?: Category[];
+}
+
+interface ProductDetailResponse {
+  data?: ApiData;
+}
 type ProductData = {
   name?: string;
-  images?: string[]; // array of image URLs
-  main_image?: string; // preferred main image
+  images?: string[];
+  main_image?: string;
   location?: string;
   regular_price?: string;
   sale_price?: string;
   price_difference?: string;
-  // ... add fields if you need
+  categories?: Category[];
+  attribute_urls?: Attribute[];
 };
-export default function ClientLogger({ data }: { data: any }) {
+export default function ClientLogger({
+  data,
+}: {
+  data: ProductDetailResponse;
+}) {
   const [activeImage, setActiveImage] = useState<string>("");
   console.log("slug de ", data, activeImage);
   const product = (data?.data?.product_details ?? {}) as ProductData;
   const pd = data?.data ?? {}; // full product object (top-level)
   const productDetails = pd.product_details ?? {};
-  const productImage = pd.product_details.main_image ?? {};
+  const productImage: string =
+    productDetails.main_image || pd.main_image || "/images/img.png";
 
-  console.log("slug de pr", productImage);
+  const productSubImage: string[] = useMemo(
+    () =>
+      Array.isArray(productDetails.images)
+        ? productDetails.images.filter(Boolean)
+        : Array.isArray(pd.images)
+        ? pd.images.filter(Boolean)
+        : [],
+    [productDetails.images, pd.images]
+  );
+  console.log("slug de pr", productImage, productSubImage);
 
-  const images: string[] = Array.isArray(pd.images)
-    ? pd.images.filter(Boolean)
-    : [];
+  const images: string[] = useMemo(
+    () => (Array.isArray(pd.images) ? pd.images.filter(Boolean) : []),
+    [pd.images]
+  );
+
+  useEffect(() => {
+    const initial = productImage || images[0] || "/images/img.png";
+    setActiveImage(initial);
+  }, [productImage, images]);
   const [activeTab, setActiveTab] = useState<"specifications" | "description">(
     "specifications"
   );
   const [showModal, setShowModal] = useState(false);
-  const attributes: Array<{
-    label?: string;
-    value?: string;
-    url?: string;
-    name?: string;
-    title?: string;
-    val?: string;
-    text?: string;
-  }> = Array.isArray(productDetails.attribute_urls)
+  const attributes: Attribute[] = Array.isArray(productDetails.attribute_urls)
     ? productDetails.attribute_urls
     : [];
 
-  const getAttr = (label: string) =>
+  const getAttr = (label: string): string =>
     attributes.find(
       (a) => String(a?.label ?? "").toLowerCase() === label.toLowerCase()
     )?.value ?? "";
-  const rawCats = Array.isArray(productDetails.categories)
+
+  const isNonEmpty = (s: unknown): s is string =>
+    typeof s === "string" && s.trim().length > 0;
+
+  const rawCats: Category[] = Array.isArray(productDetails.categories)
     ? productDetails.categories
     : Array.isArray(pd.categories)
     ? pd.categories
     : [];
 
   const categoryNames: string[] = rawCats
-    .map((c: any) =>
-      typeof c === "string" ? c : c?.name ?? c?.label ?? c?.value
+    .map((c) =>
+      typeof c === "string" ? c : c?.name ?? c?.label ?? c?.value ?? ""
     )
-    .filter(Boolean);
+    .filter(isNonEmpty);
+  const makeValue = getAttr("Make"); // e.g., "Kokoda"
+
   const specFields = [
     { label: "Type", value: categoryNames.join(", ") || getAttr("Type") }, // 👈 from categories
     { label: "Make", value: getAttr("Make") },
     { label: "Model", value: getAttr("Model") },
     { label: "Year", value: getAttr("Years") },
     { label: "Condition", value: getAttr("Conditions") },
-    { label: "Axle Configuration", value: getAttr("Sleeps") },
+    { label: "Axle Configuration", value: getAttr("AxleConfiguration") },
     { label: "Length", value: getAttr("length") },
-    { label: "Extras", value: getAttr("Tare Mass") },
+    { label: "Sleep", value: getAttr("sleeps") },
+    { label: "ATM", value: getAttr("ATM") },
+    { label: "Tare Mass", value: getAttr("Tare Mass") },
+    { label: "Ball Weight", value: getAttr("Ball Weight") },
+
+    { label: "Extras", value: getAttr("Extras") },
     { label: "Location", value: getAttr("Location") },
   ];
+
+  // helpers
+  const slug = (s: string) => s.trim().toLowerCase().replace(/\s+/g, "-");
+  const num = (s: string) => {
+    const n = parseInt(String(s).replace(/[^\d]/g, ""), 10);
+    return Number.isFinite(n) ? n : null;
+  };
+
+  type LinkOut = { href: string; text: string };
+
+  /** Build links for a spec row based on its label/value. */
+  const linksForSpec = (label: string, value: string): LinkOut[] | null => {
+    const L = label.toLowerCase();
+    const v = String(value).trim();
+    if (!v) return null;
+
+    if (L === "make") {
+      // /listings/make-value/
+      return [{ href: `/listings/${slug(v)}/`, text: v }];
+    }
+
+    if (L === "model") {
+      // per your requirement: /listings/model-value/
+      return [{ href: `/listings/${makeValue}/${slug(v)}/`, text: v }];
+    }
+    if (L === "category" || L === "type") {
+      // value may be "Luxury, Off Road"
+      return v.split(",").map((c) => {
+        const t = c.trim();
+        return { href: `/listings/${slug(t)}-category/`, text: t };
+      });
+    }
+
+    if (L === "atm") {
+      const kg = num(v);
+      if (kg) return [{ href: `/listings/under-${kg}-kg-atm/`, text: v }];
+      return null;
+    }
+
+    if (L === "location" || L === "state") {
+      // e.g., Victoria -> /listings/victoria-state/
+      return [{ href: `/listings/${slug(v)}-state/`, text: v }];
+    }
+
+    if (L === "year" || L === "years") {
+      const y = num(v);
+      if (y)
+        return [
+          {
+            href: `/listings/?acustom_fromyears=${y}&acustom_toyears=${y}`,
+            text: v,
+          },
+        ];
+      return null;
+    }
+
+    if (L === "sleep" || L === "sleeps") {
+      const s = num(v);
+      if (s)
+        return [
+          { href: `/listings/over-${s}-people-sleeping-capacity/`, text: v },
+        ];
+      return null;
+    }
+
+    if (L === "length") {
+      const ft = num(v);
+      if (ft)
+        return [{ href: `/listings/under-${ft}-length-in-feet/`, text: v }];
+      return null;
+    }
+
+    if (L === "condition" || L === "conditions") {
+      return [{ href: `/listings/${slug(v)}-condition/`, text: v }];
+    }
+
+    return null;
+  };
+
   const stateFields = [{ label: "Location", value: getAttr("Location") }];
   // --- helpers ---
-  const parseAmount = (v: any) => {
+  const parseAmount = (v: string | number | undefined) => {
     const n = Number(String(v ?? "").replace(/[^0-9.]/g, ""));
     return Number.isFinite(n) ? n : 0;
   };
@@ -148,25 +273,23 @@ export default function ClientLogger({ data }: { data: any }) {
                   className="hover_link Click-here"
                   onClick={() => setShowModal(true)}
                 ></button>
-                <div className="slider_thumb_vertical image_container">
+                {/* <div className="slider_thumb_vertical image_container">
                   <div className="image_mop">
-                    {[1, 2, 3, 4].map((i) => (
-                      <div className="image_item" key={i}>
+                    {productSubImage.map((image: string) => (
+                      <div className="image_item" key={image}>
                         <div className="background_thumb">
                           <Image
-                            src={`/images/thumb-${i}.jpg`}
+                            src={image}
                             width={128}
                             height={96}
-                            alt={`Thumb ${i}`}
+                            alt={image}
                           />
                         </div>
                         <div className="img">
-                          <Image
-                            src={`/images/thumb-${i}.jpg`}
-                            width={128}
-                            height={96}
-                            alt={`Thumb ${i}`}
-                          />
+                          src={image}
+                          width={128}
+                          height={96}
+                          alt={image}
                         </div>
                       </div>
                     ))}
@@ -174,7 +297,7 @@ export default function ClientLogger({ data }: { data: any }) {
                       <span>8+</span>
                     </span>
                   </div>
-                </div>
+                </div> */}
 
                 {/* Large Image */}
                 <div className="lager_img_view image_container">
@@ -231,11 +354,31 @@ export default function ClientLogger({ data }: { data: any }) {
                           <ul>
                             {specFields
                               .filter((f) => f.value)
-                              .map((f, i) => (
-                                <li key={i}>
-                                  <strong>{f.label}:</strong> {f.value}
-                                </li>
-                              ))}
+                              .map((f, i) => {
+                                const links = linksForSpec(
+                                  f.label,
+                                  String(f.value)
+                                );
+                                return (
+                                  <li key={i}>
+                                    <strong>{f.label}:</strong>{" "}
+                                    {links
+                                      ? // multiple links (e.g., Type has many categories)
+                                        links.map((lnk, idx) => (
+                                          <span key={lnk.href}>
+                                            <Link
+                                              href={lnk.href}
+                                              prefetch={false}
+                                            >
+                                              {lnk.text}
+                                            </Link>
+                                            {idx < links.length - 1 ? ", " : ""}
+                                          </span>
+                                        ))
+                                      : String(f.value)}
+                                  </li>
+                                );
+                              })}
                           </ul>
                         </div>
                       </div>
