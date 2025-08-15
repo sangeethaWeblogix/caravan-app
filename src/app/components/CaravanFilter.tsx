@@ -474,35 +474,35 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
       });
     }, 0); // Allow React to flush UI state
   };
-  const suppressLocationAutoClearRef = useRef(false);
-  useEffect(() => {
-    // 👇 prevent unintended region/state clearing when we explicitly reset only suburb
-    if (suppressLocationAutoClearRef.current) {
-      suppressLocationAutoClearRef.current = false;
-      return;
-    }
+  // const suppressLocationAutoClearRef = useRef(false);
+  // useEffect(() => {
+  //   // 👇 prevent unintended region/state clearing when we explicitly reset only suburb
+  //   if (suppressLocationAutoClearRef.current) {
+  //     suppressLocationAutoClearRef.current = false;
+  //     return;
+  //   }
 
-    const noLocationInFilters =
-      !currentFilters.state &&
-      !currentFilters.region &&
-      !currentFilters.suburb &&
-      !currentFilters.pincode;
+  //   const noLocationInFilters =
+  //     !currentFilters.state &&
+  //     !currentFilters.region &&
+  //     !currentFilters.suburb &&
+  //     !currentFilters.pincode;
 
-    if (noLocationInFilters && selectedStateName) {
-      setSelectedState(null);
-      setSelectedStateName(null);
-      setSelectedRegionName(null);
-      setSelectedSuburbName(null);
-      setFilteredSuburbs([]);
-      setLocationInput("");
-    }
-  }, [
-    currentFilters.state,
-    currentFilters.region,
-    currentFilters.suburb,
-    currentFilters.pincode,
-    selectedStateName,
-  ]);
+  //   if (noLocationInFilters && selectedStateName) {
+  //     setSelectedState(null);
+  //     setSelectedStateName(null);
+  //     setSelectedRegionName(null);
+  //     setSelectedSuburbName(null);
+  //     setFilteredSuburbs([]);
+  //     setLocationInput("");
+  //   }
+  // }, [
+  //   currentFilters.state,
+  //   currentFilters.region,
+  //   currentFilters.suburb,
+  //   currentFilters.pincode,
+  //   selectedStateName,
+  // ]);
 
   const resetRegionFilters = () => {
     setSelectedRegion("");
@@ -526,7 +526,8 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
       .replace(/_/g, " ") // underscores -> space
       .replace(/\s*-\s*/g, "  ") // hyphen (with any spaces) -> double space
       .replace(/\s{3,}/g, "  ") // collapse 3+ spaces -> 2
-      .trim();
+      .trim()
+      .replace(/\b\w/g, (char) => char.toUpperCase()); // capitalize each word
 
   useEffect(() => {
     const noLocationInFilters =
@@ -554,7 +555,7 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
 
   const resetSuburbFilters = () => {
     // ✅ keep state & region
-    suppressLocationAutoClearRef.current = true; // 👈 tell the auto-clear effect to skip once
+    // suppressLocationAutoClearRef.current = true; // 👈 tell the auto-clear effect to skip once
     setSelectedSuburbName(null);
     setSelectedPostcode(null);
     setLocationInput("");
@@ -1690,15 +1691,26 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
                       ...currentFilters,
                       state: selectedStateName || currentFilters.state,
                       region: selectedRegionName || currentFilters.region,
-                      suburb: suburb.name,
+                      suburb: suburb.name.toLowerCase(), // ✅ keep consistent with modal
                       pincode: postcode || undefined,
                       radius_kms:
                         typeof radiusKms === "number" && radiusKms !== 50
                           ? radiusKms
-                          : undefined, // ✅ only include when > 50
-                      // radius_kms:
-                      //   typeof radiusKms === "number" ? radiusKms : undefined, // ✅ keep
+                          : undefined,
                     });
+
+                    setFilters(updatedFilters);
+                    filtersInitialized.current = true;
+
+                    // ✅ fire API immediately and sync dedupe cursor
+                    onFilterChange(updatedFilters);
+                    lastSentFiltersRef.current = updatedFilters;
+
+                    // keep URL + internal sync
+                    startTransition(() =>
+                      updateAllFiltersAndURL(updatedFilters)
+                    );
+
                     console.log("filter subbb,", updatedFilters);
                     setFilters(updatedFilters);
                     filtersInitialized.current = true;
@@ -2423,7 +2435,7 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
                   placeholder="Suburb, Postcode..."
                   className="filter-dropdown cfs-select-input"
                   autoComplete="off"
-                  value={locationInput}
+                  value={formatLocationInput(locationInput)} // 👈 display formatted          onClick={() => setIsModalOpen(true)}
                   onFocus={() => setShowSuggestions(true)}
                   onChange={(e) => {
                     isUserTypingRef.current = true; // user typing

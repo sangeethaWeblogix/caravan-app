@@ -16,23 +16,23 @@ export const buildSlugFromFilters = (
     slugParts.push(`${filters.condition.toLowerCase()}-condition`);
   if (filters.category) slugParts.push(`${filters.category}-category`);
 
-  // if (filters.suburb) {
-  //   slugParts.push(`${filters.suburb.replace(/\s+/g, "-")}-suburb`);
-  //   if (filters.state) slugParts.push(`${slugify(filters.state)}-state`);
-  //   if (filters.pincode) slugParts.push(filters.pincode);
-  // } else if (filters.state) {
-  //   slugParts.push(`${slugify(filters.state)}-state`);
-  //   if (filters.region) slugParts.push(`${slugify(filters.region)}-region`);
-  // }
-
-  if (filters.state || filters.region || filters.suburb || filters.pincode) {
-    const segs: string[] = [];
-    if (filters.suburb) segs.push(`${slugify(filters.suburb)}-suburb`);
-    if (filters.region) segs.push(`${slugify(filters.region)}-region`);
-    if (filters.state) segs.push(`${slugify(filters.state)}-state`);
-    if (filters.pincode) segs.push(String(filters.pincode));
-    slugParts.push(segs.join("/"));
+  if (filters.suburb) {
+    slugParts.push(`${filters.suburb.replace(/\s+/g, "-")}-suburb`);
+    if (filters.state) slugParts.push(`${slugify(filters.state)}-state`);
+    if (filters.pincode) slugParts.push(filters.pincode);
+  } else if (filters.state) {
+    slugParts.push(`${slugify(filters.state)}-state`);
+    if (filters.region) slugParts.push(`${slugify(filters.region)}-region`);
   }
+
+  // if (filters.state || filters.region || filters.suburb || filters.pincode) {
+  //   const segs: string[] = [];
+  //   if (filters.suburb) segs.push(`${slugify(filters.suburb)}-suburb`);
+  //   if (filters.region) segs.push(`${slugify(filters.region)}-region`);
+  //   if (filters.state) segs.push(`${slugify(filters.state)}-state`);
+  //   if (filters.pincode) segs.push(String(filters.pincode));
+  //   slugParts.push(segs.join("/"));
+  // }
   // Length filter
   if (filters.from_length && filters.to_length)
     slugParts.push(
