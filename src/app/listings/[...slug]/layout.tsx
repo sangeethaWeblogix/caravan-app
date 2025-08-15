@@ -160,11 +160,11 @@ export async function generateMetadata({
       openGraph: {
         title,
         description,
-        images: [
-          {
-            url: "https://peoplepluspress.s3.amazonaws.com/image/string/pppp.jpg",
-          },
-        ],
+        // images: [
+        //   {
+        //     url: "https://peoplepluspress.s3.amazonaws.com/image/string/pppp.jpg",
+        //   },
+        // ],
       },
     };
   } catch (err) {
