@@ -13,7 +13,7 @@ import { createProductEnquiry } from "@/api/enquiry/api";
 type CaravanDetailModalProps = {
   isOpen: boolean;
   onClose: () => void;
-  images: string[]; // << was string, needs to be an array for .map
+  images: string[];
   product: {
     id?: string | number;
     slug?: string;
@@ -33,9 +33,7 @@ export default function CaravanDetailModal({
   images,
   product,
 }: CaravanDetailModalProps) {
-  if (!isOpen) return null;
-  console.log("imggg", images);
-  // ---- form state + validation ----
+  // ---- hooks MUST be unconditional (top-level) ----
   const [form, setForm] = useState({
     name: "",
     email: "",
@@ -54,24 +52,20 @@ export default function CaravanDetailModal({
 
   const NAME_RE = /^[A-Za-z][A-Za-z\s'.-]{1,49}$/; // letters/spaces, 2–50
   const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
-  const PHONE_RE = /^\d{7,15}$/; // digits only 7–15
-  const POST_RE = /^\d{4}$/; // AU postcode
+  const PHONE_RE = /^\d{7,15}$/;
+  const POST_RE = /^\d{4}$/;
 
   const validate = (f = form) => {
     const e: Partial<typeof form> = {};
     if (!f.name.trim()) e.name = "Name is required";
     else if (!NAME_RE.test(f.name.trim()))
       e.name = "Use letters & spaces only (2–50 chars)";
-
     if (!f.email.trim()) e.email = "Email is required";
     else if (!EMAIL_RE.test(f.email.trim())) e.email = "Enter a valid email";
-
     if (!f.phone.trim()) e.phone = "Phone is required";
     else if (!PHONE_RE.test(f.phone.trim())) e.phone = "Digits only (7–15)";
-
     if (!f.postcode.trim()) e.postcode = "Postcode is required";
     else if (!POST_RE.test(f.postcode.trim())) e.postcode = "4 digit postcode";
-
     return e;
   };
 
@@ -103,17 +97,14 @@ export default function CaravanDetailModal({
         phone: form.phone.trim(),
         postcode: form.postcode.trim(),
       });
-      // success → clear all fields and keep them empty
       setForm({ name: "", email: "", phone: "", postcode: "" });
       setTouched({ name: false, email: false, phone: false, postcode: false });
       setErrors({});
       setOkMsg("Enquiry sent successfully!");
-    } catch (err: any) {
-      // show an error under email (or you can add a global message if you prefer)
-      setErrors((p) => ({
-        ...p,
-        email: err?.message || "Failed to send. Try again.",
-      }));
+    } catch (err: unknown) {
+      const message =
+        err instanceof Error ? err.message : "Failed to send. Try again.";
+      setErrors((p) => ({ ...p, email: message }));
       setOkMsg(null);
     } finally {
       setSubmitting(false);
@@ -129,7 +120,8 @@ export default function CaravanDetailModal({
     }
   }, [isOpen]);
 
-  const imgs = Array.isArray(images) ? images : [];
+  // ✅ early-return AFTER hooks
+  if (!isOpen) return null;
 
   return (
     <div className="custom-model-main carava_details show">
@@ -141,17 +133,14 @@ export default function CaravanDetailModal({
           <div className="pop-up-content-wrap">
             <div className="container">
               <div className="row">
-                {/* Left Content (unchanged UI) */}
+                {/* Left Content */}
                 <div className="col-lg-9">
                   <div className="pop-top">
                     <h3>{product.name}</h3>
                     <div className="vehicleThumbDetails__part__price pop_up_price">
                       <span>
                         <span className="woocommerce-Price-amount amount">
-                          <bdi>
-                            <span className="woocommerce-Price-currencySymbol"></span>
-                            ${product.regularPrice}{" "}
-                          </bdi>
+                          <bdi>${product.regularPrice}</bdi>
                         </span>
                       </span>
                     </div>
@@ -162,16 +151,15 @@ export default function CaravanDetailModal({
                       modules={[Navigation, Pagination]}
                       navigation
                       pagination={{ clickable: true }}
-                      loop
+                      loop={images.length > 1}
                     >
-                      {images?.map((img, idx) => (
+                      {images.map((img, idx) => (
                         <SwiperSlide key={idx}>
                           <Image
                             width={100}
                             height={100}
                             src={img}
                             alt={`Slide ${idx + 1}`}
-                            // keep your UI same; size is as you had it
                           />
                         </SwiperSlide>
                       ))}
@@ -179,14 +167,14 @@ export default function CaravanDetailModal({
                   </div>
                 </div>
 
-                {/* Right Content - Enquiry Form (same markup/classes; added validation + values) */}
+                {/* Right Content - Enquiry Form */}
                 <div className="col-lg-3">
                   <div className="sidebar-enquiry">
                     <form className="wpcf7-form" noValidate onSubmit={onSubmit}>
                       <div className="form">
                         <h4>Contact Dealer</h4>
 
-                        {/** Name */}
+                        {/* Name */}
                         <div className="form-item">
                           <p>
                             <input
@@ -213,8 +201,8 @@ export default function CaravanDetailModal({
                           )}
                         </div>
 
-                        {/** Email */}
-                        <div className="form-item" key="email">
+                        {/* Email */}
+                        <div className="form-item">
                           <p>
                             <input
                               id="enquiry2-email"
@@ -244,8 +232,8 @@ export default function CaravanDetailModal({
                           )}
                         </div>
 
-                        {/** Phone */}
-                        <div className="form-item" key="phone">
+                        {/* Phone */}
+                        <div className="form-item">
                           <p>
                             <input
                               id="enquiry2-phone"
@@ -276,8 +264,8 @@ export default function CaravanDetailModal({
                           )}
                         </div>
 
-                        {/** Postcode */}
-                        <div className="form-item" key="postcode">
+                        {/* Postcode */}
+                        <div className="form-item">
                           <p>
                             <input
                               id="enquiry2-postcode"
