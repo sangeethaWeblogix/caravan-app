@@ -593,6 +593,7 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
   };
 
   const handleSearchClick = () => {
+    resetSuburbFilters();
     alert("enter");
     // user must pick a suggestion
     if (!suburbClickedRef.current || !selectedSuggestion) return;
