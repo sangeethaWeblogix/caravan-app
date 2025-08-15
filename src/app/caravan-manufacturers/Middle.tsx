@@ -60,7 +60,7 @@ export default function OffRoadCaravanManufacturers() {
               </p>
 
               {/* Repeatable Manufacturer Blocks */}
-              <Manufacturer
+              {/* <Manufacturer
                 index={1}
                 name="Orbit Caravans"
                 url="https://www.orbitcaravans.com.au/"
@@ -78,7 +78,7 @@ export default function OffRoadCaravanManufacturers() {
                   "Technology: Integrates the latest advancements in technology and design to enhance the performance of every caravan.",
                   "What to Expect: Best value for money , best performance and quality in the TIG welded aluminium frame caravan range in Australia.",
                 ]}
-              />
+              /> */}
 
               {/* Repeat Manufacturer blocks below using <Manufacturer /> component and pass props */}
 
@@ -125,51 +125,51 @@ export default function OffRoadCaravanManufacturers() {
   );
 }
 
-function Manufacturer({
-  index,
-  name,
-  url,
-  detailsLink,
-  imageDesktop,
-  imageMobile,
-  title,
-  features,
-}) {
-  return (
-    <div className="mb-12">
-      <h3>
-        {index}.{" "}
-        <Link href={url} target="_blank">
-          {name}
-        </Link>
-      </h3>
-      <div className="key_features">
-        <h4>{title}</h4>
-        <ul>
-          {features.map((item, idx) => (
-            <li key={idx}>{item}</li>
-          ))}
-        </ul>
-        <Link href={detailsLink} className="underline block pl-6 text-lg mt-2">
-          View All Range
-        </Link>
-      </div>
-      <div className="advertisement mt-4">
-        <Image
-          className="hidden-xs"
-          src={imageDesktop}
-          alt={`${name} - Caravan Manufacturer`}
-          width={900}
-          height={500}
-        />
-        <Image
-          className="hidden-lg hidden-md hidden-sm br-m-8"
-          src={imageMobile}
-          alt={`${name} - Caravan Manufacturer Mobile`}
-          width={450}
-          height={250}
-        />
-      </div>
-    </div>
-  );
-}
+// function Manufacturer({
+//   index,
+//   name,
+//   url,
+//   detailsLink,
+//   imageDesktop,
+//   imageMobile,
+//   title,
+//   features,
+// }) {
+//   return (
+//     <div className="mb-12">
+//       <h3>
+//         {index}.{" "}
+//         <Link href={url} target="_blank">
+//           {name}
+//         </Link>
+//       </h3>
+//       <div className="key_features">
+//         <h4>{title}</h4>
+//         <ul>
+//           {features.map((item, idx) => (
+//             <li key={idx}>{item}</li>
+//           ))}
+//         </ul>
+//         <Link href={detailsLink} className="underline block pl-6 text-lg mt-2">
+//           View All Range
+//         </Link>
+//       </div>
+//       <div className="advertisement mt-4">
+//         <Image
+//           className="hidden-xs"
+//           src={imageDesktop}
+//           alt={`${name} - Caravan Manufacturer`}
+//           width={900}
+//           height={500}
+//         />
+//         <Image
+//           className="hidden-lg hidden-md hidden-sm br-m-8"
+//           src={imageMobile}
+//           alt={`${name} - Caravan Manufacturer Mobile`}
+//           width={450}
+//           height={250}
+//         />
+//       </div>
+//     </div>
+//   );
+// }
