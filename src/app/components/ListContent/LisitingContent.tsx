@@ -1,19 +1,17 @@
 "use client";
 import Image from "next/image";
 import Link from "next/link";
-// import { Swiper, SwiperSlide } from "swiper/react";
-// import { Navigation } from "swiper/modules";
+import { Swiper, SwiperSlide } from "swiper/react";
+import { Navigation } from "swiper/modules";
 import "swiper/css";
 import "swiper/css/navigation";
 import "../../listings/listings.css";
 import Head from "next/head";
-import { useState } from "react";
-
+import { toSlug } from "../../../utils/seo/slug";
 interface Product {
   id: number;
   name: string;
   length: string;
-
   kg: string;
   regular_price: string;
   sale_price?: string;
@@ -25,6 +23,7 @@ interface Product {
   categories?: string[];
   people?: string;
   make?: string;
+  slug?: string;
 }
 interface Pagination {
   current_page: number;
@@ -53,6 +52,7 @@ export interface Filters {
   suburb?: string;
   pincode?: string;
   orderby?: string;
+  slug?: string | undefined;
 }
 interface Props {
   products: Product[];
@@ -62,6 +62,7 @@ interface Props {
   metaTitle: string; // Add metaTitle prop
   metaDescription: string; // Add metaDescription prop
   onFilterChange: (filters: Filters) => void;
+  currentFilters: Filters;
 }
 
 export default function ListingContent({
@@ -72,15 +73,14 @@ export default function ListingContent({
   metaTitle,
   metaDescription,
   onFilterChange,
+  currentFilters,
 }: Props) {
   const imageUrl = "public/favicon.ico";
-  const [filters] = useState<Filters>({});
-  console.log();
-  const handleSortChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const orderby = e.target.value;
-    onFilterChange({ orderby }); // Pass the updated filter to the parent
+  const getHref = (p: Product) => {
+    const slug = p.slug?.trim() || toSlug(p.name);
+    return slug ? `/product/${slug}/` : ""; // trailing slash optional
   };
-
+  console.log("data li pro", products);
   return (
     <>
       <Head>
@@ -120,17 +120,21 @@ export default function ListingContent({
                       name="orderby"
                       className="orderby form-select"
                       aria-label="Shop order"
-                      onChange={handleSortChange}
-                      value={filters.orderby}
+                      onChange={(e) =>
+                        onFilterChange({
+                          orderby: e.target.value || "featured",
+                        })
+                      }
+                      value={currentFilters.orderby ?? "featured"} // <— default to "featured"
                     >
                       <option value="featured">Featured</option>
                       <option value="price_asc">Price (Low to High)</option>
                       <option value="price_desc">Price (High to Low)</option>
-
                       <option value="year_desc">Year Made (High to Low)</option>
                       <option value="year_asc">Year Made (Low to High)</option>
                     </select>
-                    <input type="hidden" name="paged" value={filters.orderby} />
+
+                    {/* <input type="hidden" name="paged" value={filters.orderby} /> */}
                   </div>
                 </form>
               </div>
@@ -138,167 +142,163 @@ export default function ListingContent({
           </div>
         </div>
         <div className="dealers-section product-type">
-          {products?.map((product) => (
-            <article
-              className="vehicleSearch html general null pro"
-              key={product.id}
-            >
-              <div className="vehicleSearch__column-poster">
-                {product.link ? (
-                  <Link href={product.link}>
+          {products?.map((product) => {
+            const href = getHref(product);
+            return (
+              <article
+                className="vehicleSearch html general null pro"
+                key={product.id}
+              >
+                <div className="vehicleSearch__column-poster">
+                  <Link href={href}>
+                    {" "}
                     <div>
-                      {/* <Swiper
-                         navigation
-                         modules={[Navigation]}
-                         className="mySwiper"
-                       >
-                         <SwiperSlide>
-                           <div className="swiper-zoom-container">
-                             {product.image && product.image.trim() !== "" ? (
-                               <Image
-                                 src={product.image}
-                                 alt="Caravan"
-                                 width={1593}
-                                 height={1195}
-                               />
-                             ) : (
-                               <Image
-                                 src="/images/img.png"
-                                 alt="Fallback Caravan"
-                                 width={1593}
-                                 height={1195}
-                               />
-                             )}
-                           </div>
-                         </SwiperSlide>
-                       </Swiper> */}
+                      <Swiper
+                        navigation
+                        modules={[Navigation]}
+                        className="mySwiper"
+                      >
+                        <SwiperSlide>
+                          <div className="swiper-zoom-container">
+                            {product.image && product.image.trim() !== "" ? (
+                              <Image
+                                src={product.image}
+                                alt="Caravan"
+                                width={1593}
+                                height={1195}
+                              />
+                            ) : (
+                              <Image
+                                src="/images/img.png"
+                                alt="Fallback Caravan"
+                                width={1593}
+                                height={1195}
+                              />
+                            )}
+                          </div>
+                        </SwiperSlide>
+                      </Swiper>
                     </div>
                   </Link>
-                ) : (
-                  <div className="swiper-zoom-container">
-                    {product.image && product.image.trim() !== "" ? (
-                      <Image
-                        src={product.image}
-                        alt="Caravan"
-                        width={1593}
-                        height={1195}
-                      />
-                    ) : (
-                      <Image
-                        src="/images/img.png"
-                        alt="Fallback Caravan"
-                        width={1593}
-                        height={1195}
-                      />
-                    )}
-                  </div>
-                )}
 
-                <div className="vehicleThumbDetails">
-                  <div className="title">
-                    {product.link ? (
-                      <Link href={product.link}>
+                  <div className="vehicleThumbDetails">
+                    <div className="title">
+                      {product.link ? (
+                        <Link href={href}>
+                          {" "}
+                          <h3 className="woocommerce-loop-product__title">
+                            {product.name}
+                          </h3>
+                        </Link>
+                      ) : (
                         <h3 className="woocommerce-loop-product__title">
                           {product.name}
                         </h3>
-                      </Link>
-                    ) : (
-                      <h3 className="woocommerce-loop-product__title">
-                        {product.name}
-                      </h3>
-                    )}
-                  </div>
-                  <ul className="vehicleDetailsWithIcons simple">
-                    {product.condition && (
-                      <li>
-                        <span className="attribute3">{product.condition}</span>
-                      </li>
-                    )}
-
-                    {product.categories && product.categories.length > 0 && (
-                      <li className="attribute3_list">
-                        <span className="attribute3">
-                          {product.categories.join(", ")}
-                        </span>
-                      </li>
-                    )}
-
-                    {product.length && (
-                      <li>
-                        <span className="attribute3">{product.length}</span>
-                      </li>
-                    )}
-
-                    {product.kg && (
-                      <li>
-                        <span className="attribute3">{product.kg}</span>
-                      </li>
-                    )}
-
-                    {product.people && (
-                      <li>
-                        <span className="attribute3">{product.people}</span>
-                      </li>
-                    )}
-                    {product.make && (
-                      <li>
-                        <span className="attribute3">{product.make}</span>
-                      </li>
-                    )}
-                  </ul>
-
-                  <div className="vehicleThumbDetails__part">
-                    <div className="price">
-                      <div className="vehicleThumbDetails__part__price">
-                        {/* If regular price is 0, show POA */}
-                        {parseFloat(product.regular_price) === 0 ? (
-                          <span className="woocommerce-Price-amount amount">
-                            <bdi>POA</bdi>
-                          </span>
-                        ) : product.sale_price ? (
-                          <>
-                            <del>
-                              <span className="woocommerce-Price-amount old-price amount">
-                                <bdi>{product.regular_price}</bdi>
-                              </span>
-                            </del>
-                            <ins>
-                              <span className="woocommerce-Price-amount amount">
-                                <bdi>{product.sale_price}</bdi>
-                              </span>
-                            </ins>
-                          </>
-                        ) : (
-                          <span className="woocommerce-Price-amount amount">
-                            <bdi>{product.regular_price}</bdi>
-                          </span>
-                        )}
-                      </div>
-
-                      {(() => {
-                        const cleaned = (
-                          product.price_difference || ""
-                        ).replace(/[^0-9.]/g, "");
-                        const numericValue = parseFloat(cleaned);
-                        return numericValue > 0 ? (
-                          <div className="vehicleThumbDetails__part__finance">
-                            <span className="n_price">
-                              <small>Save</small>
-                              <span>{product.price_difference}</span>
-                            </span>
-                          </div>
-                        ) : null;
-                      })()}
+                      )}
                     </div>
-                    <div className="vehicleThumbDetails__features__address">
-                      <label>Seller Location</label>
-                      <h3>{product.location}</h3>
+                    <ul className="vehicleDetailsWithIcons simple">
+                      {product.condition && (
+                        <li>
+                          <span className="attribute3">
+                            {product.condition}
+                          </span>
+                        </li>
+                      )}
+
+                      {product.categories && product.categories.length > 0 && (
+                        <li className="attribute3_list">
+                          <span className="attribute3">
+                            {product.categories.join(", ")}
+                          </span>
+                        </li>
+                      )}
+
+                      {product.length && (
+                        <li>
+                          <span className="attribute3">{product.length}</span>
+                        </li>
+                      )}
+
+                      {product.kg && (
+                        <li>
+                          <span className="attribute3">{product.kg}</span>
+                        </li>
+                      )}
+
+                      {product.people && (
+                        <li>
+                          <span className="attribute3">{product.people}</span>
+                        </li>
+                      )}
+                      {product.make && (
+                        <li>
+                          <span className="attribute3">{product.make}</span>
+                        </li>
+                      )}
+                    </ul>
+
+                    <div className="vehicleThumbDetails__part">
+                      <div className="price">
+                        <div className="vehicleThumbDetails__part__price">
+                          {/* If regular price is 0, show POA */}
+                          {Number(product.regular_price) === 0 ? (
+                            <span className="woocommerce-Price-amount amount">
+                              <bdi>POA</bdi>
+                            </span>
+                          ) : product.sale_price ? (
+                            <>
+                              <del>
+                                <span className="woocommerce-Price-amount old-price amount">
+                                  <bdi>{product.regular_price}</bdi>
+                                </span>
+                              </del>
+                              <ins>
+                                <span className="woocommerce-Price-amount amount">
+                                  <bdi>{product.sale_price}</bdi>
+                                </span>
+                              </ins>
+                            </>
+                          ) : (
+                            <span className="woocommerce-Price-amount amount">
+                              <bdi>
+                                {parseFloat(
+                                  String(product.regular_price).replace(
+                                    /[^0-9.]/g,
+                                    ""
+                                  )
+                                ) === 0
+                                  ? "POA"
+                                  : product.regular_price}
+                              </bdi>{" "}
+                            </span>
+                          )}
+                        </div>
+
+                        {(() => {
+                          const cleaned = (
+                            product.price_difference || ""
+                          ).replace(/[^0-9.]/g, "");
+                          const numericValue = parseFloat(cleaned);
+                          return numericValue > 0 ? (
+                            <div className="vehicleThumbDetails__part__finance">
+                              <span className="n_price">
+                                <small>Save</small>
+                                <span>{product.price_difference}</span>
+                              </span>
+                            </div>
+                          ) : null;
+                        })()}
+                      </div>
+                      <div className="vehicleThumbDetails__features__address">
+                        <label>Seller Location</label>
+                        <h3>{product.location}</h3>
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
-            </article>
-          ))}
+              </article>
+            );
+          })}
         </div>
 
         <div className="pagination-wrapper mt-4">

@@ -5,7 +5,6 @@ import { fetchListings } from "../../../api/listings/api";
 import Listing from "./LisitingContent";
 import CaravanFilter from "../CaravanFilter";
 import SkeletonListing from "../skelton";
-import Footer from "../Footer";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { buildSlugFromFilters } from "../slugBuilter";
@@ -26,6 +25,7 @@ interface Product {
   condition: string;
   sleep?: string;
   categories?: string[];
+  slug?: string;
 }
 
 interface Pagination {
@@ -72,6 +72,7 @@ export interface Filters {
   suburb?: string;
   pincode?: string;
   orderby?: string;
+  radius_kms?: number | string; // <- allow both
 }
 
 interface Props {
@@ -106,6 +107,7 @@ export default function ListingsPage({ page, ...incomingFilters }: Props) {
   const filtersInitializedRef = useRef(false);
   const lastRequestKeyRef = useRef<string>("");
   const inFlightKeyRef = useRef<string>("");
+  const DEFAULT_RADIUS = 50 as const;
 
   const [filtersReady, setFiltersReady] = useState(false);
   const [filters, setFilters] = useState<Filters>(initialFilters);
@@ -134,7 +136,15 @@ export default function ListingsPage({ page, ...incomingFilters }: Props) {
     total_products: 0,
   });
 
-  console.log("orderby", filters.orderby);
+  console.log("orderby", filters.radius_kms);
+  const asNumber = (v: unknown): number | undefined => {
+    if (typeof v === "number") return v;
+    if (typeof v === "string") {
+      const n = parseInt(v, 10);
+      return Number.isFinite(n) ? n : undefined;
+    }
+    return undefined;
+  };
 
   useEffect(() => {
     if (!filtersInitializedRef.current && router) {
@@ -158,6 +168,13 @@ export default function ListingsPage({ page, ...incomingFilters }: Props) {
       window.scrollTo({ top: 0, behavior: "smooth" });
 
       try {
+        // inside loadListings, just before calling fetchListings
+        const radiusNum = asNumber(appliedFilters.radius_kms);
+        const radiusParam =
+          typeof radiusNum === "number" && radiusNum !== DEFAULT_RADIUS
+            ? String(radiusNum) // API as string
+            : undefined;
+
         const response = await fetchListings({
           ...appliedFilters,
           page,
@@ -178,8 +195,9 @@ export default function ListingsPage({ page, ...incomingFilters }: Props) {
           suburb: appliedFilters.suburb,
           postcode: appliedFilters.pincode,
           orderby: appliedFilters.orderby,
+          radius_kms: radiusParam,
         });
-
+        console.log("appl", appliedFilters);
         const hasFilters = Object.values(appliedFilters).some(
           (val) => val !== undefined && val !== null && val !== ""
         );
@@ -215,12 +233,12 @@ export default function ListingsPage({ page, ...incomingFilters }: Props) {
         } else {
           // fallback for blank or broken filter
           setProducts([]);
-          setPagination({
+          setPagination((prev) => ({
             current_page: 1,
             total_pages: 1,
-            per_page: pagination.per_page,
+            per_page: prev.per_page, // ✅ no stale closure
             total_products: 0,
-          });
+          }));
         }
       } catch (error) {
         console.error("❌ Failed to fetch listings:", error);
@@ -231,27 +249,41 @@ export default function ListingsPage({ page, ...incomingFilters }: Props) {
     },
     [] // ✅ keep as-is
   );
+  console.log("data pr", products);
 
+  // after
   useEffect(() => {
     if (!hasSearched && filtersReady) {
       filtersRef.current = { ...initialFilters, ...incomingFilters };
       setFilters(filtersRef.current);
-      // ✅ Call loadListings only on first render
       const currentPage = parseInt(searchParams.get("page") || "1", 10);
       loadListings(currentPage, filtersRef.current);
-
       setHasSearched(true);
     }
-  }, [filtersReady, hasSearched]);
+  }, [
+    filtersReady,
+    hasSearched,
+    initialFilters,
+    incomingFilters,
+    searchParams,
+    loadListings, // ✅ include everything used
+  ]);
 
   useEffect(() => {
     // ✅ Force ready on first render
     setFiltersReady(true);
   }, []);
-  console.log("Orderby filter:", filters.orderby);
+  console.log("Orderby filter:", filters.radius_kms);
   const handleFilterChange = useCallback((newFilters: Filters) => {
+    console.log("order", newFilters);
     const mergedFilters = { ...filtersRef.current, ...newFilters };
     console.log("🔗 Merging filters", mergedFilters);
+    if (
+      "orderby" in newFilters &&
+      (newFilters.orderby === undefined || newFilters.orderby === "")
+    ) {
+      delete mergedFilters.orderby;
+    }
     setHasSearched(true);
     setFiltersReady(true);
     setFilters(mergedFilters);
@@ -271,24 +303,29 @@ export default function ListingsPage({ page, ...incomingFilters }: Props) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const updateURLWithFilters = (filters: Filters, page: number) => {
-    const slug = buildSlugFromFilters(filters); // no ?page=1 inside it
-    const query = new URLSearchParams();
+  const updateURLWithFilters = useCallback(
+    (filters: Filters, page: number) => {
+      const slug = buildSlugFromFilters(filters); // no ?page=1 inside it
+      const query = new URLSearchParams();
+      if (filters.orderby) query.set("orderby", String(filters.orderby)); // ✅ add this
+      if (filters.from_year)
+        query.set("acustom_fromyears", filters.from_year.toString());
+      if (filters.to_year)
+        query.set("acustom_toyears", filters.to_year.toString());
+      // ✅ Only add page if greater than 1
+      const r = Number(filters.radius_kms);
+      if (!Number.isNaN(r) && r !== DEFAULT_RADIUS) {
+        query.set("radius_kms", String(r));
+      }
+      if (page > 1) {
+        query.set("page", page.toString());
+      }
 
-    if (filters.from_year)
-      query.set("acustom_fromyears", filters.from_year.toString());
-    if (filters.to_year)
-      query.set("acustom_toyears", filters.to_year.toString());
-    // ✅ Only add page if greater than 1
-
-    if (page > 1) {
-      query.set("page", page.toString());
-    }
-
-    const finalURL = query.toString() ? `${slug}?${query}` : slug;
-    router.push(finalURL);
-  };
-
+      const finalURL = query.toString() ? `${slug}?${query}` : slug;
+      router.push(finalURL);
+    },
+    [router]
+  ); // ✅ include router
   const handleNextPage = () => {
     if (pagination.current_page < pagination.total_pages) {
       const nextPage = pagination.current_page + 1;
@@ -304,14 +341,7 @@ export default function ListingsPage({ page, ...incomingFilters }: Props) {
     }
   };
   const noResultsRedirectingRef = useRef(false);
-  // useEffect(() => {
-  //   if (noResultsRedirectingRef.current) return; // ✅ Skip if just redirected
-  //   if (filtersReady && hasSearched) {
-  //     const currentPage = parseInt(searchParams.get("page") || "1", 10);
-  //     loadListings(currentPage, filtersRef.current);
-  //   }
-  // }, [filters, hasSearched]);
-  // ✅ single fetch trigger — runs when URL changes
+
   useEffect(() => {
     if (!filtersInitializedRef.current) return;
 
@@ -319,42 +349,55 @@ export default function ListingsPage({ page, ...incomingFilters }: Props) {
     const slugParts = path.split("/listings/")[1]?.split("/") || [];
     const parsedFromURL = parseSlugToFilters(slugParts);
 
-    // keep our refs in sync with the URL
+    // ✅ read query params (orderby, years, etc.)
     const pageFromURL = parseInt(searchParams.get("page") || "1", 10);
-    filtersRef.current = { ...parsedFromURL, ...incomingFilters };
+    const orderbyQP = searchParams.get("orderby") || undefined;
+    const radiusQP = searchParams.get("radius_kms");
+    const radiusFromURL = radiusQP
+      ? Math.max(5, parseInt(radiusQP, 10))
+      : undefined;
+    // const fromYearsQP = searchParams.get("acustom_fromyears") || undefined;
+    // const toYearsQP = searchParams.get("acustom_toyears") || undefined;
+
+    // ✅ include them in filtersRef/current
+    filtersRef.current = {
+      ...parsedFromURL,
+      ...incomingFilters,
+      orderby: orderbyQP,
+      radius_kms:
+        typeof radiusFromURL === "number" && radiusFromURL !== DEFAULT_RADIUS
+          ? radiusFromURL
+          : undefined, // ✅ crucial: makes requestKey change
+      // from_year: fromYearsQP ?? parsedFromURL.from_year,
+      // to_year: toYearsQP ?? parsedFromURL.to_year,
+    };
     setFilters(filtersRef.current);
 
-    // dedupe key (page + filters)
     const requestKey = JSON.stringify({
       page: pageFromURL,
-      filters: filtersRef.current,
+      filters: filtersRef.current, // now includes orderby
     });
 
     if (
       lastRequestKeyRef.current === requestKey ||
       inFlightKeyRef.current === requestKey
     ) {
-      return; // already fetched / in flight for this exact state
+      return;
     }
 
     lastRequestKeyRef.current = requestKey;
     inFlightKeyRef.current = requestKey;
 
-    setPagination((prev) => ({
-      ...prev,
-      current_page: pageFromURL,
-    }));
+    setPagination((prev) => ({ ...prev, current_page: pageFromURL }));
 
     loadListings(pageFromURL, filtersRef.current)
       .catch(() => {})
       .finally(() => {
-        // clear inflight only if nothing else replaced the key
-        if (inFlightKeyRef.current === requestKey) {
-          inFlightKeyRef.current = "";
-        }
+        if (inFlightKeyRef.current === requestKey) inFlightKeyRef.current = "";
       });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams]);
+
   useEffect(() => {
     if (!filtersInitializedRef.current) {
       const path =
@@ -430,10 +473,10 @@ export default function ListingsPage({ page, ...incomingFilters }: Props) {
                   metaDescription={metaDescription}
                   metaTitle={metaTitle}
                   onFilterChange={handleFilterChange}
+                  currentFilters={filters}
                 />
               )}
 
-              <Footer />
               <div className="col-lg-3 rightbar-stick"></div>
             </div>
           </div>

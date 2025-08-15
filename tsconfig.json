@@ -28,7 +28,8 @@
     "**/*.tsx",
     ".next/types/**/*.ts",
     "src/app/region",
-    "src/app/components/ListContent"
+    "src/app/components/ListContent",
+    "src/app/Product"
   ],
   "exclude": ["node_modules"]
 }

@@ -10,7 +10,7 @@ import React from "react";
 import { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: { default: "Caravan Listings", template: "%s | Caravan" },
+  title: { default: "Caravan Listings", template: "%s " },
   description: "Browse all available caravans.",
   icons: { icon: "/favicon.ico" },
 };

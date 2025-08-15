@@ -20,6 +20,8 @@ interface Filters {
   model?: string;
   postcode?: string;
   orderby?: string;
+  slug?: string;
+  radius_kms?: string;
 }
 
 export const fetchListings = async (filters: Filters = {}) => {
@@ -39,12 +41,18 @@ export const fetchListings = async (filters: Filters = {}) => {
     suburb,
     postcode,
     orderby,
+    slug,
+    radius_kms,
   } = filters;
 
   const params = new URLSearchParams();
   params.append("page", page.toString());
 
   if (category) params.append("category", category);
+  if (radius_kms) params.append("radius_kms", radius_kms);
+
+  if (slug) params.append("category", slug);
+
   if (make) params.append("make", make);
   if (postcode) params.append("pincode", postcode);
 
@@ -73,5 +81,6 @@ export const fetchListings = async (filters: Filters = {}) => {
   if (!res.ok) throw new Error("API failed");
 
   const data = await res.json();
+  console.log("data", data);
   return data;
 };

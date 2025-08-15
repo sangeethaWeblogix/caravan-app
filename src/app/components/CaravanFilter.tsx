@@ -69,6 +69,7 @@ export interface Filters {
   region?: string;
   suburb?: string;
   pincode?: string;
+  radius_kms?: number | string; // <- allow both
 }
 
 interface CaravanFilterProps {
@@ -101,6 +102,8 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const RADIUS_OPTIONS = [50, 100, 250, 500, 1000] as const;
+  const [radiusKms, setRadiusKms] = useState<number>(RADIUS_OPTIONS[0]);
   const [categoryOpen, setCategoryOpen] = useState(false);
   const [categories, setCategories] = useState<Option[]>([]);
   const [makes, setMakes] = useState<Option[]>([]);
@@ -187,7 +190,41 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
   console.log(selectedSuggestion);
   const sleep = [1, 2, 3, 4, 5, 6, 7];
   const [selectedRegion, setSelectedRegion] = useState<string>();
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  useEffect(() => {
+    if (!showSuggestions || !isUserTypingRef.current) return;
 
+    const q = locationInput.trim();
+    if (q.length < 2) {
+      setLocationSuggestions([]);
+      return;
+    }
+
+    const t = setTimeout(() => {
+      const suburb = q.split(" ")[0];
+      fetchLocations(suburb)
+        .then((data) => setLocationSuggestions(data))
+        .catch(console.error);
+    }, 300);
+    return () => clearTimeout(t);
+  }, [locationInput, showSuggestions]);
+
+  const hydrateLocation = (next: Filters): Filters => {
+    const out = { ...next };
+
+    // keep state for context, but NEVER send/slug region if suburb set
+    if (out.suburb) {
+      out.region = undefined; // ✅ kill region when suburb exists
+      // keep state if needed:
+      if (!out.state && selectedStateName) out.state = selectedStateName;
+    } else {
+      // only when there is no suburb, we can hydrate region/state
+      if (!out.region && selectedRegionName) out.region = selectedRegionName;
+      if (!out.state && selectedStateName) out.state = selectedStateName;
+    }
+
+    return out;
+  };
   useEffect(() => {
     const loadFilters = async () => {
       const res = await fetchProductList();
@@ -199,6 +236,11 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
     };
     loadFilters();
   }, []);
+  useEffect(() => {
+    if (typeof currentFilters.radius_kms === "number") {
+      setRadiusKms(currentFilters.radius_kms);
+    }
+  }, [currentFilters.radius_kms]);
 
   const handleATMChange = (newFrom: number | null, newTo: number | null) => {
     setAtmFrom(newFrom);
@@ -331,11 +373,27 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
     alignItems: "center",
     borderRadius: "4px",
     padding: "6px 12px",
-    marginBottom: "6px",
     cursor: "pointer",
     background: highlight ? "#f7f7f7" : "transparent",
   });
-
+  const accordionSubStyle = (highlight: boolean) => ({
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    borderRadius: "4px",
+    padding: "6px 30px",
+    cursor: "pointer",
+    background: highlight ? "#f7f7f7" : "transparent",
+  });
+  const accordionRegionStyle = (highlight: boolean) => ({
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    borderRadius: "4px",
+    padding: "6px 23px",
+    cursor: "pointer",
+    background: highlight ? "#f7f7f7" : "transparent",
+  });
   const iconRowStyle = {
     display: "flex",
     alignItems: "center",
@@ -461,50 +519,121 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
     setFilters(updatedFilters);
     onFilterChange(updatedFilters);
   };
+  const formatLocationInput = (s: string) =>
+    s
+      .replace(/_/g, " ") // underscores -> space
+      .replace(/\s*-\s*/g, "  ") // hyphen (with any spaces) -> double space
+      .replace(/\s{3,}/g, "  ") // collapse 3+ spaces -> 2
+      .trim();
+
+  useEffect(() => {
+    const noLocationInFilters =
+      !currentFilters.state &&
+      !currentFilters.region &&
+      !currentFilters.suburb &&
+      !currentFilters.pincode;
+
+    if (noLocationInFilters && selectedStateName) {
+      // only runs on full location reset
+      setSelectedState(null);
+      setSelectedStateName(null);
+      setSelectedRegionName(null);
+      setSelectedSuburbName(null);
+      setFilteredSuburbs([]);
+      setLocationInput("");
+    }
+  }, [
+    currentFilters.state,
+    currentFilters.region,
+    currentFilters.suburb,
+    currentFilters.pincode,
+    selectedStateName,
+  ]);
 
   const resetSuburbFilters = () => {
-    setSelectedSuburbName(null); // ✅ Clear suburb UI label
-    setFilteredSuburbs([]); // ✅ Clear list for region dropdown
+    // ✅ keep state & region
+    setSelectedSuburbName(null);
+    setSelectedPostcode(null);
+    setLocationInput("");
+
+    // ✅ rehydrate suburb list for the currently selected region
+    if (selectedStateName && selectedRegionName) {
+      const st = states.find(
+        (s) =>
+          s.name.toLowerCase() === selectedStateName.toLowerCase() ||
+          s.value.toLowerCase() === selectedStateName.toLowerCase()
+      );
+      const reg = st?.regions?.find(
+        (r) =>
+          r.name.toLowerCase() === selectedRegionName.toLowerCase() ||
+          r.value.toLowerCase() === selectedRegionName.toLowerCase()
+      );
+      setFilteredSuburbs(reg?.suburbs ?? []);
+    }
 
     const updatedFilters: Filters = {
       ...currentFilters,
-      suburb: undefined, // ✅ Remove from filters
+      // keep: state, region
+      suburb: undefined,
       pincode: undefined,
-      // ✅ Remove postcode only
     };
 
     setFilters(updatedFilters);
     filtersInitialized.current = true;
 
-    onFilterChange(updatedFilters);
+    // single source of truth for parent + URL
+    startTransition(() => {
+      updateAllFiltersAndURL(updatedFilters);
+    });
   };
 
   const handleSearchClick = () => {
+    alert("enter");
+    // user must pick a suggestion
     if (!suburbClickedRef.current || !selectedSuggestion) return;
 
+    // uri looks like: "<suburb>-suburb/<region>-region/<state>-state/<postcode>"
     const parts = selectedSuggestion.uri.split("/");
     const suburbSlug = parts[0] || "";
     const regionSlug = parts[1] || "";
     const stateSlug = parts[2] || "";
-
-    const suburb = suburbSlug.replace("-suburb", "").replace(/-/g, " ").trim();
-    const region = regionSlug.replace("-region", "").replace(/-/g, " ").trim();
-    const state = stateSlug.replace("-state", "").replace(/-/g, " ").trim();
-
     let postcode = parts[3] || "";
+
+    const suburb = suburbSlug
+      .replace(/-suburb$/, "")
+      .replace(/-/g, " ")
+      .trim();
+    const region = regionSlug
+      .replace(/-region$/, "")
+      .replace(/-/g, " ")
+      .trim();
+    const state = stateSlug
+      .replace(/-state$/, "")
+      .replace(/-/g, " ")
+      .trim();
+
+    // fallback: pull 4-digit pincode from address if needed
     if (!/^\d{4}$/.test(postcode)) {
       const m = selectedSuggestion.address.match(/\b\d{4}\b/);
       if (m) postcode = m[0];
     }
 
-    // ✅ set UI using parsed data
+    // set UI selections
     setSelectedState(stateSlug);
     setSelectedStateName(state);
     setSelectedRegionName(region);
     setSelectedSuburbName(suburb);
     setSelectedPostcode(postcode || null);
 
-    // ✅ filters
+    // radius: only store when not default (50)
+    const radiusForFilters =
+      typeof radiusKms === "number" ? radiusKms : RADIUS_OPTIONS[0];
+
+    // 👇🏽 helpful console reads
+    console.log("🔎 handleSearch suburb ->", suburb, postcode);
+    console.log("🔎 handleSearch region/state ->", region, state);
+    console.log("🔎 handleSearch radius_kms ->", radiusForFilters);
+    // build filters
     const updatedFilters = buildUpdatedFilters(currentFilters, {
       make: selectedMake || filters.make || currentFilters.make,
       model: selectedModel || filters.model || currentFilters.model,
@@ -513,10 +642,13 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
       pincode: postcode || undefined,
       state,
       region,
+      radius_kms: typeof radiusKms === "number" ? radiusKms : RADIUS_OPTIONS[0], // 👈 include only when changed from 50
     });
-
+    console.log("handleSearch filters sub 2", updatedFilters);
     setFilters(updatedFilters);
-    // (push when you want)
+    filtersInitialized.current = true;
+
+    // triggers URL update + onFilterChange (API payload)
     startTransition(() => updateAllFiltersAndURL(updatedFilters));
   };
 
@@ -546,6 +678,7 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
       from_year: undefined,
       to_year: undefined,
       location: null,
+      radius_kms: RADIUS_OPTIONS[0], // ✅ 50 in payload
     };
 
     // Clear UI states
@@ -574,7 +707,7 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
     setYearTo(null);
     setLengthFrom(null);
     setLengthTo(null);
-
+    setRadiusKms(RADIUS_OPTIONS[0]);
     filtersInitialized.current = true;
     makeInitializedRef.current = false;
     regionSetAfterSuburbRef.current = false;
@@ -589,6 +722,31 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
       updateAllFiltersAndURL(reset);
     });
   };
+  const radiusDebounceRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    // Only push if we already have a selected location context
+    if (!selectedSuggestion) return;
+
+    if (radiusDebounceRef.current) clearTimeout(radiusDebounceRef.current);
+    radiusDebounceRef.current = window.setTimeout(() => {
+      const updated = buildUpdatedFilters(currentFilters, {
+        radius_kms:
+          typeof radiusKms === "number" ? radiusKms : RADIUS_OPTIONS[0],
+      });
+      console.log(" commit ->", radiusKms, "km"); // 👈 commit log
+      setFilters(updated);
+      filtersInitialized.current = true;
+
+      startTransition(() => {
+        updateAllFiltersAndURL(updated);
+      });
+    }, 250);
+
+    return () => {
+      if (radiusDebounceRef.current) clearTimeout(radiusDebounceRef.current);
+    };
+  }, [radiusKms, selectedSuggestion]); // ✅
 
   console.log("🔁 suburb Render triggered — filteredSuburbs:", filteredSuburbs);
   // 1) Make a stable key for `states`
@@ -694,6 +852,23 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
   ]);
 
   const regionSetAfterSuburbRef = useRef(false);
+  useEffect(() => {
+    if (!showSuggestions || !isUserTypingRef.current) return;
+
+    const q = locationInput.trim();
+    if (q.length < 2) {
+      setLocationSuggestions([]);
+      return;
+    }
+
+    const t = setTimeout(() => {
+      const suburb = q.split(" ")[0];
+      fetchLocations(suburb)
+        .then((data) => setLocationSuggestions(data))
+        .catch(console.error);
+    }, 300);
+    return () => clearTimeout(t);
+  }, [locationInput, showSuggestions]);
 
   useEffect(() => {
     const q = locationInput.trim();
@@ -847,6 +1022,7 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
     "to_year",
     "from_length",
     "to_length",
+    "radius_kms",
   ];
 
   const normalizeFilters = (f: Filters): Filters => {
@@ -938,18 +1114,20 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
     }
   }, [filters]);
   const lastSentFiltersRef = useRef<Filters | null>(null);
+
   // ✅ Update all filters and URL with validation
   const updateAllFiltersAndURL = (override?: Filters) => {
+    const DEFAULT_RADIUS = 50;
     const nextRaw: Filters = override ?? filters;
-    const next: Filters = normalizeFilters(nextRaw);
-
+    const next: Filters = hydrateLocation(normalizeFilters(nextRaw));
     // 1) set local filters only if changed
     setFilters((prev) => (filtersEqual(prev, next) ? (prev as Filters) : next));
     filtersInitialized.current = true;
-
+    if (typeof next.radius_kms !== "number") next.radius_kms = DEFAULT_RADIUS;
     // 2) notify parent only if changed
     if (!filtersEqual(lastSentFiltersRef.current, next)) {
       lastSentFiltersRef.current = next;
+      console.log("range next ->", next);
       onFilterChange(next);
     }
 
@@ -958,6 +1136,7 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
     const query = new URLSearchParams();
     if (next.from_year) query.set("acustom_fromyears", String(next.from_year));
     if (next.to_year) query.set("acustom_toyears", String(next.to_year));
+
     query.set("page", "1");
 
     const safeSlugPath = slugPath.endsWith("/") ? slugPath : `${slugPath}/`;
@@ -1300,7 +1479,7 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
         {selectedRegionName && (
           <div
             className="filter-accordion-item"
-            style={accordionStyle(!selectedSuburbName)}
+            style={accordionRegionStyle(!selectedSuburbName)}
           >
             <span style={{ flexGrow: 1 }} onClick={() => openOnly("region")}>
               {selectedRegionName}
@@ -1326,7 +1505,10 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
 
         {/* SUBURB CHIP */}
         {selectedSuburbName && (
-          <div className="filter-accordion-item" style={accordionStyle(true)}>
+          <div
+            className="filter-accordion-item"
+            style={accordionSubStyle(true)}
+          >
             <span style={{ flexGrow: 1 }}>{selectedSuburbName}</span>
             <span onClick={resetSuburbFilters} style={closeIconStyle}>
               ×
@@ -1500,13 +1682,20 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
                     setStateSuburbOpen(false);
 
                     // update filters
-                    const updatedFilters: Filters = {
+                    const updatedFilters: Filters = hydrateLocation({
                       ...currentFilters,
                       state: selectedStateName || currentFilters.state,
                       region: selectedRegionName || currentFilters.region,
                       suburb: suburb.name,
                       pincode: postcode || undefined,
-                    };
+                      radius_kms:
+                        typeof radiusKms === "number" && radiusKms !== 50
+                          ? radiusKms
+                          : undefined, // ✅ only include when > 50
+                      // radius_kms:
+                      //   typeof radiusKms === "number" ? radiusKms : undefined, // ✅ keep
+                    });
+                    console.log("filter subbb,", updatedFilters);
                     setFilters(updatedFilters);
                     filtersInitialized.current = true;
                     startTransition(() =>
@@ -1530,9 +1719,9 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
           id="afilter_locations_text"
           className="cfs-select-input"
           placeholder=""
-          value={locationInput} // ← use locationInput
-          onClick={() => setIsModalOpen(true)}
+          value={formatLocationInput(locationInput)} // 👈 display formatted          onClick={() => setIsModalOpen(true)}
           onChange={(e) => setLocationInput(e.target.value)}
+          onClick={() => setIsModalOpen(true)}
         />
 
         {/* ✅ Show selected suburb below input, like a pill with X */}
@@ -2231,33 +2420,80 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
                   className="filter-dropdown cfs-select-input"
                   autoComplete="off"
                   value={locationInput}
-                  onChange={(e) => setLocationInput(e.target.value)}
+                  onFocus={() => setShowSuggestions(true)}
+                  onChange={(e) => {
+                    isUserTypingRef.current = true; // user typing
+                    setShowSuggestions(true); // open list
+                    setLocationInput(e.target.value);
+                  }}
+                  onBlur={() =>
+                    setTimeout(() => setShowSuggestions(false), 150)
+                  }
                 />
 
                 {/* 🔽 Styled suggestion list */}
-                <ul className="location-suggestions">
-                  {locationSuggestions.map((item, i) => {
-                    const isSelected =
-                      selectedSuggestion?.short_address === item.short_address;
+                {showSuggestions && locationSuggestions.length > 0 && (
+                  <ul className="location-suggestions">
+                    {locationSuggestions.map((item, i) => {
+                      const isSelected =
+                        selectedSuggestion?.short_address ===
+                        item.short_address;
+                      return (
+                        <li
+                          key={i}
+                          className={`suggestion-item ${
+                            isSelected ? "selected" : ""
+                          }`}
+                          onMouseDown={() => {
+                            // use onMouseDown to avoid blur race
+                            isUserTypingRef.current = false; // programmatic update
+                            setSelectedSuggestion(item);
+                            setLocationInput(item.short_address);
+                            setLocationSuggestions([]);
+                            setShowSuggestions(false); // ✅ keep closed
+                            suburbClickedRef.current = true;
+                          }}
+                        >
+                          {item.address}
+                        </li>
+                      );
+                    })}
+                  </ul>
+                )}
 
-                    return (
-                      <li
-                        key={i}
-                        className={`suggestion-item ${
-                          isSelected ? "selected" : ""
-                        }`}
-                        onClick={() => {
-                          setLocationInput(item.short_address);
-                          setSelectedSuggestion(item); // ✅ mark as selected
-                          setLocationSuggestions([]); // ✅ CLOSE the suggestion list
-                          suburbClickedRef.current = true;
+                {selectedSuggestion && (
+                  <div style={{ marginTop: 12 }}>
+                    <div style={{ fontWeight: 600, marginBottom: 8 }}>
+                      {selectedSuggestion.address} <span>+{radiusKms}km</span>
+                    </div>
+
+                    <div
+                      style={{ display: "flex", alignItems: "center", gap: 12 }}
+                    >
+                      <input
+                        type="range"
+                        min={0}
+                        max={RADIUS_OPTIONS.length - 1}
+                        step={1}
+                        value={Math.max(
+                          0,
+                          RADIUS_OPTIONS.indexOf(
+                            radiusKms as (typeof RADIUS_OPTIONS)[number]
+                          )
+                        )}
+                        onChange={(e) => {
+                          const idx = parseInt(e.target.value, 10);
+                          setRadiusKms(RADIUS_OPTIONS[idx]);
                         }}
-                      >
-                        {item.address}
-                      </li>
-                    );
-                  })}
-                </ul>
+                        style={{ flex: 1 }}
+                        aria-label="Search radius in kilometers"
+                      />
+                      <div style={{ minWidth: 60, textAlign: "right" }}>
+                        +{radiusKms}km
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
 
