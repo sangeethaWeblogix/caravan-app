@@ -28,6 +28,7 @@ interface ProductDetailResponse {
   data?: ApiData;
 }
 type ProductData = {
+  id?: string | number;
   name?: string;
   images?: string[];
   main_image?: string;
@@ -37,6 +38,7 @@ type ProductData = {
   price_difference?: string;
   categories?: Category[];
   attribute_urls?: Attribute[];
+  description?: string;
 };
 export default function ClientLogger({
   data,
@@ -60,13 +62,14 @@ export default function ClientLogger({
         : [],
     [productDetails.images, pd.images]
   );
-  console.log("slug de pr", productImage, productSubImage);
+  console.log("slug de pr", productDetails);
+  console.log("slug de ", pd);
 
   const images: string[] = useMemo(
     () => (Array.isArray(pd.images) ? pd.images.filter(Boolean) : []),
     [pd.images]
   );
-
+  console.log("thumbs:", productSubImage);
   useEffect(() => {
     const initial = productImage || images[0] || "/images/img.png";
     setActiveImage(initial);
@@ -273,37 +276,42 @@ export default function ClientLogger({
                   className="hover_link Click-here"
                   onClick={() => setShowModal(true)}
                 ></button>
-                {/* <div className="slider_thumb_vertical image_container">
+                <div className="slider_thumb_vertical image_container">
                   <div className="image_mop">
-                    {productSubImage.map((image: string) => (
-                      <div className="image_item" key={image}>
+                    {productSubImage.slice(0, 4).map((image, i) => (
+                      <div className="image_item" key={i}>
                         <div className="background_thumb">
                           <Image
                             src={image}
                             width={128}
                             height={96}
-                            alt={image}
+                            alt="Thumbnail"
+                            priority={i < 4}
                           />
                         </div>
                         <div className="img">
-                          src={image}
-                          width={128}
-                          height={96}
-                          alt={image}
+                          <Image
+                            src={image}
+                            width={128}
+                            height={96}
+                            alt={`Thumb ${image}`}
+                            priority={i < 4}
+                          />
                         </div>
                       </div>
                     ))}
+
                     <span className="caravan__image_count">
-                      <span>8+</span>
+                      <span>{productSubImage.length}+</span>
                     </span>
                   </div>
-                </div> */}
+                </div>
 
                 {/* Large Image */}
                 <div className="lager_img_view image_container">
                   <div className="background_thumb">
                     <Image
-                      src={productImage}
+                      src={activeImage || productImage}
                       width={800}
                       height={600}
                       alt="Large"
@@ -312,7 +320,7 @@ export default function ClientLogger({
                   </div>
                   <a href="#">
                     <Image
-                      src={productImage}
+                      src={activeImage || productImage}
                       width={800}
                       height={600}
                       alt="Large"
@@ -386,8 +394,7 @@ export default function ClientLogger({
                   )}
                   {activeTab === "description" && (
                     <div className="tab-pane fade show active">
-                      <p>LOCATED AT 1 PINN STREET ST MARYS</p>
-                      <p>(08) *****4388</p>
+                      {productDetails.description}
                     </div>
                   )}
                 </div>
@@ -526,7 +533,7 @@ export default function ClientLogger({
                         className="btn btn-primary "
                         onClick={() => setShowModal(true)}
                       >
-                        Contact
+                        Contact Delar
                       </button>
                     </div>
                   </div>
@@ -539,6 +546,18 @@ export default function ClientLogger({
               <CaravanDetailModal
                 isOpen={showModal}
                 onClose={() => setShowModal(false)}
+                images={productSubImage} // full array
+                product={{
+                  id: (product as any)?.id ?? (pd as any)?.id ?? product.name,
+                  slug: (product as any)?.slug ?? (pd as any)?.slug,
+                  name: product.name ?? "",
+                  image: activeImage || productImage,
+                  price: hasSale ? sale : reg,
+                  regularPrice: reg,
+                  salePrice: sale,
+                  isPOA,
+                  location: product.location ?? undefined,
+                }}
               />
             )}
           </div>
