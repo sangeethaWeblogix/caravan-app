@@ -365,3 +365,35 @@ input[type=checkbox]:checked~.menuIconToggle>.dia.p-2 {
 .hidden-lg.hidden-md:hover .dropdown-menu {
   display: block;
 }
+
+
+@media screen and (max-width: 767px) {
+.navbar.style-4 {
+    background-color: #000000;
+    padding: 10px 0;
+}
+.logo_left {
+    display: inline-block;
+    width: 70%;
+    float: left;
+}
+.header_right_info {
+    width: 30%;
+    display: flex;
+    margin-top: 0;
+    align-items: center;
+    gap: 0;
+    justify-content: end;
+}
+
+}
+
+@media screen and (max-width: 480px) {
+    .navbar.style-4 .navbar-brand {
+        width: 250px;
+    }
+    .menuIconToggle {
+        width: 35px;
+    }
+    
+}

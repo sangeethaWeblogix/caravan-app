@@ -46,9 +46,9 @@ export default function Navbar() {
           </div>
 
           <div className="header_right_info">
-            <button className="navbar-toggler mytogglebutton">
+            {/* <button className="navbar-toggler mytogglebutton">
               <i className="bi bi-search"></i>
-            </button>
+            </button> */}
 
             <button
               className="navbar-toggler hidden-xs hidden-sm"

@@ -191,9 +191,9 @@
   color: #0066f0;
 }
 .caravan_type {
-    margin-bottom: 10px;
-    display: flex;
-    gap: 5px;
+  margin-bottom: 10px;
+  display: flex;
+  gap: 5px;
 }
 .content-info .product_data ul {
   list-style: none;
@@ -560,12 +560,12 @@
 }
 
 .caravans_by_state .sec_left a {
-    color: #333;
-    margin-bottom: 3px;
-    font-weight: 500;
-    transition: transform .4s ease-out, color .4s ease-out;
-    display: block;
-    font-size: 15px;
+  color: #333;
+  margin-bottom: 3px;
+  font-weight: 500;
+  transition: transform 0.4s ease-out, color 0.4s ease-out;
+  display: block;
+  font-size: 15px;
 }
 
 .caravans_by_state .sec_left a:hover {
@@ -645,9 +645,9 @@ a.ignoretext {
 }
 
 .caravans_by_manufacturer p {
-    font-size: 17px;
-    line-height: 26px;
-    font-weight: 400;
+  font-size: 17px;
+  line-height: 26px;
+  font-weight: 400;
 }
 
 .caravans_by_manufacturer .post_image {
@@ -679,16 +679,16 @@ a.ignoretext {
 }
 
 .caravans_by_manufacturer .post_info ul {
-    padding-left: 0;
+  padding-left: 0;
 }
 
 .caravans_by_manufacturer .post_info ul li {
-    color: #333;
-    padding-bottom: 5px;
-    padding-left: 23px;
-    font-weight: 400;
-    position: relative;
-    list-style: none;
+  color: #333;
+  padding-bottom: 5px;
+  padding-left: 23px;
+  font-weight: 400;
+  position: relative;
+  list-style: none;
 }
 
 .caravans_by_manufacturer .post_info ul li i {
@@ -753,7 +753,7 @@ a.ignoretext {
 }
 
 .quick-link-home .modern_links .al-ty-bd span {
-    display: flex;
+  display: flex;
 }
 
 .quick-link-home a {
@@ -764,9 +764,9 @@ a.ignoretext {
 }
 
 .quick-link-home .modern_links .al-ty-bd a {
-    color: #333;
-    font-weight: 400;
-    padding-right: 8px;
+  color: #333;
+  font-weight: 400;
+  padding-right: 8px;
 }
 
 .quick-link-home .modern_links .al-ty-bd a:hover {
@@ -1050,32 +1050,32 @@ a.ignoretext {
 }
 
 .search-container .suggestions {
-    z-index: 1002;
-    background: #fff;
-    border: none;
-    border-radius: 5px;
-    margin-top: 5px;
-    padding: 8px 0;
-    display: none;
-    position: absolute;
-    top: 100%;
-    left: 0;
-    right: 0;
-    text-align: left;
+  z-index: 1002;
+  background: #fff;
+  border: none;
+  border-radius: 5px;
+  margin-top: 5px;
+  padding: 8px 0;
+  display: none;
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  text-align: left;
 }
 
 .search-container .suggestions h4 {
-    margin: 0;
-    padding: 12px 16px 8px;
-    font-size: 14px;
-    color: #ec7200;
-    border-bottom: none;
+  margin: 0;
+  padding: 12px 16px 8px;
+  font-size: 14px;
+  color: #ec7200;
+  border-bottom: none;
 }
 
 .search-container .suggestions h4 svg {
-    width: 20px;
-    fill: #ec7200;
-    margin-right: 5px;
+  width: 20px;
+  fill: #ec7200;
+  margin-right: 5px;
 }
 
 .search-container .suggestions ul {
@@ -1085,22 +1085,22 @@ a.ignoretext {
 }
 
 .search-container .suggestions li {
-    padding: 7px 16px;
-    cursor: pointer;
-    transition: background 0.2s;
-    position: relative;
-    color: #333;
-    font-size: 16px;
+  padding: 7px 16px;
+  cursor: pointer;
+  transition: background 0.2s;
+  position: relative;
+  color: #333;
+  font-size: 16px;
 }
 
 .search-container .suggestions li:before {
-    content: "\f52a";
-    font-family: bootstrap-icons !important;
-    font-style: normal;
-    font-weight: 400 !important;
-    margin-right: 15px;
-    color: #9f9f9f;
-    font-size: 13px;
+  content: "\f52a";
+  font-family: bootstrap-icons !important;
+  font-style: normal;
+  font-weight: 400 !important;
+  margin-right: 15px;
+  color: #9f9f9f;
+  font-size: 13px;
 }
 
 .search-container .suggestions li:hover {
@@ -1123,41 +1123,41 @@ a.ignoretext {
 }
 
 .swiper-container {
-    margin-left: auto;
-    margin-right: auto;
-    position: relative;
-    overflow: hidden;
-    list-style: none;
-    padding: 0;
-    z-index: 1;
+  margin-left: auto;
+  margin-right: auto;
+  position: relative;
+  overflow: hidden;
+  list-style: none;
+  padding: 0;
+  z-index: 1;
 }
 
 .mb-40 {
-    margin-bottom: 40px;
+  margin-bottom: 40px;
 }
 
 .tpof_tab {
-    display: flex;
-    justify-content: space-between;
-    margin-bottom: 15px;
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 15px;
 }
 
 .viewall_bttn a {
-    font-size: 26px;
-    font-weight: 600;
-    color: #f58333;
-    text-transform: uppercase;
-    display: inline-block;
-    padding: 0 0;
-    line-height: 30px;
-    height: 30px;
+  font-size: 26px;
+  font-weight: 600;
+  color: #f58333;
+  text-transform: uppercase;
+  display: inline-block;
+  padding: 0 0;
+  line-height: 30px;
+  height: 30px;
 }
 
 .img-cover img {
-    width: 100%;
-    height: 100%;
-    -o-object-fit: cover;
-    object-fit: cover;
+  width: 100%;
+  height: 100%;
+  -o-object-fit: cover;
+  object-fit: cover;
 }
 
 @media (max-width: 767px) {
@@ -1273,5 +1273,8 @@ a.ignoretext {
   }
   .sidenav {
     background-color: #f1f1f1;
+  }
+  .product_data h3.title {
+    margin-top: 10px;
   }
 }
