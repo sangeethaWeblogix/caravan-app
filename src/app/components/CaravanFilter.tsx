@@ -355,7 +355,7 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
   const [locationSuggestions, setLocationSuggestions] = useState<
     LocationSuggestion[]
   >([]);
-
+  const [modalInput, setModalInput] = useState(""); // 🔐 modal-only
   const toggle = (setter: Dispatch<SetStateAction<boolean>>) => {
     setter((prev) => !prev);
   };
@@ -655,6 +655,10 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
 
     // triggers URL update + onFilterChange (API payload)
     startTransition(() => updateAllFiltersAndURL(updatedFilters));
+    setSelectedSuggestion(null); // slider hide (because we render slider only if selectedSuggestion)
+    setLocationInput(""); // clear the input box
+    setShowSuggestions(false); // close dropdown
+    setRadiusKms(RADIUS_OPTIONS[0]);
   };
 
   // useEffect(() => {
@@ -858,9 +862,9 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
 
   const regionSetAfterSuburbRef = useRef(false);
   useEffect(() => {
-    if (!showSuggestions || !isUserTypingRef.current) return;
+    if (!isModalOpen || !showSuggestions || !isUserTypingRef.current) return;
 
-    const q = locationInput.trim();
+    const q = modalInput.trim();
     if (q.length < 2) {
       setLocationSuggestions([]);
       return;
@@ -872,24 +876,9 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
         .then((data) => setLocationSuggestions(data))
         .catch(console.error);
     }, 300);
-    return () => clearTimeout(t);
-  }, [locationInput, showSuggestions]);
 
-  useEffect(() => {
-    const q = locationInput.trim();
-    if (q.length < 2) {
-      setLocationSuggestions([]);
-      return;
-    }
-    const t = setTimeout(() => {
-      // If you want only the suburb token, do it here
-      const suburb = q.split(" ")[0];
-      fetchLocations(suburb)
-        .then((data) => setLocationSuggestions(data))
-        .catch(console.error);
-    }, 300);
     return () => clearTimeout(t);
-  }, [locationInput]); // <-- do NOT include suggestions or filters here
+  }, [modalInput, showSuggestions, isModalOpen]);
 
   useEffect(() => {
     if (
@@ -1685,7 +1674,7 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
                     setStateLocationOpen(false);
                     setStateRegionOpen(false);
                     setStateSuburbOpen(false);
-
+                    setLocationInput(""); // ✅ clear input after selection
                     // update filters
                     const updatedFilters: Filters = hydrateLocation({
                       ...currentFilters,
@@ -2413,6 +2402,7 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
           placeholder="Search by keyword"
         />
       </div>
+
       {/* Reset Button */}
       <button onClick={resetFilters} className="btn cfs-btn fullwidth_btn">
         Reset Filters
@@ -2435,12 +2425,12 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
                   placeholder="Suburb, Postcode..."
                   className="filter-dropdown cfs-select-input"
                   autoComplete="off"
-                  value={formatLocationInput(locationInput)} // 👈 display formatted          onClick={() => setIsModalOpen(true)}
+                  value={formatLocationInput(modalInput)} // 👈 use modalInput
                   onFocus={() => setShowSuggestions(true)}
                   onChange={(e) => {
-                    isUserTypingRef.current = true; // user typing
-                    setShowSuggestions(true); // open list
-                    setLocationInput(e.target.value);
+                    isUserTypingRef.current = true;
+                    setShowSuggestions(true);
+                    setModalInput(e.target.value); // 👈 update modalInput
                   }}
                   onBlur={() =>
                     setTimeout(() => setShowSuggestions(false), 150)
@@ -2465,6 +2455,7 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
                             isUserTypingRef.current = false; // programmatic update
                             setSelectedSuggestion(item);
                             setLocationInput(item.short_address);
+                            setModalInput(item.short_address);
                             setLocationSuggestions([]);
                             setShowSuggestions(false); // ✅ keep closed
                             suburbClickedRef.current = true;
@@ -2477,39 +2468,44 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
                   </ul>
                 )}
 
-                {selectedSuggestion && (
-                  <div style={{ marginTop: 12 }}>
-                    <div style={{ fontWeight: 600, marginBottom: 8 }}>
-                      {selectedSuggestion.address} <span>+{radiusKms}km</span>
-                    </div>
+                {selectedSuggestion &&
+                  modalInput === selectedSuggestion.short_address && (
+                    <div style={{ marginTop: 12 }}>
+                      <div style={{ fontWeight: 600, marginBottom: 8 }}>
+                        {selectedSuggestion.address} <span>+{radiusKms}km</span>
+                      </div>
 
-                    <div
-                      style={{ display: "flex", alignItems: "center", gap: 12 }}
-                    >
-                      <input
-                        type="range"
-                        min={0}
-                        max={RADIUS_OPTIONS.length - 1}
-                        step={1}
-                        value={Math.max(
-                          0,
-                          RADIUS_OPTIONS.indexOf(
-                            radiusKms as (typeof RADIUS_OPTIONS)[number]
-                          )
-                        )}
-                        onChange={(e) => {
-                          const idx = parseInt(e.target.value, 10);
-                          setRadiusKms(RADIUS_OPTIONS[idx]);
+                      <div
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 12,
                         }}
-                        style={{ flex: 1 }}
-                        aria-label="Search radius in kilometers"
-                      />
-                      <div style={{ minWidth: 60, textAlign: "right" }}>
-                        +{radiusKms}km
+                      >
+                        <input
+                          type="range"
+                          min={0}
+                          max={RADIUS_OPTIONS.length - 1}
+                          step={1}
+                          value={Math.max(
+                            0,
+                            RADIUS_OPTIONS.indexOf(
+                              radiusKms as (typeof RADIUS_OPTIONS)[number]
+                            )
+                          )}
+                          onChange={(e) => {
+                            const idx = parseInt(e.target.value, 10);
+                            setRadiusKms(RADIUS_OPTIONS[idx]);
+                          }}
+                          style={{ flex: 1 }}
+                          aria-label="Search radius in kilometers"
+                        />
+                        <div style={{ minWidth: 60, textAlign: "right" }}>
+                          +{radiusKms}km
+                        </div>
                       </div>
                     </div>
-                  </div>
-                )}
+                  )}
               </div>
             </div>
 

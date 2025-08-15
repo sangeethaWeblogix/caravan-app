@@ -150,7 +150,7 @@ export default function CaravanDetailModal({
                         <span className="woocommerce-Price-amount amount">
                           <bdi>
                             <span className="woocommerce-Price-currencySymbol"></span>
-                            {product.regularPrice}{" "}
+                            ${product.regularPrice}{" "}
                           </bdi>
                         </span>
                       </span>
