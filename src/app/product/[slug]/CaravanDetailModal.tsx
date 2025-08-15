@@ -6,6 +6,7 @@ import "swiper/css";
 import "swiper/css/navigation";
 import "swiper/css/pagination";
 import "./popup.css";
+import Image from "next/image";
 
 const CaravanDetailModal = ({
   isOpen,
@@ -60,7 +61,9 @@ const CaravanDetailModal = ({
                         "3061-5-subi.jpg",
                       ].map((img, idx) => (
                         <SwiperSlide key={idx}>
-                          <img
+                          <Image
+                            width={100}
+                            height={100}
                             src={`https://www.caravansforsale.com.au/wp-content/uploads/2024/07/2024-everest-18-6-alpine-freestyle-new-full-off-road-caravan-straight-lounge-${img}`}
                             alt={`Slide ${idx + 1}`}
                           />
