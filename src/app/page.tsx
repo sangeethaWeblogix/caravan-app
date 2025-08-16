@@ -1,6 +1,7 @@
 import React from "react";
 import Home from "./home";
 import { Metadata } from "next";
+import "./globals.css";
 
 export async function generateMetadata(): Promise<Metadata> {
   const metaTitle = "Caravan For Sale ";

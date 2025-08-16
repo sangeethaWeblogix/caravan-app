@@ -8,6 +8,7 @@ import "swiper/css";
 import "swiper/css/navigation";
 import Link from "next/link";
 import Image from "next/image";
+import "./globals.css";
 
 /* ----------------------------- Types & Data ------------------------------ */
 type CategoryItem = {
