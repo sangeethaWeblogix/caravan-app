@@ -141,28 +141,58 @@ export async function generateMetadata({
     console.log("[SEO] URL:", url);
     console.log("[SEO] Status:", statusInfo);
     console.log("[SEO] Content-Type:", contentType);
-    console.log("[SEO] Body preview:", raw.slice(0, 200));
 
     if (!res.ok) throw new Error(`HTTP error: ${statusInfo}`);
 
     const parsed = /^\s*[{[]/.test(raw) ? JSON.parse(raw) : null;
 
-    const seoObj =
-      parsed && typeof parsed === "object" && parsed !== null && "seo" in parsed
-        ? ((parsed as Record<string, unknown>).seo as {
-            metatitle?: string;
-            metadescription?: string;
-          })
-        : null;
+    type SEO = {
+      metatitle?: string;
+      metadescription?: string;
+      index?: "index" | "noindex";
+    };
 
-    const title = seoObj?.metatitle || "Caravans for Sale";
+    let seo: SEO | null = null;
+    if (parsed && typeof parsed === "object") {
+      const maybeSeo = (parsed as any).seo;
+      if (maybeSeo && typeof maybeSeo === "object") {
+        // if the API nests as seo.seo, unwrap it; else use seo directly
+        seo =
+          "seo" in maybeSeo && typeof (maybeSeo as any).seo === "object"
+            ? ((maybeSeo as any).seo as SEO)
+            : (maybeSeo as SEO);
+      }
+    }
+    const rawIndex = (seo?.index ?? "").trim().toLowerCase(); // "", "index", "noindex"/"no-index"
+    const normIndex = rawIndex === "no-index" ? "noindex" : rawIndex;
+
+    console.log("[SEO] api.index (raw):", seo?.index ?? "");
+    console.log("[SEO] index.normalized:", normIndex || "(empty)");
+
+    // map to Next robots
+    const robots =
+      normIndex === "noindex"
+        ? { index: false, follow: false } // → <meta name="robots" content="noindex, nofollow">
+        : { index: true, follow: true }; // → <meta name="robots" content="index, follow">
+
+    console.log(
+      "[SEO] robots tag:",
+      robots.index ? "index, follow" : "noindex, nofollow"
+    );
+
+    // log metatitle after index
+    if (seo?.metatitle) console.log("[SEO] metatitle:", seo.metatitle);
+
+    const title = seo?.metatitle || "Caravans for Sale";
     const description =
-      seoObj?.metadescription ||
-      "Browse the latest caravans available for sale.";
+      seo?.metadescription || "Browse the latest caravans available for sale.";
+
+    // ▶ map "index" / "no-index" to Next.js robots metadata
 
     return {
       title: { absolute: title },
       description,
+      robots,
       openGraph: { title, description },
       twitter: { card: "summary_large_image", title, description },
     };

@@ -156,8 +156,8 @@ export default function CaravanDetailModal({
                       {images.map((img, idx) => (
                         <SwiperSlide key={idx}>
                           <Image
-                            width={100}
-                            height={100}
+                            width={500}
+                            height={500}
                             src={img}
                             alt={`Slide ${idx + 1}`}
                           />
@@ -298,7 +298,18 @@ export default function CaravanDetailModal({
                             </div>
                           )}
                         </div>
-
+                        <div className="form-item">
+                          <p>
+                            <label htmlFor="enquiry4-message">
+                              Message (optional)
+                            </label>
+                            <textarea
+                              id="enquiry4-message"
+                              name="enquiry4-message"
+                              className="wpcf7-form-control wpcf7-textarea"
+                            ></textarea>
+                          </p>
+                        </div>
                         {okMsg && <div className="cfs-success">{okMsg}</div>}
 
                         <p className="terms_text">

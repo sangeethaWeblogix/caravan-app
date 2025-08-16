@@ -53,14 +53,14 @@ export default function ClientLogger({
   data: ProductDetailResponse;
 }) {
   const [activeImage, setActiveImage] = useState<string>("");
-
+  console.log("dataaa", data);
   const pd: ApiData = data?.data ?? {};
   const productDetails: ProductData = pd.product_details ?? {};
   const product: ProductData = productDetails;
 
   const productImage: string =
     productDetails.main_image || pd.main_image || "/images/img.png";
-
+  console.log("img", productImage);
   const productSubImage: string[] = useMemo(
     () =>
       Array.isArray(productDetails.images)
@@ -289,6 +289,7 @@ export default function ClientLogger({
                             height={96}
                             alt="Thumbnail"
                             priority={i < 4}
+                            unoptimized
                           />
                         </div>
                         <div className="img">

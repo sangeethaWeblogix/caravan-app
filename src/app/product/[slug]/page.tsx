@@ -6,7 +6,7 @@ type PageProps = { params: Promise<RouteParams> }; // ✅ params is a Promise
 
 async function fetchProductDetail(slug: string) {
   const res = await fetch(
-    `https://www.dev.caravansforsale.com.au/wp-json/cfs/v1/product-detail/${encodeURIComponent(
+    `https://www.caravansforsale.com.au/wp-json/cfs/v1/product-detail/${encodeURIComponent(
       slug
     )}`,
     { cache: "no-store", headers: { Accept: "application/json" } }
@@ -18,7 +18,7 @@ async function fetchProductDetail(slug: string) {
 export default async function ProductDetailPage({ params }: PageProps) {
   const { slug } = await params; // ✅ must await
   const data = await fetchProductDetail(slug);
-
+  console.log("pdata", data);
   return (
     <main className="container mx-auto p-4">
       <ClientLogger data={data} />
