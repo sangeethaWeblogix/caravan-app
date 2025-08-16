@@ -154,13 +154,17 @@ export async function generateMetadata({
 
     let seo: SEO | null = null;
     if (parsed && typeof parsed === "object") {
-      const maybeSeo = (parsed as any).seo;
+      const parsedWithSeo = parsed as { seo?: SEO | { seo?: SEO } };
+
+      const maybeSeo = parsedWithSeo.seo;
       if (maybeSeo && typeof maybeSeo === "object") {
         // if the API nests as seo.seo, unwrap it; else use seo directly
-        seo =
-          "seo" in maybeSeo && typeof (maybeSeo as any).seo === "object"
-            ? ((maybeSeo as any).seo as SEO)
-            : (maybeSeo as SEO);
+        if (maybeSeo && typeof maybeSeo === "object" && "seo" in maybeSeo) {
+          const innerSeo = (maybeSeo as { seo?: SEO }).seo;
+          seo = innerSeo ?? (maybeSeo as SEO);
+        } else {
+          seo = maybeSeo as SEO;
+        }
       }
     }
     const rawIndex = (seo?.index ?? "").trim().toLowerCase(); // "", "index", "noindex"/"no-index"
