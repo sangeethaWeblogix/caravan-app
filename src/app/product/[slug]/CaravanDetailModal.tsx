@@ -234,7 +234,8 @@ export default function CaravanDetailModal({
 
                         {/* Phone */}
                         <div className="form-item">
-                          <p>
+                          <p className="phone_country">
+                            <span className="phone-label">+61</span>
                             <input
                               id="enquiry2-phone"
                               name="enquiry2-phone"
@@ -297,6 +298,14 @@ export default function CaravanDetailModal({
                               {errors.postcode}
                             </div>
                           )}
+                        </div>
+
+                        {/* Message */}
+                        <div className="form-item">
+                          <p>
+                            <label htmlFor="enquiry4-message">Message (optional)</label>
+                            <textarea id="enquiry4-message" name="enquiry4-message" className="wpcf7-form-control wpcf7-textarea"></textarea>
+                          </p>
                         </div>
 
                         {okMsg && <div className="cfs-success">{okMsg}</div>}
