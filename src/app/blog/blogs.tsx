@@ -3,40 +3,54 @@
 import React, { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import type { BlogPost } from "@/api/blog/api";
+import { fetchBlogs, type BlogPost } from "@/api/blog/api";
 
-// const blogPosts = [
-//   {
-//     title: "Best Off Road Caravans 2025: What’s New, Tough, and Worth Your Money",
-//     date: "June 17, 2025",
-//     excerpt:
-//       "Introduction The demand for find the best off-road caravan is soaring as adventurers seek rugged, reliable, and comfortable homes on wheels...",
-//     image:
-//       "https://www.caravansforsale.com.au/wp-content/uploads/2025/06/2.jpg",
-//     link: "https://www.caravansforsale.com.au/best-off-road-caravans-2025/",
-//   },
-//   {
-//     title: "Best Pop-Top Caravans with Shower & Toilet in Australia for 2025",
-//     date: "June 13, 2025",
-//     excerpt:
-//       "Pop-top caravans with a shower and toilet offer the perfect blend of convenience and comfort for travellers seeking freedom on the road...",
-//     image:
-//       "https://www.caravansforsale.com.au/wp-content/uploads/2025/06/A-Comprehensive-Guide-to-Pop-Top-Caravans-with-Shower-Toilet_Mobile-.jpg",
-//     link: "https://www.caravansforsale.com.au/pop-top-caravans-with-shower-and-toilet/",
-//   },
-//   // ... repeat for other posts as needed
-// ];
-export default function Blogs({
-  blogPosts,
-  currentPage,
-  hasPrev,
-  hasNext,
-}: {
-  blogPosts: BlogPost[];
-  currentPage: number;
-  hasPrev: boolean;
-  hasNext: boolean;
-}) {
+// //   {
+// //     title: "Best Off Road Caravans 2025: What’s New, Tough, and Worth Your Money",
+// //     date: "June 17, 2025",
+// //     excerpt:
+// //       "Introduction The demand for find the best off-road caravan is soaring as adventurers seek rugged, reliable, and comfortable homes on wheels...",
+// //     image:
+// //       "https://www.caravansforsale.com.au/wp-content/uploads/2025/06/2.jpg",
+// //     link: "https://www.caravansforsale.com.au/best-off-road-caravans-2025/",
+// //   },
+// //   {
+// //     title: "Best Pop-Top Caravans with Shower & Toilet in Australia for 2025",
+// //     date: "June 13, 2025",
+// //     excerpt:
+// //       "Pop-top caravans with a shower and toilet offer the perfect blend of convenience and comfort for travellers seeking freedom on the road...",
+// //     image:
+// //       "https://www.caravansforsale.com.au/wp-content/uploads/2025/06/A-Comprehensive-Guide-to-Pop-Top-Caravans-with-Shower-Toilet_Mobile-.jpg",
+// //     link: "https://www.caravansforsale.com.au/pop-top-caravans-with-shower-and-toilet/",
+// //   },
+// //   // ... repeat for other posts as needed
+// // ];
+// export default function Blogs({
+//   blogPosts,
+//   currentPage,
+//   hasPrev,
+//   hasNext,
+// }: {
+//   blogPosts: BlogPost[];
+//   currentPage: number;
+//   hasPrev: boolean;
+//   hasNext: boolean;
+// }) {
+export default function BlogPage() {
+  const [blogPosts, setBlogPosts] = useState<BlogPost[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let mounted = true;
+    fetchBlogs(1)
+      .then((data) => mounted && setBlogPosts(data))
+      .finally(() => mounted && setLoading(false));
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  if (loading) return <div className="p-8">Loading…</div>;
   return (
     <div className="blog-page style-5">
       <section className="all-news bg-light-gray blog-listing section-padding blog bg-transparent style-3">
@@ -92,7 +106,7 @@ export default function Blogs({
                 </div>
               ))}
 
-              <div className="pagination style-5 color-4 justify-content-center mt-20 flex items-center gap-2">
+              {/* <div className="pagination style-5 color-4 justify-content-center mt-20 flex items-center gap-2">
                 {hasPrev && (
                   <Link
                     href={`/blog/page/${currentPage - 1}/`}
@@ -115,7 +129,7 @@ export default function Blogs({
                     next »
                   </Link>
                 )}
-              </div>
+              </div> */}
             </div>
           </div>
         </div>
