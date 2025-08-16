@@ -17,37 +17,47 @@ type Attribute = {
 };
 
 type Category = { name?: string; label?: string; value?: string } | string;
+
 interface ApiData {
   product_details?: ProductData;
   main_image?: string;
   images?: string[];
   categories?: Category[];
+  // If the API ever includes these at the top level, keep optional:
+  id?: string | number;
+  slug?: string;
 }
 
 interface ProductDetailResponse {
   data?: ApiData;
 }
+
 type ProductData = {
+  id?: string | number;
+  slug?: string;
   name?: string;
   images?: string[];
   main_image?: string;
   location?: string;
-  regular_price?: string;
-  sale_price?: string;
-  price_difference?: string;
+  regular_price?: string | number;
+  sale_price?: string | number;
+  price_difference?: string | number;
   categories?: Category[];
   attribute_urls?: Attribute[];
+  description?: string;
 };
+
 export default function ClientLogger({
   data,
 }: {
   data: ProductDetailResponse;
 }) {
   const [activeImage, setActiveImage] = useState<string>("");
-  console.log("slug de ", data, activeImage);
-  const product = (data?.data?.product_details ?? {}) as ProductData;
-  const pd = data?.data ?? {}; // full product object (top-level)
-  const productDetails = pd.product_details ?? {};
+
+  const pd: ApiData = data?.data ?? {};
+  const productDetails: ProductData = pd.product_details ?? {};
+  const product: ProductData = productDetails;
+
   const productImage: string =
     productDetails.main_image || pd.main_image || "/images/img.png";
 
@@ -60,7 +70,6 @@ export default function ClientLogger({
         : [],
     [productDetails.images, pd.images]
   );
-  console.log("slug de pr", productImage, productSubImage);
 
   const images: string[] = useMemo(
     () => (Array.isArray(pd.images) ? pd.images.filter(Boolean) : []),
@@ -71,10 +80,12 @@ export default function ClientLogger({
     const initial = productImage || images[0] || "/images/img.png";
     setActiveImage(initial);
   }, [productImage, images]);
+
   const [activeTab, setActiveTab] = useState<"specifications" | "description">(
     "specifications"
   );
   const [showModal, setShowModal] = useState(false);
+
   const attributes: Attribute[] = Array.isArray(productDetails.attribute_urls)
     ? productDetails.attribute_urls
     : [];
@@ -98,10 +109,11 @@ export default function ClientLogger({
       typeof c === "string" ? c : c?.name ?? c?.label ?? c?.value ?? ""
     )
     .filter(isNonEmpty);
-  const makeValue = getAttr("Make"); // e.g., "Kokoda"
+
+  const makeValue = getAttr("Make");
 
   const specFields = [
-    { label: "Type", value: categoryNames.join(", ") || getAttr("Type") }, // 👈 from categories
+    { label: "Type", value: categoryNames.join(", ") || getAttr("Type") },
     { label: "Make", value: getAttr("Make") },
     { label: "Model", value: getAttr("Model") },
     { label: "Year", value: getAttr("Years") },
@@ -112,95 +124,87 @@ export default function ClientLogger({
     { label: "ATM", value: getAttr("ATM") },
     { label: "Tare Mass", value: getAttr("Tare Mass") },
     { label: "Ball Weight", value: getAttr("Ball Weight") },
-
     { label: "Extras", value: getAttr("Extras") },
     { label: "Location", value: getAttr("Location") },
-  ];
+  ] as const;
 
-  // helpers
-  const slug = (s: string) => s.trim().toLowerCase().replace(/\s+/g, "-");
-  const num = (s: string) => {
+  const slugify = (s: string) => s.trim().toLowerCase().replace(/\s+/g, "-");
+  const toInt = (s: string) => {
     const n = parseInt(String(s).replace(/[^\d]/g, ""), 10);
     return Number.isFinite(n) ? n : null;
   };
 
   type LinkOut = { href: string; text: string };
 
-  /** Build links for a spec row based on its label/value. */
   const linksForSpec = (label: string, value: string): LinkOut[] | null => {
     const L = label.toLowerCase();
     const v = String(value).trim();
     if (!v) return null;
 
     if (L === "make") {
-      // /listings/make-value/
-      return [{ href: `/listings/${slug(v)}/`, text: v }];
+      return [{ href: `/listings/${slugify(v)}/`, text: v }];
     }
 
     if (L === "model") {
-      // per your requirement: /listings/model-value/
-      return [{ href: `/listings/${makeValue}/${slug(v)}/`, text: v }];
+      return [{ href: `/listings/${makeValue}/${slugify(v)}/`, text: v }];
     }
+
     if (L === "category" || L === "type") {
-      // value may be "Luxury, Off Road"
       return v.split(",").map((c) => {
         const t = c.trim();
-        return { href: `/listings/${slug(t)}-category/`, text: t };
+        return { href: `/listings/${slugify(t)}-category/`, text: t };
       });
     }
 
     if (L === "atm") {
-      const kg = num(v);
-      if (kg) return [{ href: `/listings/under-${kg}-kg-atm/`, text: v }];
-      return null;
+      const kg = toInt(v);
+      return kg ? [{ href: `/listings/under-${kg}-kg-atm/`, text: v }] : null;
     }
 
     if (L === "location" || L === "state") {
-      // e.g., Victoria -> /listings/victoria-state/
-      return [{ href: `/listings/${slug(v)}-state/`, text: v }];
+      return [{ href: `/listings/${slugify(v)}-state/`, text: v }];
     }
 
     if (L === "year" || L === "years") {
-      const y = num(v);
-      if (y)
-        return [
-          {
-            href: `/listings/?acustom_fromyears=${y}&acustom_toyears=${y}`,
-            text: v,
-          },
-        ];
-      return null;
+      const y = toInt(v);
+      return y
+        ? [
+            {
+              href: `/listings/?acustom_fromyears=${y}&acustom_toyears=${y}`,
+              text: v,
+            },
+          ]
+        : null;
     }
 
     if (L === "sleep" || L === "sleeps") {
-      const s = num(v);
-      if (s)
-        return [
-          { href: `/listings/over-${s}-people-sleeping-capacity/`, text: v },
-        ];
-      return null;
+      const s = toInt(v);
+      return s
+        ? [{ href: `/listings/over-${s}-people-sleeping-capacity/`, text: v }]
+        : null;
     }
 
     if (L === "length") {
-      const ft = num(v);
-      if (ft)
-        return [{ href: `/listings/under-${ft}-length-in-feet/`, text: v }];
-      return null;
+      const ft = toInt(v);
+      return ft
+        ? [{ href: `/listings/under-${ft}-length-in-feet/`, text: v }]
+        : null;
     }
 
     if (L === "condition" || L === "conditions") {
-      return [{ href: `/listings/${slug(v)}-condition/`, text: v }];
+      return [{ href: `/listings/${slugify(v)}-condition/`, text: v }];
     }
 
     return null;
   };
 
   const stateFields = [{ label: "Location", value: getAttr("Location") }];
-  // --- helpers ---
+
   const parseAmount = (v: string | number | undefined) => {
     const n = Number(String(v ?? "").replace(/[^0-9.]/g, ""));
     return Number.isFinite(n) ? n : 0;
   };
+
   const fmt = (n: number) =>
     n.toLocaleString("en-AU", {
       style: "currency",
@@ -208,22 +212,21 @@ export default function ClientLogger({
       maximumFractionDigits: 0,
     });
 
-  // --- numbers ---
   const reg = parseAmount(product.regular_price);
   const sale = parseAmount(product.sale_price);
   const hasSale = sale > 0 && reg > 0 && sale < reg;
   const save = hasSale ? reg - sale : 0;
   const isPOA = !hasSale && (reg === 0 || Number.isNaN(reg));
 
-  useEffect(() => {
-    const initial = pd.main_image || images[0] || "/images/img.png";
-    setActiveImage(initial);
-  }, [pd.main_image, images]);
-
-  const handleBackClick = (e: React.MouseEvent) => {
+  const handleBackClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
     e.preventDefault();
     window.history.back();
   };
+
+  // Safe fallbacks without `any`
+  const productId: string | number | undefined =
+    product.id ?? pd.id ?? product.name;
+  const productSlug: string | undefined = product.slug ?? pd.slug;
 
   return (
     <section className="product caravan_dtt">
@@ -232,7 +235,6 @@ export default function ClientLogger({
           <div className="row justify-content-center">
             {/* Left Column */}
             <div className="col-xl-8 col-lg-8 col-md-12">
-              {/* Back Button */}
               <Link
                 href="#"
                 onClick={handleBackClick}
@@ -240,9 +242,10 @@ export default function ClientLogger({
               >
                 <i className="bi bi-chevron-left fs-6"></i> Back to Search
               </Link>
-              {/* Product Info */}
+
               <div className="product-info left-info">
                 <h1 className="title">{product.name}</h1>
+
                 <div className="contactSeller__container d-lg-none">
                   <div className="price_section">
                     <div className="price-shape">
@@ -257,6 +260,7 @@ export default function ClientLogger({
                     </div>
                   </div>
                 </div>
+
                 <div className="attributes">
                   {stateFields
                     .filter((f) => f.value)
@@ -267,43 +271,49 @@ export default function ClientLogger({
                     ))}
                 </div>
               </div>
+
               {/* Image Gallery */}
               <div className="caravan_slider_visible">
                 <button
                   className="hover_link Click-here"
                   onClick={() => setShowModal(true)}
-                ></button>
-                {/* <div className="slider_thumb_vertical image_container">
+                />
+                <div className="slider_thumb_vertical image_container">
                   <div className="image_mop">
-                    {productSubImage.map((image: string) => (
-                      <div className="image_item" key={image}>
+                    {productSubImage.slice(0, 4).map((image, i) => (
+                      <div className="image_item" key={`${image}-${i}`}>
                         <div className="background_thumb">
                           <Image
                             src={image}
                             width={128}
                             height={96}
-                            alt={image}
+                            alt="Thumbnail"
+                            priority={i < 4}
                           />
                         </div>
                         <div className="img">
-                          src={image}
-                          width={128}
-                          height={96}
-                          alt={image}
+                          <Image
+                            src={image}
+                            width={128}
+                            height={96}
+                            alt={`Thumb ${i + 1}`}
+                            priority={i < 4}
+                          />
                         </div>
                       </div>
                     ))}
+
                     <span className="caravan__image_count">
-                      <span>8+</span>
+                      <span>{productSubImage.length}+</span>
                     </span>
                   </div>
-                </div> */}
+                </div>
 
                 {/* Large Image */}
                 <div className="lager_img_view image_container">
                   <div className="background_thumb">
                     <Image
-                      src={productImage}
+                      src={activeImage || productImage}
                       width={800}
                       height={600}
                       alt="Large"
@@ -312,7 +322,7 @@ export default function ClientLogger({
                   </div>
                   <a href="#">
                     <Image
-                      src={productImage}
+                      src={activeImage || productImage}
                       width={800}
                       height={600}
                       alt="Large"
@@ -321,6 +331,7 @@ export default function ClientLogger({
                   </a>
                 </div>
               </div>
+
               {/* Tabs */}
               <section className="product-details">
                 <ul className="nav nav-pills">
@@ -354,17 +365,16 @@ export default function ClientLogger({
                           <ul>
                             {specFields
                               .filter((f) => f.value)
-                              .map((f, i) => {
+                              .map((f) => {
                                 const links = linksForSpec(
                                   f.label,
                                   String(f.value)
                                 );
                                 return (
-                                  <li key={i}>
+                                  <li key={f.label}>
                                     <strong>{f.label}:</strong>{" "}
                                     {links
-                                      ? // multiple links (e.g., Type has many categories)
-                                        links.map((lnk, idx) => (
+                                      ? links.map((lnk, idx) => (
                                           <span key={lnk.href}>
                                             <Link
                                               href={lnk.href}
@@ -386,12 +396,12 @@ export default function ClientLogger({
                   )}
                   {activeTab === "description" && (
                     <div className="tab-pane fade show active">
-                      <p>LOCATED AT 1 PINN STREET ST MARYS</p>
-                      <p>(08) *****4388</p>
+                      {productDetails.description}
                     </div>
                   )}
                 </div>
               </section>
+
               {/* Community Section */}
               <section className="community product_dt_lower style-5 pt-4">
                 <div className="content">
@@ -416,8 +426,8 @@ export default function ClientLogger({
                         img: "special_deal",
                         text: "Access insights and hidden gems in the industry.",
                       },
-                    ].map((item, i) => (
-                      <div className="commun-card" key={i}>
+                    ].map((item) => (
+                      <div className="commun-card" key={item.img}>
                         <div className="icon">
                           <Image
                             src={`/images/${item.img}.svg`}
@@ -442,6 +452,7 @@ export default function ClientLogger({
                   </div>
                 </div>
               </section>
+
               {/* Mobile Bottom Bar */}
               <div className="fixed-bottom-bar d-lg-none">
                 <button
@@ -526,7 +537,7 @@ export default function ClientLogger({
                         className="btn btn-primary "
                         onClick={() => setShowModal(true)}
                       >
-                        Contact
+                        Contact Delar
                       </button>
                     </div>
                   </div>
@@ -539,6 +550,18 @@ export default function ClientLogger({
               <CaravanDetailModal
                 isOpen={showModal}
                 onClose={() => setShowModal(false)}
+                images={productSubImage}
+                product={{
+                  id: productId,
+                  slug: productSlug,
+                  name: product.name ?? "",
+                  image: activeImage || productImage,
+                  price: hasSale ? sale : reg,
+                  regularPrice: reg,
+                  salePrice: sale,
+                  isPOA,
+                  location: product.location ?? undefined,
+                }}
               />
             )}
           </div>

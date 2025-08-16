@@ -200,17 +200,17 @@ h1.page-title {
   display: block !important;
 }
 .vehicleDetailsWithIcons.simple li {
-  color: rgb(255, 255, 255);
-  text-align: center;
-  vertical-align: top;
-  align-items: center;
-  margin-right: 25px;
-  font-size: 1em;
-  line-height: 19px;
-  display: flex;
-  width: 25%;
-  float: left;
-  padding: 5px;
+    color: #fff;
+    text-align: center;
+    vertical-align: top;
+    float: left;
+    align-items: center;
+    width: 35%;
+    margin-right: 25px;
+    padding: 5px;
+    font-size: 14px;
+    line-height: 19px;
+    display: flex;
 }
 .vehicleDetailsWithIcons.simple li span {
   display: inline-block;
@@ -881,3 +881,10 @@ input[type="number"]::-webkit-outer-spin-button {
   flex-wrap: wrap;
   gap: 10px 20px; /* row gap, column gap */
 }
+
+.bg-gray-100 {
+  background-color: #f2f2f2;
+  border-bottom: solid 1px #e1e1e1;
+  border-top: solid 1px #e1e1e1;
+}
+

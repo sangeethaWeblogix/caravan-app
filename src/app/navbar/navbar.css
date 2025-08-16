@@ -1,5 +1,5 @@
 .navbar.style-4 {
-    position: sticky;
+    position: inherit;
     z-index: 1;
     padding: 0;
     background-color: #242223;
@@ -238,16 +238,16 @@ input[type=checkbox]:checked~.menuIconToggle>.dia.p-2 {
     transition: all 0.3s linear;
 }
 
-.sidebar-navigation ul li a.drop_down::after {
-    position: absolute;
-    right: 20px;
-    top: 30%;
+.sidebar-navigation ul li a.drop_down:after {
     opacity: 1;
     content: "";
-    font-weight: 900;
-    font-family: "Font Awesome 5 pro";
     border: 0;
+    font-family: "Font Awesome 6 Free";
     font-size: 80%;
+    font-weight: 900;
+    position: absolute;
+    top: 30%;
+    right: 20px;
 }
 
 .sidebar-navigation ul li.selected a.drop_down::after {
@@ -364,4 +364,36 @@ input[type=checkbox]:checked~.menuIconToggle>.dia.p-2 {
 /* Additional styles for the sidebar dropdowns */
 .hidden-lg.hidden-md:hover .dropdown-menu {
   display: block;
+}
+
+
+@media screen and (max-width: 767px) {
+.navbar.style-4 {
+    background-color: #000000;
+    padding: 10px 0;
+}
+.logo_left {
+    display: inline-block;
+    width: 70%;
+    float: left;
+}
+.header_right_info {
+    width: 30%;
+    display: flex;
+    margin-top: 0;
+    align-items: center;
+    gap: 0;
+    justify-content: end;
+}
+
+}
+
+@media screen and (max-width: 480px) {
+    .navbar.style-4 .navbar-brand {
+        width: 250px;
+    }
+    .menuIconToggle {
+        width: 35px;
+    }
+    
 }

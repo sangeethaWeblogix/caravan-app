@@ -29,7 +29,7 @@ const blogPosts = [
 const BlogListingSection = () => {
   return (
     <div className="blog-page style-5">
-    <section className="all-news blog-listing section-padding blog bg-transparent style-3">
+    <section className="all-news bg-light-gray blog-listing section-padding blog bg-transparent style-3">
       <div className="container">
         <div className="section-head mb-60 style-5">
           <h2>Valuable News, Reviews &amp; Advice From Caravan Marketplace</h2>

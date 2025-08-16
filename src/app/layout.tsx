@@ -22,7 +22,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className="flex flex-col min-h-screen">
+      <body className="flex flex-col min-h-screen new_font">
         <Navbar />
         <main className="product-page style-5">{children}</main>
         <Footer />

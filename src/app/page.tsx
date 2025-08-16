@@ -7,7 +7,8 @@ export async function generateMetadata(): Promise<Metadata> {
   const metaDescription = "Browse all available caravans across Australia.";
 
   return {
-    title: { absolute: metaTitle }, // 👈 This ignores the global "%s | Caravan"     description: metaDescription,
+    title: metaTitle,
+    description: metaDescription,
     openGraph: {
       title: metaTitle,
       description: metaDescription,

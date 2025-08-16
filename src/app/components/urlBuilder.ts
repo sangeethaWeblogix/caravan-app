@@ -106,9 +106,6 @@ export function parseSlugToFilters(slugParts: string[]): Filters {
   });
 
   // ✅ if suburb present, ignore region
-  if (filters.suburb) {
-    delete filters.region;
-  }
 
   return filters;
 }
