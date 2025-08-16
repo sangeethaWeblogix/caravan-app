@@ -1,6 +1,6 @@
-'use client';
+"use client";
 
-import React from 'react';
+import React from "react";
 
 export default function ContactSection() {
   return (
@@ -70,7 +70,6 @@ export default function ContactSection() {
                     <div className="col-lg-12">
                       <div className="form-group mb-20">
                         <textarea
-                          rows="10"
                           className="form-control"
                           placeholder="How can we help you?"
                         ></textarea>
