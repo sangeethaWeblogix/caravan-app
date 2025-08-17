@@ -10,8 +10,6 @@ import "swiper/css";
 import "swiper/css/navigation";
 import Link from "next/link";
 import Image from "next/image";
-import FeaturedSection from "./featured";
-import BlogSection from "./blogSection";
 
 type CategoryItem = {
   name: string;
@@ -279,7 +277,204 @@ export default function ProductPage() {
 
       {/* Deal of the Month Section */}
       <section className="deal-of-month product-details section-padding">
-        <FeaturedSection />
+        <div className="container">
+          <div className="inside_col">
+            <div className="header_posistion">
+              <h2>
+                Find Exclusive{" "}
+                <Image
+                  className="deal_icon hidden-xs"
+                  src="/images/deal_icons.svg"
+                  alt="deal icon"
+                  width={30}
+                  height={30}
+                />{" "}
+                Deals Only @ CFS
+              </h2>
+            </div>
+
+            <ul className="nav nav-pills" id="pills-tab" role="tablist">
+              {categories.map((cat, index) => (
+                <li className="nav-item" role="presentation" key={cat.alt}>
+                  <button
+                    className={`nav-link ${index === 0 ? "active" : ""}`}
+                    id={`pills-${cat.alt}-tab`}
+                    data-bs-toggle="pill"
+                    data-bs-target={`#pills-${cat.alt}`}
+                    type="button"
+                    role="tab"
+                    aria-controls={`pills-${cat.alt}`}
+                    aria-selected={index === 0}
+                  >
+                    <span>{cat.name}</span>
+                  </button>
+                </li>
+              ))}
+            </ul>
+
+            <div className="tab-content" id="pills-tabContent">
+              {categories.map((cat, index) => (
+                <div
+                  className={`tab-pane fade ${
+                    index === 0 ? "show active" : ""
+                  }`}
+                  id={`pills-${cat.alt}`}
+                  role="tabpanel"
+                  aria-labelledby={`pills-${cat.alt}-tab`}
+                  key={cat.alt}
+                >
+                  <div className="content-info text-center pb-0">
+                    <div className="product_data">
+                      <div className="row">
+                        <div className="col-md-6 left_design order-lg-2">
+                          <div className="img_b">
+                            <Image
+                              src="https://www.caravansforsale.com.au/wp-content/uploads/2024/10/19-6-coronet-rv-2024-ultimate-new-off-road-caravan-3-27-maini.jpg"
+                              className="attachment-full size-full wp-post-image"
+                              alt="caravan"
+                              width={0}
+                              height={0}
+                              unoptimized
+                              style={{ width: "auto", height: "auto" }}
+                            />
+                          </div>
+                        </div>
+
+                        <div className="col-md-6 right_design order-lg-1">
+                          <div className="deal_info">
+                            <div className="dd-title">
+                              <div className="metc1">
+                                <h3 className="title">
+                                  2024 Coronet RV Ultimate 19’6 Semi Off Road 2
+                                  Berth – Rear Door
+                                </h3>
+                              </div>
+                              <div className="caravan_type">
+                                <span>{cat.name}</span>
+                                <span>Location - Victoria</span>
+                              </div>
+                              <div className="metc2">
+                                <h5 className="slog">
+                                  $78,999 <s>$79,999</s>
+                                </h5>
+                                <p className="card-price">
+                                  <span>SAVE</span>$1,000
+                                </p>
+                              </div>
+                            </div>
+
+                            <div className="d_feature">
+                              <ul>
+                                <li>New</li>
+                                <li>22ft</li>
+                                <li>2 People</li>
+                              </ul>
+                            </div>
+
+                            <div className="sub_bttn">
+                              <Link className="btn" href={cat.link}>
+                                VIEW THIS DEAL
+                              </Link>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="other_items">
+                    <div className="related-products">
+                      <h3>Featured {cat.name} Caravans For Sale</h3>
+                      <div className="featured-deals position-relative">
+                        <Swiper
+                          modules={[Navigation, Autoplay]}
+                          navigation={{
+                            nextEl: `.swiper-button-next-${cat.alt}`,
+                            prevEl: `.swiper-button-prev-${cat.alt}`,
+                          }}
+                          autoplay={{
+                            delay: 3000,
+                            disableOnInteraction: false,
+                          }}
+                          spaceBetween={20}
+                          slidesPerView={1}
+                          breakpoints={{
+                            640: { slidesPerView: 1, spaceBetween: 20 },
+                            768: { slidesPerView: 2, spaceBetween: 20 },
+                            1024: { slidesPerView: 3, spaceBetween: 20 },
+                          }}
+                          className="swiper-container"
+                        >
+                          {Array.from({ length: 10 }).map((_, i) => (
+                            <SwiperSlide key={i}>
+                              <Link href="https://www.caravansforsale.com.au/product/2024-red-centre-tanami-plus-208-extreme-off-road-with-ensuite/">
+                                <div className="product-card">
+                                  <div className="img">
+                                    <Image
+                                      src="https://www.caravansforsale.com.au/wp-content/uploads/2025/04/2024-red-centre-tanami-plus-208-extreme-off-road-with-ensuite-main-1.jpg"
+                                      alt="caravan"
+                                      width={300}
+                                      height={200}
+                                    />
+                                  </div>
+                                  <div className="product_de">
+                                    <div className="info">
+                                      <h6 className="category">
+                                        <i className="fa fa-map-marker-alt" />
+                                        <span>New South Wales</span>
+                                      </h6>
+                                      <h3 className="title">
+                                        2024 Red Centre Tanami Plus 20&apos;8
+                                        Extreme Off Road with Ensuite
+                                      </h3>
+                                    </div>
+                                    <div className="price">
+                                      <div className="metc2">
+                                        <h5 className="slog">
+                                          $78,999 <s>$79,999</s>
+                                        </h5>
+                                        <p className="card-price">
+                                          <span>SAVE</span>$1,000
+                                        </p>
+                                      </div>
+                                    </div>
+                                    <ul className="vehicleDetailsWithIcons simple">
+                                      <li>
+                                        <span className="attribute3">New</span>
+                                      </li>
+                                      <li>
+                                        <span className="attribute3">
+                                          3 people
+                                        </span>
+                                      </li>
+                                    </ul>
+                                    <span className="btn">VIEW THIS DEAL</span>
+                                  </div>
+                                </div>
+                              </Link>
+                            </SwiperSlide>
+                          ))}
+                        </Swiper>
+                        <div
+                          className={`swiper-button-next swiper-button-next-${cat.alt}`}
+                        />
+                        <div
+                          className={`swiper-button-prev swiper-button-prev-${cat.alt}`}
+                        />
+                      </div>
+                    </div>
+
+                    <div className="d-flex justify-content-end">
+                      <Link className="floating_links" href={cat.link}>
+                        See All <i className="bi bi-chevron-right" />
+                      </Link>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
       </section>
 
       {/* Caravans by State Section */}
@@ -556,7 +751,135 @@ export default function ProductPage() {
       </section>
 
       {/* Latest Blog Section */}
-      <BlogSection />
+      <section className="related-products latest_blog section-padding blog style-8">
+        <div className="container">
+          <div className="title">
+            <div className="tpof_tab">
+              <h3>Latest News, Reviews &amp; Advice</h3>
+              <div className="viewall_bttn">
+                <Link href="https://www.caravansforsale.com.au/blog/">
+                  <i className="bi bi-chevron-right" />
+                </Link>
+              </div>
+            </div>
+          </div>
+
+          <div className="content">
+            <div className="blog-content">
+              <div className="row">
+                {[
+                  [
+                    {
+                      title:
+                        "Buying a Used Caravan in Australia Complete 2025 Inspection Checklist",
+                      image:
+                        "https://www.caravansforsale.com.au/wp-content/uploads/2025/07/Buying-a-Used-Caravan-in-Australia-Complete-2025-Inspection-Checklist-Mob.jpg",
+                      date: "July 30, 2025",
+                      link: "#",
+                    },
+                    {
+                      title:
+                        "20 Essential Tips for Living in a Caravan Full Time in Australia",
+                      image:
+                        "https://www.caravansforsale.com.au/wp-content/uploads/2025/07/Living-in-a-Caravan-Mob-.jpg",
+                      date: "July 29, 2025",
+                      link: "#",
+                    },
+                    {
+                      title:
+                        "Best Beachside Caravan Parks in Australia for the Ultimate Coastal Getaway",
+                      image:
+                        "https://www.caravansforsale.com.au/wp-content/uploads/2025/07/Best-Beachside-Caravan-Parks-in-Australia-for-the-Ultimate-Coastal-Getaway-mobile.jpg",
+                      date: "July 26, 2025",
+                      link: "#",
+                    },
+                  ],
+                  [
+                    {
+                      title:
+                        "Best Off Road Caravans 2025: What’s New, Tough, and Worth Your Money",
+                      image:
+                        "https://www.caravansforsale.com.au/wp-content/uploads/2025/06/2.jpg",
+                      date: "June 17, 2025",
+                      link: "#",
+                    },
+                    {
+                      title:
+                        "Best Pop-Top Caravans with Shower & Toilet in Australia for 2025",
+                      image:
+                        "https://www.caravansforsale.com.au/wp-content/uploads/2025/06/A-Comprehensive-Guide-to-Pop-Top-Caravans-with-Shower-Toilet_Mobile-.jpg",
+                      date: "June 13, 2025",
+                      link: "#",
+                    },
+                    {
+                      title:
+                        "Best Caravans for Couples in Australia: A Complete Guide for 2025",
+                      image:
+                        "https://www.caravansforsale.com.au/wp-content/uploads/2025/06/Best-Caravans-for-Couples-in-Australia-A-Complete-Guide-for-2025_mobile1.jpg",
+                      date: "June 6, 2025",
+                      link: "#",
+                    },
+                  ],
+                  [
+                    {
+                      title:
+                        "Buying a Used Caravan in Australia Complete 2025 Inspection Checklist",
+                      image:
+                        "https://www.caravansforsale.com.au/wp-content/uploads/2025/07/Buying-a-Used-Caravan-in-Australia-Complete-2025-Inspection-Checklist-Mob.jpg",
+                      date: "July 30, 2025",
+                      link: "#",
+                    },
+                    {
+                      title:
+                        "20 Essential Tips for Living in a Caravan Full Time in Australia",
+                      image:
+                        "https://www.caravansforsale.com.au/wp-content/uploads/2025/07/Living-in-a-Caravan-Mob-.jpg",
+                      date: "July 29, 2025",
+                      link: "#",
+                    },
+                    {
+                      title:
+                        "Best Beachside Caravan Parks in Australia for the Ultimate Coastal Getaway",
+                      image:
+                        "https://www.caravansforsale.com.au/wp-content/uploads/2025/07/Best-Beachside-Caravan-Parks-in-Australia-for-the-Ultimate-Coastal-Getaway-mobile.jpg",
+                      date: "July 26, 2025",
+                      link: "#",
+                    },
+                  ],
+                ].map((group, groupIndex) => (
+                  <div className="col-lg-4" key={groupIndex}>
+                    <div className="side-posts">
+                      {group.map((post, postIndex) => (
+                        <div className="item" key={postIndex}>
+                          <div className="img img-cover">
+                            <Image
+                              src={post.image}
+                              alt={post.title}
+                              width={300}
+                              height={200}
+                            />
+                          </div>
+                          <div className="info">
+                            <h4 className="title">
+                              <Link href={post.link}>{post.title}</Link>
+                            </h4>
+                            <div className="date-author">
+                              <Link href={post.link} className="date">
+                                {post.date}
+                              </Link>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* Quick Links Section */}
       <section className="quick-link-home section-padding">
         <div className="container">

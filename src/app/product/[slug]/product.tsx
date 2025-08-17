@@ -53,7 +53,6 @@ export default function ClientLogger({
   data: ProductDetailResponse;
 }) {
   const [activeImage, setActiveImage] = useState<string>("");
-  console.log("dataaa", data);
   const pd: ApiData = data?.data ?? {};
   const productDetails: ProductData = pd.product_details ?? {};
   const product: ProductData = productDetails;
