@@ -13,52 +13,6 @@ import Image from "next/image";
 import FeaturedSection from "./featured";
 import BlogSection from "./blogSection";
 
-type CategoryItem = {
-  name: string;
-  link: string;
-  image: string;
-  alt: string;
-};
-
-const categories: CategoryItem[] = [
-  {
-    name: "Off Road",
-    link: "/listings/off-road-category/",
-    image: "/images/off-road.webp",
-    alt: "off-road",
-  },
-  {
-    name: "Hybrid",
-    link: "/listings/hybrid-category/",
-    image: "/images/hybrid.webp",
-    alt: "hybrid",
-  },
-  {
-    name: "Pop Top",
-    link: "/listings/pop-top-category/",
-    image: "/images/pop-top.webp",
-    alt: "pop-top",
-  },
-  {
-    name: "Luxury",
-    link: "/listings/luxury-category/",
-    image: "/images/luxury.webp",
-    alt: "luxury",
-  },
-  {
-    name: "Family",
-    link: "/listings/family-category/",
-    image: "/images/family.webp",
-    alt: "family",
-  },
-  {
-    name: "Touring",
-    link: "/listings/touring-category/",
-    image: "/images/touring.webp",
-    alt: "touring",
-  },
-];
-
 const suggestions: string[] = [
   "caravans for sale",
   "jayco crosstrak for sale",

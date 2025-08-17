@@ -71,11 +71,7 @@
 //     </div>
 //   );
 // }
-import type { Metadata } from "next";
 import Image from "next/image";
-import Link from "next/link";
-import { fetchBlogDetail } from "../../../api/blog-list/api";
-import { formatPostDate } from "@/utils/date";
 import { notFound } from "next/navigation";
 
 type BlogDetail = {

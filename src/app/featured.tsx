@@ -10,8 +10,6 @@ import "swiper/css/navigation";
 import { fetchFeaturedHomeCat, type FeaturedItem } from "@/api/featured/api";
 import { toSlug } from "@/utils/seo/slug";
 import "../app/listings/listings.css";
-import Skeleton from "@mui/material/Skeleton"; // 👈 add
-import { title } from "process";
 import HeroSkeleton from "./components/heroSkelton";
 import CardSkeleton from "./components/cardsSkeleton";
 

@@ -23,53 +23,101 @@ export type HomeBlogPost = {
   date?: string;
 };
 
-type AnyObj = Record<string, any>;
-
 export type HomePageData = {
   featured: HomeProduct[];
   products: HomeProduct[];
   latest_posts: HomeBlogPost[];
 };
 
-const first = <T = any>(v: unknown): T | undefined =>
-  Array.isArray(v) ? v[0] : undefined;
+/* ---------------------------- input shapes (typed) ---------------------------- */
+type Wrapper<T> = { items?: T[]; list?: T[]; data?: T[] };
 
-// unwrap common wrappers: array | {items: []} | {list: []} | {data: []}
-function pickItems(obj: AnyObj | undefined): any[] {
-  if (!obj) return [];
-  if (Array.isArray(obj)) return obj;
-  if (Array.isArray(obj.items)) return obj.items;
-  if (Array.isArray(obj.list)) return obj.list;
-  if (Array.isArray(obj.data)) return obj.data;
+type ProductRaw = {
+  id?: number | string;
+  product_id?: number | string;
+  title?: string;
+  name?: string;
+  slug?: string;
+  image?: string;
+  main_image?: string;
+  thumbnail?: string;
+  link?: string;
+  permalink?: string;
+  location?: string;
+  regular_price?: string | number;
+  sale_price?: string | number;
+  price_difference?: string | number;
+  save?: string | number;
+};
+
+type BlogRaw = {
+  id?: number;
+  title?: string;
+  excerpt?: string;
+  link?: string;
+  image?: string;
+  slug?: string;
+  date?: string;
+};
+
+type HomeRoot = {
+  // products buckets
+  featured?: ProductRaw[] | Wrapper<ProductRaw>;
+  featured_products?: ProductRaw[] | Wrapper<ProductRaw>;
+  featured_caravans?: ProductRaw[] | Wrapper<ProductRaw>;
+  top?: ProductRaw[] | Wrapper<ProductRaw>;
+
+  products?: ProductRaw[] | Wrapper<ProductRaw>;
+  more_products?: ProductRaw[] | Wrapper<ProductRaw>;
+  latest_listings?: ProductRaw[] | Wrapper<ProductRaw>;
+  recommended?: ProductRaw[] | Wrapper<ProductRaw>;
+
+  // posts buckets
+  latest_blog_posts?: BlogRaw[] | Wrapper<BlogRaw>;
+  blog?: BlogRaw[] | Wrapper<BlogRaw>;
+  posts?: BlogRaw[] | Wrapper<BlogRaw>;
+};
+
+type ApiEnvelope = HomeRoot & { data?: HomeRoot };
+
+/* ------------------------------- helpers ----------------------------------- */
+function pickItems<T>(v: T[] | Wrapper<T> | null | undefined): T[] {
+  if (!v) return [];
+  if (Array.isArray(v)) return v;
+  const w = v as Wrapper<T>;
+  if (Array.isArray(w.items)) return w.items;
+  if (Array.isArray(w.list)) return w.list;
+  if (Array.isArray(w.data)) return w.data;
   return [];
 }
 
-function normalizeProduct(o: AnyObj = {}): HomeProduct {
+function normalizeProduct(src: ProductRaw = {}): HomeProduct {
   return {
-    id: o.id ?? o.product_id,
-    title: o.title ?? o.name,
-    slug: o.slug,
-    image: o.image ?? o.main_image ?? o.thumbnail,
-    link: o.link ?? o.permalink,
-    location: o.location,
-    regular_price: o.regular_price,
-    sale_price: o.sale_price,
-    price_difference: o.price_difference ?? o.save,
+    id: src.id ?? src.product_id,
+    title: src.title ?? src.name,
+    slug: src.slug,
+    image: src.image ?? src.main_image ?? src.thumbnail,
+    link: src.link ?? src.permalink,
+    location: src.location,
+    regular_price: src.regular_price,
+    sale_price: src.sale_price,
+    price_difference: src.price_difference ?? src.save,
   };
 }
 
-function normalizeBlog(o: AnyObj = {}): HomeBlogPost {
+function normalizeBlog(src: BlogRaw = {}): HomeBlogPost {
   return {
-    id: o.id,
-    title: o.title,
-    excerpt: o.excerpt,
-    link: o.link,
-    image: o.image,
-    slug: o.slug,
-    date: o.date,
+    id: src.id,
+    title: src.title,
+    excerpt: src.excerpt,
+    link: src.link,
+    image: src.image,
+    slug: src.slug,
+    date: src.date,
   };
 }
 
+/* -------------------------------- fetcher ---------------------------------- */
 export async function fetchHomePage(): Promise<HomePageData> {
   const url = `${API_BASE.replace(/\/$/, "")}/home_page`;
   const res = await fetch(url, {
@@ -79,12 +127,10 @@ export async function fetchHomePage(): Promise<HomePageData> {
   if (!res.ok)
     throw new Error(`Home API failed: ${res.status} ${res.statusText}`);
 
-  const json = (await res.json()) as AnyObj;
+  // `res.json()` is treated as any by TS DOM libs; assert to our envelope
+  const json = (await res.json()) as ApiEnvelope;
+  const root: HomeRoot = json.data ?? json;
 
-  // ✅ Some environments wrap everything under `data`
-  const root: AnyObj = json?.data ?? json;
-
-  // Look for likely section keys on the *root*
   const featuredRaw =
     root.featured ??
     root.featured_products ??
@@ -97,18 +143,11 @@ export async function fetchHomePage(): Promise<HomePageData> {
     root.latest_listings ??
     root.recommended;
 
-  const postsRaw =
-    root.latest_blog_posts ?? // ← most likely
-    root.blog ??
-    root.posts;
+  const postsRaw = root.latest_blog_posts ?? root.blog ?? root.posts;
 
-  const featured = pickItems(featuredRaw).map(normalizeProduct);
-  const products = pickItems(productsRaw).map(normalizeProduct);
-  const latest_posts = pickItems(postsRaw).map(normalizeBlog);
-
-  // Debug (comment out after verifying)
-  console.log("[home] keys:", Object.keys(root));
-  console.log("[home] latest_posts sample:", first(latest_posts));
+  const featured = pickItems<ProductRaw>(featuredRaw).map(normalizeProduct);
+  const products = pickItems<ProductRaw>(productsRaw).map(normalizeProduct);
+  const latest_posts = pickItems<BlogRaw>(postsRaw).map(normalizeBlog);
 
   return { featured, products, latest_posts };
 }
