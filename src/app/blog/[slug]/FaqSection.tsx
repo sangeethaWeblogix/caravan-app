@@ -1,5 +1,7 @@
 "use client";
 
+import { useState } from "react";
+
 const faqs = [
   {
     question: "What defines an “off road” caravan?",
@@ -59,11 +61,11 @@ const faqs = [
 ];
 
 export default function FaqSection() {
-  // const [activeIndex, setActiveIndex] = useState(0);
+  const [activeIndex, setActiveIndex] = useState(0);
 
-  // const toggleAccordion = (index: string | ) => {
-  //   setActiveIndex(index === activeIndex ? null : index);
-  // };
+  const toggleAccordion = (index: any) => {
+    setActiveIndex(index === activeIndex ? null : index);
+  };
 
   return (
     <section className="faq section-padding style-4 pt-40 pb-40 bg_custom_d">
@@ -79,7 +81,7 @@ export default function FaqSection() {
                   className="accordion-item border-bottom rounded-0"
                   key={index}
                 >
-                  {/* <h3 className="accordion-header" id={`heading${index}`}>
+                  <h3 className="accordion-header" id={`heading${index}`}>
                     <button
                       className={`accordion-button rounded-0 py-4 ${
                         activeIndex === index ? "" : "collapsed"
@@ -91,8 +93,8 @@ export default function FaqSection() {
                     >
                       {faq.question}
                     </button>
-                  </h3> */}
-                  {/* <div
+                  </h3>
+                  <div
                     id={`collapse${index}`}
                     className={`accordion-collapse collapse ${
                       activeIndex === index ? "show" : ""
@@ -104,7 +106,7 @@ export default function FaqSection() {
                       className="accordion-body"
                       dangerouslySetInnerHTML={{ __html: faq.answer }}
                     />
-                  </div> */}
+                  </div>
                 </div>
               ))}
             </div>

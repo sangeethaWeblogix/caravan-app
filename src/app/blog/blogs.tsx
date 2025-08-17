@@ -9,13 +9,10 @@ import { toSlug } from "../../utils/seo/slug";
 
 export default function BlogPage() {
   const [blogPosts, setBlogPosts] = useState<BlogPost[]>([]);
-  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     let mounted = true;
-    fetchBlogs(1)
-      .then((data) => mounted && setBlogPosts(data))
-      .finally(() => mounted && setLoading(false));
+    fetchBlogs(1).then((data) => mounted && setBlogPosts(data));
     return () => {
       mounted = false;
     };
