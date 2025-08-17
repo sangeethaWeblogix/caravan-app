@@ -7,6 +7,7 @@ export interface BlogPost {
   excerpt: string;
   link: string;
   image: string;
+  slug: string;
   date: string; // e.g. "2024-12-28 20:11:04"
 }
 
@@ -28,5 +29,6 @@ export const fetchBlogs = async (page: number = 1): Promise<BlogPost[]> => {
   }
 
   const data: BlogApiResponse = await res.json();
+  console.log("blog", data.data.latest_blog_posts.items);
   return data.data.latest_blog_posts.items;
 };

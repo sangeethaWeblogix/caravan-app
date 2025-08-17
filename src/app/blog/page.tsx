@@ -1,21 +1,14 @@
-// app/blog/page/[page]/page.tsx  (Server Component)
 import Blogs from "./blogs";
-
+import "./blog.css";
+import { Metadata } from "next";
+export const metadata: Metadata = {
+  title: { default: "Latest News, Reviews & Advice", template: "%s " },
+  description:
+    "Latest news, in-depth reviews, and expert advice on the latest in the caravan market. Stay informed and make smarter decisions.",
+  icons: { icon: "/favicon.ico" },
+};
 export const revalidate = 60; // ISR: refresh every 60s
 
 export default async function BlogPage() {
-  // Fetch current + next to decide Next visibility
-
-  // Optional: if first page has no posts, you can throw 404
-  // if (!posts.length) notFound();
-
-  return (
-    // <Blogs
-    //   blogPosts={posts as BlogPost[]}
-    //   currentPage={currentPage}
-    //   hasPrev={hasPrev}
-    //   hasNext={hasNext}
-    // />
-    <Blogs />
-  );
+  return <Blogs />;
 }
