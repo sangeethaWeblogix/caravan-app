@@ -81,6 +81,6 @@ export const fetchListings = async (filters: Filters = {}) => {
   if (!res.ok) throw new Error("API failed");
 
   const data = await res.json();
-  console.log("data", data);
+  // console.log("data", data);
   return data;
 };

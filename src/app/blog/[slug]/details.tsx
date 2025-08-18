@@ -94,8 +94,8 @@ export default function blogDetailsPage({
   data: BlogDetailResponse;
 }) {
   const post = data?.data?.blog_detail;
-  console.log("dataaa", data);
-  console.log("dataaapost", post);
+  // console.log("dataaa", data);
+  // console.log("dataaapost", post);
   if (!post) {
     notFound();
   }

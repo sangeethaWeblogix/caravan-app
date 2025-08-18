@@ -80,12 +80,14 @@ export default function ListingContent({
     const slug = p.slug?.trim() || toSlug(p.name);
     return slug ? `/product/${slug}/` : ""; // trailing slash optional
   };
-  console.log("data li pro", products);
+  // console.log("data li pro", products);
   return (
     <>
       <Head>
         <title>{metaTitle}</title> {/* Dynamically set title */}
         <meta name="description" content={metaDescription} />
+        <meta property="og:type" content="website" />
+        <meta property="robot" content="index, follow" />
         <meta property="og:title" content={metaTitle} />
         <meta property="og:description" content={metaDescription} />
         <meta name="twitter:title" content={metaTitle} />
