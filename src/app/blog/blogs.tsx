@@ -6,10 +6,15 @@ import Link from "next/link";
 import { fetchBlogs, type BlogPost } from "@/api/blog/api";
 import { formatPostDate } from "@/utils/date";
 import { toSlug } from "../../utils/seo/slug";
-
+import DOMPurify from "dompurify";
 export default function BlogPage() {
   const [blogPosts, setBlogPosts] = useState<BlogPost[]>([]);
-
+  function decodeHTML(str: string = "") {
+    if (!str) return "";
+    if (typeof window === "undefined") return str; // SSR safe
+    const doc = new DOMParser().parseFromString(str, "text/html");
+    return doc.documentElement.textContent || "";
+  }
   useEffect(() => {
     let mounted = true;
     fetchBlogs(1).then((data) => mounted && setBlogPosts(data));
@@ -65,7 +70,7 @@ export default function BlogPage() {
                           <Link href={href} className="card-title mb-10">
                             {post.title}
                           </Link>
-                          <p>{post.excerpt}</p>
+                          <p>{decodeHTML(post.excerpt)}</p>{" "}
                           <Link
                             href={href}
                             className="btn rounded-pill bg-blue4 fw-bold text-white mt-10"
