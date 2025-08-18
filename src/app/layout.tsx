@@ -7,7 +7,12 @@ import Navbar from "./navbar/Navbar";
 import Footer from "./footer/Footer";
 import React from "react";
 import { Metadata } from "next";
+import { Montserrat } from "next/font/google";
 
+const montserrat = Montserrat({
+  subsets: ["latin"],
+  weight: ["100", "200", "300", "400", "500", "600", "700", "800", "900"],
+});
 export const metadata: Metadata = {
   title: { default: "Caravan Listings", template: "%s " },
   description: "Browse all available caravans.",
@@ -21,7 +26,10 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className="flex flex-col min-h-screen new_font">
+      <body
+        className={`${montserrat.className} flex flex-col min-h-screen new_font`}
+      >
+        {" "}
         <Navbar />
         <main className="product-page style-5">{children}</main>
         <Footer />

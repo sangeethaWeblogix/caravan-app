@@ -1,18 +1,17 @@
-// src/app/product-details/[slug]/page.tsx
 import type { Metadata } from "next";
-import ClientLogger from "./product";
+import DeatilsPage from "./details";
 
 type RouteParams = { slug: string };
 type PageProps = { params: Promise<RouteParams> };
 
-async function fetchProductDetail(slug: string) {
+async function fetchBlogDetail(slug: string) {
   const res = await fetch(
-    `https://www.caravansforsale.com.au/wp-json/cfs/v1/product-detail/${encodeURIComponent(
+    `https://www.caravansforsale.com.au/wp-json/cfs/v1/blog-detail/${encodeURIComponent(
       slug
     )}`,
     { cache: "no-store", headers: { Accept: "application/json" } }
   );
-  if (!res.ok) throw new Error("Failed to load product detail");
+  if (!res.ok) throw new Error("Failed to load blog detail");
   return res.json();
 }
 
@@ -23,7 +22,7 @@ export async function generateMetadata({
   params: Promise<RouteParams>;
 }): Promise<Metadata> {
   const { slug } = await params;
-  const data = await fetchProductDetail(slug);
+  const data = await fetchBlogDetail(slug);
 
   const seo = data?.seo ?? data?.product?.seo ?? {};
   const title =
@@ -40,7 +39,7 @@ export async function generateMetadata({
     "View caravan details.";
 
   return {
-    title: { absolute: title },
+    title,
     description,
     openGraph: {
       title,
@@ -52,18 +51,18 @@ export async function generateMetadata({
       description,
     },
     other: {
-      "og:type": "product",
+      "og:type": "blog",
     },
   };
 }
 
 export default async function ProductDetailPage({ params }: PageProps) {
   const { slug } = await params;
-  const data = await fetchProductDetail(slug);
+  const data = await fetchBlogDetail(slug);
 
   return (
     <main className="container mx-auto p-4">
-      <ClientLogger data={data} />
+      <DeatilsPage data={data} />
     </main>
   );
 }

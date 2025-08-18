@@ -93,15 +93,15 @@
 }
 
 .close-btn {
-    cursor: pointer;
-    z-index: 99;
-    color: #adadad;
-    font-size: 70px;
-    font-weight: 200;
-    position: absolute;
-    top: -15px;
-    right: 30px;
-    display: block;
+  cursor: pointer;
+  z-index: 99;
+  color: #adadad;
+  font-size: 70px;
+  font-weight: 200;
+  position: absolute;
+  top: -15px;
+  right: 30px;
+  display: block;
 }
 
 .close-btn:hover {
@@ -247,32 +247,6 @@
 .submit-btn button:hover {
   background: #000000;
   border: 1px solid #000000;
-}
-.phone_country {
-    position: relative;
-}
-.phone-label {
-    position: absolute;
-    top: 58%;
-    left: 10px;
-    transform: translateY(-50%);
-    color: #000000;
-    pointer-events: none;
-    font-size: 16px;
-}
-.phone_country input {
-    padding-left: 40px;
-}
-
-.cfs-error {
-    color: #d40000;
-    text-align: left;
-    font-size: 12px;
-    margin-top: 5px;
-}
-
-.form-item p {
-  margin-bottom: 0;
 }
 
 @media screen and (min-width: 800px) {
