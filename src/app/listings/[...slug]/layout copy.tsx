@@ -7,8 +7,8 @@ interface Filters {
   page?: number;
   category?: string;
   make?: string;
-  from_price?: string;
-  to_price?: string;
+  minPrice?: string;
+  maxPrice?: string;
   minKg?: string;
   maxKg?: string;
   condition?: string;
@@ -58,10 +58,14 @@ function parseJsonSafe(text: string) {
 
 // price slug → numbers
 // accepts: "over-10000", "under-50000", "10000-to-30000", "15000", ""
-function parsePricePair(from_price?: string, to_price?: string) {
+function parsePricePair(minPrice?: string, maxPrice?: string) {
   const norm = (s?: string) => (s ?? "").toString().trim().toLowerCase();
-  const mp = norm(from_price);
-  const xp = norm(to_price);
+
+  const mp = norm(minPrice);
+  const xp = norm(maxPrice);
+
+  let from_price: string | undefined;
+  let to_price: string | undefined;
 
   const num = (s: string) => {
     const m = s.match(/\d+/g);
@@ -74,8 +78,11 @@ function parsePricePair(from_price?: string, to_price?: string) {
     if (a) from_price = a;
     if (b) to_price = b;
   } else {
+    // over-X
     if (mp.startsWith("over-")) from_price = num(mp);
+    // under-X
     if (mp.startsWith("under-")) to_price = num(mp);
+    // plain number
     if (/^\d+$/g.test(mp)) from_price = mp;
   }
 
@@ -84,7 +91,7 @@ function parsePricePair(from_price?: string, to_price?: string) {
     if (xp.startsWith("under-")) to_price = num(xp);
     else if (/^\d+$/g.test(xp)) to_price = xp;
     else if (xp.includes("to") && /^\d/.test(xp)) {
-      const [, b] = xp.split("to").map((v) => num(v));
+      const [_, b] = xp.split("to").map((v) => num(v));
       if (b) to_price = b;
     }
   }
@@ -96,6 +103,7 @@ function parsePricePair(from_price?: string, to_price?: string) {
 // accepts: "over-600-kg-atm", "under-3500-kg-atm", "600-to-3500-kg-atm", "600", ""
 function parseAtmPair(minKg?: string, maxKg?: string) {
   const norm = (s?: string) => (s ?? "").toString().trim().toLowerCase();
+
   const mn = norm(minKg);
   const mx = norm(maxKg);
 
@@ -132,7 +140,7 @@ function parseAtmPair(minKg?: string, maxKg?: string) {
     } else if (/^\d+$/g.test(mx)) {
       to_atm = `${mx}kg`;
     } else if (mx.includes("to") && /\d/.test(mx)) {
-      const [, b] = mx.split("to").map((v) => num(v));
+      const [_, b] = mx.split("to").map((v) => num(v));
       if (b) to_atm = `${b}kg`;
     }
   }
@@ -145,85 +153,67 @@ function normalizeIndexValue(v?: string | null) {
   const raw = (v ?? "").toString().trim().toLowerCase();
   const squashed = raw.replace(/[^a-z]/g, ""); // "no index" / "no-index" → "noindex"
   const isNoindex = squashed === "noindex";
+
   return {
     raw, // original string from API
-    value: isNoindex ? "noindex" : "index", // "index" | "noindex"
+    value: isNoindex ? "noindex" : "index",
     isNoindex,
   };
 }
-// price slug → numbers (supports: over-10000, under-50000, 10000-to-30000,
-// between-10000-30000, over-10k, under-50k, between-10k-30k, 15000, "")
 
 /* ----------------------- Server: generate metadata ------------------------ */
-export const dynamic = "force-dynamic";
-export const revalidate = 0;
-
-type SP = Record<string, string | string[] | undefined>;
-
 export async function generateMetadata({
   params,
-  // ✅ layouts don’t receive this; make it optional
-  searchParams,
 }: {
-  params: { slug?: string[] };
-  searchParams?: SP; // <-- optional
+  params: Promise<{ slug?: string[] }>;
 }): Promise<Metadata> {
-  const { slug = [] } = params;
-
-  const sp = (searchParams ?? {}) as SP;
-
-  // ✅ use the safe object
-  const get = (k: string) =>
-    typeof sp[k] === "string" ? (sp[k] as string) : undefined;
-  const or = (a?: string, b?: string) => a ?? b;
+  const { slug = [] } = await params;
 
   const [
     categorySlug,
     makeSlug,
-    from_priceSlug,
-    to_priceSlug,
-    minKgSlug,
-    maxKgSlug,
-    conditionSlug,
-    sleepsSlug,
-    stateSlug,
-    regionSlug,
-    suburbSlug,
-    acustom_fromyearsSlug,
-    acustom_toyearsSlug,
-    from_lengthSlug,
-    to_lengthSlug,
-    modelSlug,
-    postcodeSlug,
-    orderbySlug,
-    atmSlug,
-    radius_kmsSlug,
+    minPrice,
+    maxPrice,
+    minKg,
+    maxKg,
+    condition,
+    sleeps,
+    state,
+    region,
+    suburb,
+    acustom_fromyears,
+    acustom_toyears,
+    from_length,
+    to_length,
+    model,
+    postcode,
+    orderby,
+    atm, // unused but kept for slot compatibility
+    radius_kms,
   ] = slug;
-
-  // Prefer query params over slug (UI filters usually write ?from_price=&to_price= etc.)
 
   const filters: Filters = {
     page: 1,
-    category: or(get("category"), categorySlug),
-    make: or(get("make"), makeSlug),
-    from_price: or(get("from_price"), from_priceSlug),
-    to_price: or(get("to_price"), to_priceSlug),
-    minKg: or(get("minKg"), minKgSlug),
-    maxKg: or(get("maxKg"), maxKgSlug),
-    condition: or(get("condition"), conditionSlug),
-    sleeps: or(get("sleeps"), sleepsSlug),
-    state: or(get("state"), stateSlug),
-    region: or(get("region"), regionSlug),
-    suburb: or(get("suburb"), suburbSlug),
-    acustom_fromyears: or(get("acustom_fromyears"), acustom_fromyearsSlug),
-    acustom_toyears: or(get("acustom_toyears"), acustom_toyearsSlug),
-    from_length: or(get("from_length"), from_lengthSlug),
-    to_length: or(get("to_length"), to_lengthSlug),
-    model: or(get("model"), modelSlug),
-    postcode: or(get("postcode") ?? get("pincode"), postcodeSlug),
-    orderby: or(get("orderby"), orderbySlug),
-    atm: or(get("atm"), atmSlug),
-    radius_kms: or(get("radius_kms") ?? get("radius"), radius_kmsSlug),
+    category: categorySlug,
+    make: makeSlug,
+    minPrice,
+    maxPrice,
+    minKg,
+    maxKg,
+    condition,
+    sleeps,
+    state,
+    region,
+    suburb,
+    acustom_fromyears,
+    acustom_toyears,
+    from_length,
+    to_length,
+    model,
+    postcode,
+    orderby,
+    atm,
+    radius_kms,
   };
 
   try {
@@ -238,12 +228,16 @@ export async function generateMetadata({
     if (filters.state) qs.append("state", filters.state);
     if (filters.region) qs.append("region", filters.region);
     if (filters.suburb) qs.append("suburb", filters.suburb);
+
+    // ✅ robust price parsing (fixes "Invalid from_price/to_price")
     const { from_price, to_price } = parsePricePair(
-      filters.from_price,
-      filters.to_price
+      filters.minPrice,
+      filters.maxPrice
     );
     if (from_price) qs.append("from_price", from_price);
     if (to_price) qs.append("to_price", to_price);
+
+    // ✅ robust ATM parsing
     const { from_atm, to_atm } = parseAtmPair(filters.minKg, filters.maxKg);
     if (from_atm) qs.append("from_atm", from_atm);
     if (to_atm) qs.append("to_atm", to_atm);
@@ -263,7 +257,7 @@ export async function generateMetadata({
     if (filters.sleeps) qs.append("sleep", filters.sleeps);
 
     const url = `https://www.caravansforsale.com.au/wp-json/cfs/v1/new-list?${qs.toString()}`;
-    console.log("Fetching metadata from:", url);
+
     const groupResponse = await fetch(url, {
       cache: "no-store",
       headers: { Accept: "application/json" },
@@ -273,77 +267,55 @@ export async function generateMetadata({
     const contentType = groupResponse.headers.get("content-type") || "";
     const raw = await groupResponse.text();
 
-    // Non-OK → safe defaults
+    console.log("SEO fetch URL:", url);
+    console.log("Status:", statusInfo);
+    console.log("Content:", groupResponse);
+    console.log("Body preview:", raw.slice(0, 180));
+
     if (!groupResponse.ok) {
-      return {
-        title: { absolute: "Default Title - Caravans for Sale" },
-        description: "Browse the latest caravans available for sale.",
-        robots: { index: true, follow: true },
-        openGraph: {
-          title: "Default Title",
-          description: "Browse our latest caravans for sale.",
-        },
-        twitter: {
-          card: "summary_large_image",
-          title: "Default Title",
-          description: "Browse our latest caravans for sale.",
-        },
-        other: {
-          "cfs-seo-index": "index",
-          "cfs-seo-title": "Default Title - Caravans for Sale",
-          "cfs-seo-description":
-            "Browse the latest caravans available for sale.",
-          "cfs-seo-source-url": url,
-          "cfs-seo-status": statusInfo,
-        },
-      };
+      throw new Error(`HTTP error: ${statusInfo}`);
     }
 
-    let groupData: ApiResp | null = null;
-    try {
-      if (/application\/json/i.test(contentType) || /^\s*[{[]/.test(raw)) {
-        groupData = JSON.parse(raw) as ApiResp;
-      }
-    } catch {}
+    const groupData = parseJsonSafe(raw) as ApiResp | null;
+    if (!groupData) throw new Error("Endpoint did not return JSON");
 
-    const seoBlock: SEOBlock =
-      groupData && (groupData as ApiOk).success
-        ? (groupData as ApiOk).seo ?? {}
-        : {};
-
+    if (!groupData.success) {
+      console.warn(
+        "API returned error:",
+        (groupData as ApiErr).errors || (groupData as ApiErr).message
+      );
+    }
+    console.log("seoBlock1", groupData);
+    const seoBlock: SEOBlock = groupData ? (groupData as ApiOk).seo ?? {} : {};
+    console.log("Seo", seoBlock);
     const idx = normalizeIndexValue(seoBlock.index);
     const title = seoBlock.metatitle || "Default Title - Caravans for Sale";
     const description =
       seoBlock.metadescription ||
       "Browse the latest caravans available for sale.";
 
-    // IMPORTANT: noindex should still follow (noindex, follow)
+    console.log("idxv", idx.value);
+    // robots mapping: noindex → follow (as requested)
     const robots =
-      idx.value === "index"
-        ? { index: true, follow: true }
-        : { index: false, follow: true };
+      idx.value == "noindex"
+        ? { index: false, follow: false } // noindex → noindex, nofollow
+        : { index: true, follow: true }; // index → index, follow
+    console.log("idxv3", idx.value);
+    console.log("idx2", robots);
 
     return {
+      // you can optionally set metadataBase to remove that Next.js warning in dev/prod
+      // metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000"),
       title: { absolute: title },
       description,
       robots,
       openGraph: { title, description },
       twitter: { card: "summary_large_image", title, description },
       other: {
-        "cfs-seo-index": idx.value,
+        "cfs-seo-index": idx.value, // "index" | "noindex"
         "cfs-seo-title": title,
         "cfs-seo-description": description,
         "cfs-seo-source-url": url,
-        "cfs-seo-status": statusInfo,
-        "cfs-seo-content-type": contentType,
-        "cfs-seo-json": String(
-          Boolean(groupData && (groupData as any).success)
-        ),
-        // Helpful for debugging what drove this metadata:
-        "cfs-filters-from_price": String(filters.from_price ?? ""),
-        "cfs-filters-to_price": String(filters.to_price ?? ""),
-        "cfs-filters-minKg": String(filters.minKg ?? ""),
-        "cfs-filters-maxKg": String(filters.maxKg ?? ""),
       },
     };
   } catch (err) {
@@ -351,16 +323,12 @@ export async function generateMetadata({
     return {
       title: { absolute: "Default Title - Caravans for Sale" },
       description: "Browse the latest caravans available for sale.",
+      keywords: "caravans, trailers, new caravans, used caravans",
       openGraph: {
         title: "Default Title",
         description: "Browse our latest caravans for sale.",
+        images: [{ url: "/default-image.jpg" }],
       },
-      twitter: {
-        card: "summary_large_image",
-        title: "Default Title",
-        description: "Browse our latest caravans for sale.",
-      },
-      robots: { index: true, follow: true },
       other: {
         "cfs-seo-index": "index",
         "cfs-seo-title": "Default Title - Caravans for Sale",
