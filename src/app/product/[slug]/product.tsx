@@ -373,6 +373,7 @@ export default function ClientLogger({
                                 return (
                                   <li key={f.label}>
                                     <strong>{f.label}:</strong>{" "}
+                                    <span>
                                     {links
                                       ? links.map((lnk, idx) => (
                                           <span key={lnk.href}>
@@ -386,6 +387,7 @@ export default function ClientLogger({
                                           </span>
                                         ))
                                       : String(f.value)}
+                                      </span>
                                   </li>
                                 );
                               })}
@@ -447,7 +449,7 @@ export default function ClientLogger({
                       className="btn btn-primary"
                       onClick={() => setShowModal(true)}
                     >
-                      Contact D
+                      Contact Dealer
                     </button>
                   </div>
                 </div>
@@ -481,13 +483,15 @@ export default function ClientLogger({
               >
                 <div className="contactSeller__container">
                   <div
-                    className="price_section"
-                    style={{
-                      boxShadow: "0px 4px 15px #0000000d",
-                      display: "block",
-                      border: "1px solid #ddd",
-                    }}
-                  >
+  className="price_section"
+  style={{
+    boxShadow: "0px 4px 15px #0000000d",
+    display: "block",
+    border: "1px solid #ddd",
+    padding: "10px 0px",
+    borderRadius: "6px",
+  }}
+>
                     <div className="divide-2">
                       <div className="price_section border-0">
                         <div className="price-shape">
@@ -537,7 +541,7 @@ export default function ClientLogger({
                         className="btn btn-primary "
                         onClick={() => setShowModal(true)}
                       >
-                        Contact Delar
+                        Contact Dealer
                       </button>
                     </div>
                   </div>

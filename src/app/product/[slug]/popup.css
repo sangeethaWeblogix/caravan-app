@@ -169,6 +169,31 @@
   position: relative;
   top: 80px;
 }
+
+.form-item p {
+margin-bottom: 0;
+}
+.cfs-error {
+    color: #bc0505;
+    text-align: left;
+    font-size: 13px;
+    margin-top: 3px;
+}
+.phone_country {
+    position: relative;
+}
+.phone-label {
+    position: absolute;
+    top: 58%;
+    left: 10px;
+    transform: translateY(-50%);
+    color: #000000;
+    pointer-events: none;
+    font-size: 16px;
+}
+.form-item .phone_country input {
+    padding-left: 40px;
+}
 .form {
   width: 100%;
   margin: 0 auto;

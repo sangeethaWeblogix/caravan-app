@@ -148,22 +148,26 @@ export default function CaravanDetailModal({
 
                   <div className="single-product-slider">
                     <Swiper
-                      modules={[Navigation, Pagination]}
-                      navigation
-                      pagination={{ clickable: true }}
-                      loop={images.length > 1}
-                    >
-                      {images.map((img, idx) => (
-                        <SwiperSlide key={idx}>
-                          <Image
-                            width={500}
-                            height={500}
-                            src={img}
-                            alt={`Slide ${idx + 1}`}
-                          />
-                        </SwiperSlide>
-                      ))}
-                    </Swiper>
+  modules={[Navigation, Pagination]}
+  navigation
+  pagination={{ clickable: true }}
+  loop={images.length > 1}
+>
+  {images.map((img, idx) => (
+    <SwiperSlide key={idx} className="flex justify-center items-center">
+      <Image
+        src={img}
+        alt={`Slide ${idx + 1}`}
+        width={0}
+        height={0}
+        sizes="100vw"
+        className="w-full h-auto"
+        unoptimized
+      />
+    </SwiperSlide>
+  ))}
+</Swiper>
+
                   </div>
                 </div>
 

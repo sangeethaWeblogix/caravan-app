@@ -137,7 +137,7 @@ export default function DealsOnlyCFS() {
                               height={300}
                               className="attachment-full size-full wp-post-image"
                               unoptimized
-                              style={{ width: "100%", height: "50%" }}
+                              style={{ objectFit: "contain" }}
                             />
                           )}
                         </div>
