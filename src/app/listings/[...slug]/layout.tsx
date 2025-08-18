@@ -261,6 +261,18 @@ export async function generateMetadata({
         filters.condition.toLowerCase().replace(/\s+/g, "-")
       );
     if (filters.sleeps) qs.append("sleep", filters.sleeps);
+    const makeReadable = (filters: Filters) => {
+      const parts = [];
+      if (filters.make) parts.push(filters.make);
+      if (filters.state) parts.push(filters.state);
+      if (filters.region) parts.push(filters.region);
+      if (filters.suburb) parts.push(filters.suburb);
+      if (filters.from_price || filters.to_price)
+        parts.push(
+          `Price ${filters.from_price ?? ""} - ${filters.to_price ?? ""}`
+        );
+      return parts.filter(Boolean).join(" | ");
+    };
 
     const url = `https://www.caravansforsale.com.au/wp-json/cfs/v1/new-list?${qs.toString()}`;
     console.log("Fetching metadata from:", url);
@@ -305,13 +317,14 @@ export async function generateMetadata({
         groupData = JSON.parse(raw) as ApiResp;
       }
     } catch {}
-
+    console.log("SEO API JSON:", groupData);
     const seoBlock: SEOBlock =
-      groupData && (groupData as ApiOk).success
-        ? (groupData as ApiOk).seo ?? {}
+      groupData && (groupData as ApiOk).success && (groupData as ApiOk).seo
+        ? (groupData as ApiOk).seo!
         : {};
 
     const idx = normalizeIndexValue(seoBlock.index);
+    console.log("SEO block:", seoBlock, "Index:", idx);
     const title = seoBlock.metatitle || "Default Title - Caravans for Sale";
     const description =
       seoBlock.metadescription ||
@@ -321,7 +334,7 @@ export async function generateMetadata({
     const robots =
       idx.value === "index"
         ? { index: true, follow: true }
-        : { index: false, follow: true };
+        : { index: false, follow: false };
 
     return {
       title: { absolute: title },
@@ -329,22 +342,6 @@ export async function generateMetadata({
       robots,
       openGraph: { title, description },
       twitter: { card: "summary_large_image", title, description },
-      other: {
-        "cfs-seo-index": idx.value,
-        "cfs-seo-title": title,
-        "cfs-seo-description": description,
-        "cfs-seo-source-url": url,
-        "cfs-seo-status": statusInfo,
-        "cfs-seo-content-type": contentType,
-        "cfs-seo-json": String(
-          Boolean(groupData && (groupData as any).success)
-        ),
-        // Helpful for debugging what drove this metadata:
-        "cfs-filters-from_price": String(filters.from_price ?? ""),
-        "cfs-filters-to_price": String(filters.to_price ?? ""),
-        "cfs-filters-minKg": String(filters.minKg ?? ""),
-        "cfs-filters-maxKg": String(filters.maxKg ?? ""),
-      },
     };
   } catch (err) {
     console.error("Failed to build metadata:", err);

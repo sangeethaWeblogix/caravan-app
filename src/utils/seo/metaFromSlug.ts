@@ -13,10 +13,20 @@ export async function metaFromSlug(
   const title = res?.seo?.metatitle || "Caravan Listings";
   const description =
     res?.seo?.metadescription || "Browse all available caravans.";
+  const rawIndex = (res?.seo?.index ?? "").toLowerCase().trim();
+
+  let robots: { index: boolean; follow: boolean };
+  if (rawIndex === "noindex") {
+    robots = { index: false, follow: false }; // noindex, nofollow
+  } else {
+    robots = { index: true, follow: true }; // index, follow
+  }
+  console.log("Meta robots:", robots);
 
   return {
     title,
     description,
+    robots,
     openGraph: {
       title,
       description,
