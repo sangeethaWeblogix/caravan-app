@@ -180,7 +180,7 @@ input[type=checkbox]:checked~.menuIconToggle>.dia.p-2 {
 
 .left_menu {
     height: 40px;
-    width: 50px;
+    width: 40px;
     display: flex;
     align-items: center;
 }

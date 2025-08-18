@@ -276,7 +276,7 @@
   -ms-flex-align: center;
   align-items: center;
   padding: 15px 25px;
-  font-style: 16px;
+  font-size: 16px;
   color: #000000;
   border-bottom: 1px solid #0002;
 }
@@ -455,4 +455,154 @@
 .sticky-top {
   z-index: 0;
 }
-/* ... */
+
+.product-page {
+  
+  border-top: solid 1px #e1e1e1;
+}
+
+.additional-info {
+  background-color: #ffffff;
+}
+
+.fixed-bottom-bar {
+    position: fixed;
+    bottom: 0;
+    right: 0;
+    padding: 1em;
+    width: 100%;
+    background-color: white;
+    z-index: 9;
+    border-top: 1px solid #ddd;
+    text-align: center;
+}
+
+.fixed-bottom-bar button.enbttn_qqr {
+    display: inline-block;
+    margin-top: 0;
+    background: #f58333;
+    border: 1px solid #f58333;
+    color: #fff;
+    padding: 10px 20px;
+    text-transform: uppercase;
+    border-radius: 20px;
+    font-weight: 500;
+    width: 100%;
+    letter-spacing: 1px;
+}
+
+.fixed-bottom-bar p.terms_text {
+    text-align: center;
+    margin-top: 10px;
+    margin-bottom: 0;
+}
+
+.terms_text a {
+    color: #f58333;
+}
+
+@media (max-width: 767px) {
+
+  .caravan_dtt {
+    padding: 30px 0;
+}
+
+.product-page .product-info .title {
+      font-size: 22px;
+}
+
+.contactSeller__container, .toolkit__container {
+  margin-bottom: 12px;
+}
+
+.caravan_slider_visible {
+  display: block;
+}
+.image_mop {
+    position: relative;
+    display: flex;
+    justify-content: space-between;
+    width: 100%;
+}
+.slider_thumb_vertical .image_item {
+    width: 24%;
+}
+.slider_thumb_vertical .image_item {
+    max-height: 60px;
+    min-height: 60px;
+}
+.caravan__image_count {
+    bottom: 20px;
+    right: 4%;
+    left: inherit;
+}
+
+.slider_thumb_vertical {
+      margin-inline-end: 0;
+    padding-right: 0 !important;
+}
+.lager_img_view {
+    max-height: 240px;
+    min-height: 240px;
+    margin-bottom: 10px;
+}
+.product-page .product-details .additional-info ul li strong {
+    text-align: left;
+    flex: 0;
+}
+.product-page .product-details .additional-info ul li {
+  padding: 15px 15px;
+    font-size: 15px;
+}
+.carava_details .swiper-slide img {
+    max-height: 240px;
+    min-height: 240px;
+}
+.carava_details .swiper-wrapper{
+    height: auto;
+}
+.pop-top {
+    text-align: left;
+    justify-content: space-around;
+    align-items: center;
+    padding: 12px 0;
+    display: block;
+    padding-top: 35px;
+}
+.close-btn {
+  top: -25px;
+    right: 8px;
+}
+.sidebar-enquiry {
+    position: relative;
+    top: 30px;
+}
+.community.product_dt_lower.style-5 .content {
+    padding-top: 20px;
+}
+.community .heading, .community.product_dt_lower .heading {
+    text-align: center;
+    margin-left: 18px;
+    margin-right: 18px;
+    padding-bottom: 20px;
+    padding-top: 20px;
+}
+.community .heading h3, .community.product_dt_lower.style-5 h3 {
+    font-size: 26px;
+    font-weight: 600;
+    margin-bottom: 15px;
+    line-height: 35px;
+}
+.community .card_flex {
+    display: block !important;
+}
+.community.product_dt_lower.style-5 .content .commun-card {
+    padding: 0 15px;
+    width: 100%;
+}
+.community.product_dt_lower.style-5 .content .commun-card .inf p {
+    font-size: 16px;
+    font-weight: 300;
+}
+  
+}

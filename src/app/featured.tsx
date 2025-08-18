@@ -76,7 +76,7 @@ export default function DealsOnlyCFS() {
   const rest = items.slice(1);
 
   return (
-    <section className="deal-of-month product-details section-padding">
+    
       <div className="container">
         <div className="inside_col">
           <div className="header_posistion">
@@ -376,6 +376,5 @@ export default function DealsOnlyCFS() {
           </div>
         </div>
       </div>
-    </section>
   );
 }
