@@ -128,7 +128,7 @@ const Manufacture = () => {
                     </div>
 
                     <div className="post_info">
-                      <h3>{man.name}</h3>
+                      <h3 className="mb-2">{man.name}</h3>
                       {desc && <p className="mb-3">{desc}</p>}
 
                       {!!types.length && (
@@ -141,7 +141,7 @@ const Manufacture = () => {
                       )}
 
                       {/* UI shows the name, but href goes to listings/<value> */}
-                      <Link href={href}>
+                      <Link href={href} className="btn btn-sm btn-primary">
                         View Listings <i className="bi bi-chevron-right" />
                       </Link>
                     </div>
