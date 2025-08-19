@@ -248,7 +248,7 @@ export default function CaravanDetail() {
               {/* Mobile Bottom Bar */}
               <div className="fixed-bottom-bar d-lg-none">
                 <button
-                  className="btn btn-primary w-100 mb-2"
+                  className="btn enbttn_qqr btn-primary w-100 mb-2"
                   onClick={() => setShowModal(true)}
                 >
                   Send Enquiry

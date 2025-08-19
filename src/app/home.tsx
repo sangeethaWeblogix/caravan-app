@@ -298,7 +298,7 @@ export default function ProductPage() {
                   },
                   {
                     state: "South Australia",
-                    cities: ["Adelaide", "Mount Gambier", "Whyalla", ""],
+                    cities: ["Adelaide", "Mount Gambier", "Whyalla"],
                     image: "/images/sa_map.svg",
                   },
                   {
@@ -311,13 +311,9 @@ export default function ProductPage() {
                     <div className="service-box">
                       <div className="sec_left">
                         <h5>
-                          <Link
-                            href={`/listings/${state.state
-                              .toLowerCase()
-                              .replace(/\s+/g, "-")}-state/`}
-                          >
+                          
                             {state.state}
-                          </Link>
+                          
                         </h5>
                         <div className="info">
                           <div className="quick_linkss">

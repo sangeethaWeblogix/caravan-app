@@ -121,7 +121,6 @@
 }
 .pop-top h3 {
   color: #fff;
-  font-family: Poppins;
   font-size: 23px;
   font-weight: 700;
 }
@@ -168,6 +167,31 @@
 .sidebar-enquiry {
   position: relative;
   top: 80px;
+}
+
+.form-item p {
+margin-bottom: 0;
+}
+.cfs-error {
+    color: #bc0505;
+    text-align: left;
+    font-size: 13px;
+    margin-top: 3px;
+}
+.phone_country {
+    position: relative;
+}
+.phone-label {
+    position: absolute;
+    top: 58%;
+    left: 10px;
+    transform: translateY(-50%);
+    color: #000000;
+    pointer-events: none;
+    font-size: 16px;
+}
+.form-item .phone_country input {
+    padding-left: 40px;
 }
 .form {
   width: 100%;
@@ -247,32 +271,6 @@
 .submit-btn button:hover {
   background: #000000;
   border: 1px solid #000000;
-}
-.phone_country {
-  position: relative;
-}
-.phone-label {
-  position: absolute;
-  top: 58%;
-  left: 10px;
-  transform: translateY(-50%);
-  color: #000000;
-  pointer-events: none;
-  font-size: 16px;
-}
-.phone_country input {
-  padding-left: 40px;
-}
-
-.cfs-error {
-  color: #d40000;
-  text-align: left;
-  font-size: 12px;
-  margin-top: 5px;
-}
-
-.form-item p {
-  margin-bottom: 0;
 }
 
 @media screen and (min-width: 800px) {

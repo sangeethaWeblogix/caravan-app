@@ -200,17 +200,17 @@ h1.page-title {
   display: block !important;
 }
 .vehicleDetailsWithIcons.simple li {
-    color: #fff;
-    text-align: center;
-    vertical-align: top;
-    float: left;
-    align-items: center;
-    width: 35%;
-    margin-right: 25px;
-    padding: 5px;
-    font-size: 14px;
-    line-height: 19px;
-    display: flex;
+  color: #fff;
+  text-align: center;
+  vertical-align: top;
+  float: left;
+  align-items: center;
+  width: 35%;
+  margin-right: 25px;
+  padding: 5px;
+  font-size: 14px;
+  line-height: 19px;
+  display: flex;
 }
 .vehicleDetailsWithIcons.simple li span {
   display: inline-block;
@@ -439,7 +439,7 @@ h1.page-title {
   text-transform: capitalize;
   border: 1px solid #ddd;
   position: relative;
-    position: relative;
+  position: relative;
 }
 .filter .filter-card .card-title {
   font-size: 15px;
@@ -554,13 +554,13 @@ h1.page-title {
   font-size: 14px;
 }
 .cfs-btn {
-    color: #fff;
-    text-transform: uppercase;
-    background: #000;
-    margin-top: 15px;
-    font-weight: 600;
-    display: inline-block;
-    height: 50px;
+  color: #fff;
+  text-transform: uppercase;
+  background: #000;
+  margin-top: 15px;
+  font-weight: 600;
+  display: inline-block;
+  height: 50px;
 }
 .cfs-btn:hover {
   background: #f58333;
@@ -568,134 +568,133 @@ h1.page-title {
 }
 .cfs-btn.fullwidth_btn {
   width: 100%;
- }
- .cs-full_width_section {
-   width: 100%;
-   font-size: 16px;
-   padding: 0 0 10px;
-   border-bottom: 1px solid #d6d6d6;
-   margin-top: 10px;
-   font-weight: 700;
-   display: inline-block;
- }
- .cs-half_width_section {
-   width: 45%;
-   float: left;
-   margin-right: 5%;
- }
- .cfs-modal {
-   
-   /* Hidden by default */
-   position: fixed;
-   /* Stay in place */
-   z-index: 9999;
-   /* Sit on top */
-   left: 0;
-   top: 0;
-   width: 100%;
-   /* Full width */
-   height: 100%;
-   /* Full height */
-   overflow: auto;
-   /* Enable scroll if needed */
-   background-color: rgb(0, 0, 0);
-   /* Fallback color */
-   background-color: rgba(0, 0, 0, 0.4);
-   /* Black w/ opacity */
- }
- /* Modal Content/Box */
- .cfs-modal-content {
-   background-color: #ffffff;
-   margin: 15% auto;
-   /* 15% from the top and centered */
-   border: 1px solid #888;
-   max-width: 700px;
- }
- .cfs-modal-header {
-   position: relative;
-   width: 100%;
-   float: left;
- }
- .cfs-modal-body {
-   padding: 20px;
-   min-height: 300px;
- }
- .cfs-modal-search-section {
-   max-width: 500px;
-   margin: 0 auto
- }
- .cfs-modal-footer {
-   padding: 10px;
-   text-align: center;
- }
- /* The Close Button */
- .cfs-close {
-   color: #aaa;
-   float: right;
-   font-size: 28px;
-   font-weight: bold;
-   padding-right: 10px;
- }
- .cfs-close:hover,
- .cfs-close:focus {
-   color: black;
-   text-decoration: none;
-   cursor: pointer;
- }
- .suggestions,
- .hsuggestions {
-   width: 100%;
-   background: #fff;
-   text-align: left;
-   z-index: 9999;
- }
- .hosuggestions {
-   width: 100%;
-   background: #fff;
-   text-align: left;
-   z-index: 9999;
- }
- #hosuggestionsul {
-   list-style-type: none;
-   padding: 0;
-   margin: 0;
-   box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.2);
-   max-height: 200px;
-   overflow-y: auto;
-   display: block;
-   background: #fff;
-   border: none;
- }
- #hosuggestionsul li {
-   padding: 10px;
-   cursor: pointer;
-   background: rgba(255, 255, 255, 0.2);
-   height: 40px;
-   line-height: normal;
-   width: 100%;
- }
- .cs-full_width_section .filter-acc-level-one {
-   cursor: pointer;
-   margin-top: 5px;
-   font-weight: 400;
-   padding: 4px 8px;
-   border-radius: 2px;
-   display: flex;
-   align-items: center;
-   justify-content: space-between;
-   position: relative;
- }
- .cs-full_width_section .filter-acc-level-one.marked .cfs-clear-location,
- .cs-full_width_section .filter-acc-level-two.marked .cfs-clear-location {
-   position: absolute;
-   right: 30px;
- }
- .cs-full_width_section .filter-acc-level-one.marked,
- .cs-full_width_section .filter-acc-level-two.marked {
-   background: #ededed;
-   margin-bottom: 5px;
- }
- .cs-full_width_section .filter-acc-level-two {
+}
+.cs-full_width_section {
+  width: 100%;
+  font-size: 16px;
+  padding: 0 0 10px;
+  border-bottom: 1px solid #d6d6d6;
+  margin-top: 10px;
+  font-weight: 700;
+  display: inline-block;
+}
+.cs-half_width_section {
+  width: 45%;
+  float: left;
+  margin-right: 5%;
+}
+.cfs-modal {
+  /* Hidden by default */
+  position: fixed;
+  /* Stay in place */
+  z-index: 9999;
+  /* Sit on top */
+  left: 0;
+  top: 0;
+  width: 100%;
+  /* Full width */
+  height: 100%;
+  /* Full height */
+  overflow: auto;
+  /* Enable scroll if needed */
+  background-color: rgb(0, 0, 0);
+  /* Fallback color */
+  background-color: rgba(0, 0, 0, 0.4);
+  /* Black w/ opacity */
+}
+/* Modal Content/Box */
+.cfs-modal-content {
+  background-color: #ffffff;
+  margin: 15% auto;
+  /* 15% from the top and centered */
+  border: 1px solid #888;
+  max-width: 700px;
+}
+.cfs-modal-header {
+  position: relative;
+  width: 100%;
+  float: left;
+}
+.cfs-modal-body {
+  padding: 20px;
+  min-height: 300px;
+}
+.cfs-modal-search-section {
+  max-width: 500px;
+  margin: 0 auto;
+}
+.cfs-modal-footer {
+  padding: 10px;
+  text-align: center;
+}
+/* The Close Button */
+.cfs-close {
+  color: #aaa;
+  float: right;
+  font-size: 28px;
+  font-weight: bold;
+  padding-right: 10px;
+}
+.cfs-close:hover,
+.cfs-close:focus {
+  color: black;
+  text-decoration: none;
+  cursor: pointer;
+}
+.suggestions,
+.hsuggestions {
+  width: 100%;
+  background: #fff;
+  text-align: left;
+  z-index: 9999;
+}
+.hosuggestions {
+  width: 100%;
+  background: #fff;
+  text-align: left;
+  z-index: 9999;
+}
+#hosuggestionsul {
+  list-style-type: none;
+  padding: 0;
+  margin: 0;
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.2);
+  max-height: 200px;
+  overflow-y: auto;
+  display: block;
+  background: #fff;
+  border: none;
+}
+#hosuggestionsul li {
+  padding: 10px;
+  cursor: pointer;
+  background: rgba(255, 255, 255, 0.2);
+  height: 40px;
+  line-height: normal;
+  width: 100%;
+}
+.cs-full_width_section .filter-acc-level-one {
+  cursor: pointer;
+  margin-top: 5px;
+  font-weight: 400;
+  padding: 4px 8px;
+  border-radius: 2px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: relative;
+}
+.cs-full_width_section .filter-acc-level-one.marked .cfs-clear-location,
+.cs-full_width_section .filter-acc-level-two.marked .cfs-clear-location {
+  position: absolute;
+  right: 30px;
+}
+.cs-full_width_section .filter-acc-level-one.marked,
+.cs-full_width_section .filter-acc-level-two.marked {
+  background: #ededed;
+  margin-bottom: 5px;
+}
+.cs-full_width_section .filter-acc-level-two {
   margin-left: 0px;
   cursor: pointer;
   font-weight: 400;
@@ -722,6 +721,15 @@ h1.page-title {
   color: #000000;
   background: #ededed;
 }
+.mobile_fltn.navbar-toggler {
+  color: #fff;
+  background: #000000;
+  width: 100%;
+  padding: 10px;
+  font-size: 15px;
+  border-radius: 6px;
+}
+
 #suggestionsul,
 #hsuggestionsul {
   list-style-type: none;
@@ -888,3 +896,56 @@ input[type="number"]::-webkit-outer-spin-button {
   border-top: solid 1px #e1e1e1;
 }
 
+.offcanvas-header.mobile_filter_xs {
+background-color: #000;
+}
+
+@media (max-width: 767px) {
+  .product_listing {
+    padding: 30px 0;
+  }
+  h1.page-title {
+    padding-bottom: 10px;
+    font-size: 25px;
+  }
+  .vehicleSearch .swiper {
+    max-height: 250px;
+    display: flex;
+    align-items: center;
+  }
+  .vehicleSearch__column-poster .vehicleThumbDetails .title {
+    max-width: 100%;
+    margin: 0;
+    display: flex;
+}
+.woocommerce-loop-product__title {
+    font-size: 1.2em;
+}
+.vehicleDetailsWithIcons.simple {
+      padding: 0;
+}
+.vehicleSearch__column-poster .vehicleThumbDetails__part {
+  display: inline-block;
+}
+.vehicleThumbDetails__part .price {
+    align-items: center;
+    height: auto;
+    display: flex;
+    margin-bottom: 15px;
+}
+.vehicleSearch__column-poster .vehicleThumbDetails__features__address {
+    color: #000;
+    border-left: none;
+    border-right: none;
+    border-top: .5px solid #ddd;
+    align-items: center;
+    height: auto;
+    margin-left: 0;
+    padding: 10px 0px 0px;
+    display: block;
+    position: relative;
+}
+.mb-10 {
+    margin-bottom: 20px;
+}
+}

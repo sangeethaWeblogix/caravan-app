@@ -334,12 +334,13 @@ small {
 }
 
 .product-page .related-products .product-card .img {
-  max-height: 200px;
-  min-height: 200px;
-  overflow: hidden;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+    justify-content: center;
+    align-items: center;
+    min-height: 250px;
+    max-height: 250px;
+    display: flex;
+    overflow: hidden;
+    background: #eee;
 }
 
 .product-page .product-card .img {
@@ -386,7 +387,7 @@ small {
 }
 
 .product-page .product-card .info .title {
-  font-size: 15px;
+  font-size: 17px;
   text-transform: capitalize;
   font-weight: 600;
   margin-bottom: 0;
