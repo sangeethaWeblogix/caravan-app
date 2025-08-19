@@ -4,9 +4,11 @@
 import React from "react";
 import { useForm } from "react-hook-form";
 import toast from "react-hot-toast";
-
-const API_BASE = process.env.NEXT_PUBLIC_CFS_API_BASE!;
-const API_URL = `${API_BASE}/cara_req`; // change if your create path differs
+// 👇 make sure this path matches the API file you created
+import {
+  createRequirementCF7,
+  type RequirementPayload,
+} from "@/api/postRequirementEnquiry/api";
 
 type FormValues = {
   name: string;
@@ -40,49 +42,49 @@ export default function ContactSection() {
   });
 
   const onSubmit = async (values: FormValues) => {
-    const payload = {
-      featured: "0",
-      active: "1",
-      type: values.type,
-      Condition: values.condition, // API in your screenshot used "Condition"
-      location: values.postcode,
-      requirements: values.requirements,
-      budget: values.budget,
+    const payload: RequirementPayload = {
+      // contact
       name: values.name,
       email: values.email,
       phone: values.phone,
+
+      // requirement
+      type: values.type, // CF7 helper will slugify
+      condition: values.condition, // CF7 helper will slugify
+      location: values.postcode,
+      requirements: values.requirements,
+      budget: values.budget,
+
+      // optional flags (only if your CF7 has hidden inputs with these names)
+      featured: "0",
+      active: "1",
     };
 
     await toast.promise(
       (async () => {
-        const res = await fetch(API_URL, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          cache: "no-store",
-          body: JSON.stringify(payload),
-        });
+        const resp = await createRequirementCF7(payload);
 
-        // Try to detect success from either status or JSON body
-        const text = await res.text();
-        let ok = res.ok;
-        try {
-          const json = JSON.parse(text);
-          ok =
-            ok &&
-            (json?.success === true ||
-              json?.status === "ok" ||
-              json?.code === 200);
-        } catch {
-          // non-JSON body, rely on status
+        if (resp.status === "mail_sent") {
+          reset();
+          return "OK";
         }
-        if (!ok) throw new Error(`Submit failed (${res.status}).`);
 
-        reset();
+        if (resp.status === "validation_failed") {
+          // You can surface resp.invalid_fields to the UI if desired
+          console.warn("CF7 invalid fields:", resp.invalid_fields);
+          throw new Error(resp.message || "Validation failed");
+        }
+
+        // mail_failed
+        throw new Error(resp.message || "Mail failed");
       })(),
       {
         loading: "Submitting…",
         success: "Thanks! Your request has been submitted.",
-        error: "Something went wrong. Please try again.",
+        error: (e) =>
+          e instanceof Error
+            ? e.message
+            : "Something went wrong. Please try again.",
       }
     );
   };
@@ -318,7 +320,6 @@ export default function ContactSection() {
                         type="submit"
                         className="btn bg-blue4 fw-bold text-white text-light fs-12px"
                         disabled={isSubmitting}
-                        onClick={handleSubmit(onSubmit)}
                       >
                         {isSubmitting ? "SUBMITTING…" : "SUBMIT"}
                       </button>

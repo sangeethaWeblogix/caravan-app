@@ -47,7 +47,7 @@ const Manufacture = () => {
       mounted = false;
     };
   }, []);
-  console.log("make-categories", items, err);
+  console.log("make-categories", items);
   return (
     <div>
       <div className="container">
