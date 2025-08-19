@@ -27,7 +27,8 @@ const slugify = (s: string) =>
     .replace(/\s+|_+/g, "-")
     .replace(/[^a-z0-9-]/g, "")
     .replace(/-+/g, "-");
-
+const isError = (e: unknown): e is Error =>
+  typeof e === "object" && e !== null && "message" in e;
 const Manufacture = () => {
   const [items, setItems] = useState<MakeItem[]>([]);
   const [err, setErr] = useState<string | null>(null);
@@ -38,9 +39,10 @@ const Manufacture = () => {
       try {
         const res = await fetchRangeFeaturedCategories();
         if (mounted) setItems((res || []) as MakeItem[]);
-      } catch (e: any) {
+      } catch (e: unknown) {
         if (mounted) {
-          setErr(e?.message || "Failed to load manufacturers");
+          const msg = isError(e) ? e.message : "Failed to load manufacturers";
+          setErr(msg);
           console.error("Manufacture fetch error:", e);
         }
       }

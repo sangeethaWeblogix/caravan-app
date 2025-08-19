@@ -1,5 +1,5 @@
 import Blogs from "./page";
-import "./blog.css";
+import "../../../blog/blog.css";
 import { Metadata } from "next";
 
 export const metadata: Metadata = {
