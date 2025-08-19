@@ -18,7 +18,7 @@ interface Filters {
   from_length?: string;
   to_length?: string;
   model?: string;
-  postcode?: string;
+  pincode?: string;
   orderby?: string;
   slug?: string;
   radius_kms?: string;
@@ -39,7 +39,7 @@ export const fetchListings = async (filters: Filters = {}) => {
     state,
     region,
     suburb,
-    postcode,
+    pincode,
     orderby,
     slug,
     radius_kms,
@@ -54,7 +54,7 @@ export const fetchListings = async (filters: Filters = {}) => {
   if (slug) params.append("category", slug);
 
   if (make) params.append("make", make);
-  if (postcode) params.append("pincode", postcode);
+  if (pincode) params.append("pincode", pincode);
 
   if (state) params.append("state", state);
   if (region) params.append("region", region);
