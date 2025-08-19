@@ -1,102 +1,123 @@
-// src/app/components/ContactSection.tsx
 "use client";
 
-import React from "react";
-import { useForm } from "react-hook-form";
-import toast from "react-hot-toast";
+import React, { useState } from "react";
 
-const API_BASE = process.env.NEXT_PUBLIC_CFS_API_BASE!;
-const API_URL = `${API_BASE}/cara_req`; // change if your create path differs
-
-type FormValues = {
-  name: string;
-  email: string;
-  phone: string;
-  postcode: string;
-  type: string;
-  condition: string;
-  budget: string;
-  requirements: string;
+type FormState = {
+  "your-name": string;
+  "your-email": string;
+  "your-phone": string;
+  "you-postcode": string; // keep as-is since your CF7 works with this key
+  "your-message": string;
 };
 
 export default function ContactSection() {
-  const {
-    register,
-    handleSubmit,
-    reset,
-    formState: { errors, isSubmitting },
-  } = useForm<FormValues>({
-    mode: "onTouched",
-    defaultValues: {
-      name: "",
-      email: "",
-      phone: "",
-      postcode: "",
-      type: "",
-      condition: "",
-      budget: "",
-      requirements: "",
-    },
+  const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState("");
+  const [formData, setFormData] = useState<FormState>({
+    "your-name": "",
+    "your-email": "",
+    "your-phone": "",
+    "you-postcode": "",
+    "your-message": "",
   });
+  const [errors, setErrors] = useState<
+    Partial<Record<keyof FormState, string>>
+  >({});
 
-  const onSubmit = async (values: FormValues) => {
-    const payload = {
-      featured: "0",
-      active: "1",
-      type: values.type,
-      Condition: values.condition, // API in your screenshot used "Condition"
-      location: values.postcode,
-      requirements: values.requirements,
-      budget: values.budget,
-      name: values.name,
-      email: values.email,
-      phone: values.phone,
-    };
-
-    await toast.promise(
-      (async () => {
-        const res = await fetch(API_URL, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          cache: "no-store",
-          body: JSON.stringify(payload),
-        });
-
-        // Try to detect success from either status or JSON body
-        const text = await res.text();
-        let ok = res.ok;
-        try {
-          const json = JSON.parse(text);
-          ok =
-            ok &&
-            (json?.success === true ||
-              json?.status === "ok" ||
-              json?.code === 200);
-        } catch {
-          // non-JSON body, rely on status
-        }
-        if (!ok) throw new Error(`Submit failed (${res.status}).`);
-
-        reset();
-      })(),
-      {
-        loading: "Submitting…",
-        success: "Thanks! Your request has been submitted.",
-        error: "Something went wrong. Please try again.",
-      }
-    );
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+    // clear field error on change
+    if (errors[e.target.name as keyof FormState]) {
+      setErrors((prev) => ({ ...prev, [e.target.name]: undefined }));
+    }
   };
+
+  const validate = () => {
+    const next: Partial<Record<keyof FormState, string>> = {};
+    if (!formData["your-name"].trim()) next["your-name"] = "Name is required.";
+    if (!formData["your-email"].trim()) {
+      next["your-email"] = "Email is required.";
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData["your-email"])) {
+      next["your-email"] = "Enter a valid email.";
+    }
+    if (!formData["your-phone"].trim()) {
+      next["your-phone"] = "Phone is required.";
+    } else if (!/^[0-9\s+\-()]{7,20}$/.test(formData["your-phone"])) {
+      next["your-phone"] = "Enter a valid phone number.";
+    }
+    if (!formData["you-postcode"].trim()) {
+      next["you-postcode"] = "Postcode is required.";
+    }
+    if (!formData["your-message"].trim()) {
+      next["your-message"] = "Message is required.";
+    }
+    setErrors(next);
+    return Object.keys(next).length === 0;
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setMessage("");
+
+    if (loading) return; // guard
+    if (!validate()) {
+      setMessage("⚠️ All fields are required.");
+      return;
+    }
+
+    try {
+      setLoading(true);
+
+      const form = new FormData();
+      form.append("_wpcf7", "3290");
+      form.append("_wpcf7_version", "5.9.3");
+      form.append("_wpcf7_locale", "en_US");
+      form.append("_wpcf7_unit_tag", "wpcf7-f3290-p45-o1");
+      form.append("_wpcf7_container_post", "45");
+
+      Object.entries(formData).forEach(([key, value]) =>
+        form.append(key, value)
+      );
+
+      const res = await fetch(
+        "https://www.caravansforsale.com.au/wp-json/contact-form-7/v1/contact-forms/3290/feedback",
+        { method: "POST", body: form }
+      );
+
+      const data = await res.json();
+
+      if (data.status === "mail_sent") {
+        setMessage("✅ Message sent successfully!");
+        // clear form + errors
+        setFormData({
+          "your-name": "",
+          "your-email": "",
+          "your-phone": "",
+          "you-postcode": "",
+          "your-message": "",
+        });
+        setErrors({});
+      } else {
+        setMessage("❌ Error: " + (data.message || "Failed to send message."));
+      }
+    } catch (err) {
+      console.error(err);
+      setMessage("❌ Something went wrong.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const hasAnyError = Object.values(errors).some(Boolean);
 
   return (
     <>
       <section className="community contact_top section-padding style-5">
         <div className="container">
           <div className="section-head text-center style-4">
-            <h2 className="text-center mb-20">
-              Exclusive Offers From Select
-              <br />
-              Quality Caravan Manufacturers
-            </h2>
+            <h2 className="text-center mb-20">Get in Touch</h2>
           </div>
         </div>
       </section>
@@ -107,224 +128,135 @@ export default function ContactSection() {
             <div className="row justify-content-center">
               <div className="col-lg-8">
                 <form
-                  className="form"
+                  onSubmit={handleSubmit}
+                  className="flex flex-col gap-3 max-w-md mx-auto p-4 border rounded-lg shadow"
                   noValidate
-                  onSubmit={handleSubmit(onSubmit)}
                 >
-                  <p className="text-center text-danger fs-12px mb-30">
-                    Fill out the form below, and we&apos;ll send you exclusive
-                    deals for the best caravans in the market.
-                  </p>
+                  {/* Top alert only when errors exist */}
+                  {hasAnyError && (
+                    <p className="text-center text-danger fs-12px mb-30">
+                      All fields are required.
+                    </p>
+                  )}
+                  {/* Show server message */}
+                  {message && (
+                    <p className="text-center mb-2" aria-live="polite">
+                      {message}
+                    </p>
+                  )}
 
                   <div className="row">
-                    {/* Name */}
-                    <div className="col-lg-6">
+                    <div className="col-lg-12">
                       <div className="form-group mb-20">
                         <input
                           type="text"
+                          name="your-name"
+                          className="form-control"
                           placeholder="Name*"
-                          className={`form-control ${
-                            errors.name ? "is-invalid" : ""
-                          }`}
-                          {...register("name", {
-                            required: "Name is required",
-                          })}
+                          value={formData["your-name"]}
+                          onChange={handleChange}
+                          required
                         />
-                        {errors.name && (
-                          <div className="invalid-feedback">
-                            {errors.name.message}
-                          </div>
+                        {errors["your-name"] && (
+                          <small className="text-danger">
+                            {errors["your-name"]}
+                          </small>
                         )}
                       </div>
                     </div>
 
-                    {/* Email */}
-                    <div className="col-lg-6">
+                    <div className="col-lg-12">
                       <div className="form-group mb-20">
                         <input
                           type="email"
-                          placeholder="Email Address*"
-                          className={`form-control ${
-                            errors.email ? "is-invalid" : ""
-                          }`}
-                          {...register("email", {
-                            required: "Email is required",
-                            pattern: {
-                              value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
-                              message: "Enter a valid email",
-                            },
-                          })}
+                          name="your-email"
+                          className="form-control"
+                          placeholder="Email*"
+                          value={formData["your-email"]}
+                          onChange={handleChange}
+                          required
                         />
-                        {errors.email && (
-                          <div className="invalid-feedback">
-                            {errors.email.message}
-                          </div>
+                        {errors["your-email"] && (
+                          <small className="text-danger">
+                            {errors["your-email"]}
+                          </small>
                         )}
                       </div>
                     </div>
 
-                    {/* Phone */}
-                    <div className="col-lg-6">
+                    <div className="col-lg-12">
                       <div className="form-group mb-20">
                         <input
-                          type="text"
-                          placeholder="Phone Number*"
-                          className={`form-control ${
-                            errors.phone ? "is-invalid" : ""
-                          }`}
-                          {...register("phone", {
-                            required: "Phone is required",
-                            pattern: {
-                              value: /^[0-9+\s()-]{6,20}$/,
-                              message: "Enter a valid phone number",
-                            },
-                          })}
+                          type="tel"
+                          name="your-phone"
+                          className="form-control"
+                          placeholder="Phone*"
+                          value={formData["your-phone"]}
+                          onChange={handleChange}
+                          required
                         />
-                        {errors.phone && (
-                          <div className="invalid-feedback">
-                            {errors.phone.message}
-                          </div>
+                        {errors["your-phone"] && (
+                          <small className="text-danger">
+                            {errors["your-phone"]}
+                          </small>
                         )}
                       </div>
                     </div>
 
-                    {/* Postcode */}
-                    <div className="col-lg-6">
-                      <div className="form-group mb-20">
-                        <input
-                          type="text"
-                          placeholder="Postcode*"
-                          className={`form-control ${
-                            errors.postcode ? "is-invalid" : ""
-                          }`}
-                          {...register("postcode", {
-                            required: "Postcode is required",
-                            pattern: {
-                              value: /^\d{4}$/,
-                              message: "Postcode must be 4 digits",
-                            },
-                          })}
-                        />
-                        {errors.postcode && (
-                          <div className="invalid-feedback">
-                            {errors.postcode.message}
-                          </div>
-                        )}
-                      </div>
-                    </div>
-
-                    {/* Type */}
-                    <div className="col-lg-6">
-                      <div className="form-group mb-20">
-                        <select
-                          className={`form-control ${
-                            errors.type ? "is-invalid" : ""
-                          }`}
-                          {...register("type", {
-                            required: "Please select a caravan type",
-                          })}
-                        >
-                          <option value="">
-                            What type of caravan are you looking for ?
-                          </option>
-                          <option value="Off Road">Off Road</option>
-                          <option value="Hybrid">Hybrid</option>
-                          <option value="Pop Top">Pop Top</option>
-                          <option value="Luxury">Luxury</option>
-                          <option value="Family">Family</option>
-                          <option value="Touring">Touring</option>
-                        </select>
-                        {errors.type && (
-                          <div className="invalid-feedback">
-                            {errors.type.message}
-                          </div>
-                        )}
-                      </div>
-                    </div>
-
-                    {/* Condition */}
-                    <div className="col-lg-6">
-                      <div className="form-group mb-20">
-                        <select
-                          className={`form-control ${
-                            errors.condition ? "is-invalid" : ""
-                          }`}
-                          {...register("condition", {
-                            required: "Please select condition",
-                          })}
-                        >
-                          <option value="">Select Condition</option>
-                          <option value="New">New</option>
-                          <option value="Used">Used</option>
-                          <option value="Near New">Near New</option>
-                        </select>
-                        {errors.condition && (
-                          <div className="invalid-feedback">
-                            {errors.condition.message}
-                          </div>
-                        )}
-                      </div>
-                    </div>
-
-                    {/* Budget */}
                     <div className="col-lg-12">
                       <div className="form-group mb-20">
                         <input
                           type="text"
-                          placeholder="What is your budget?*"
-                          className={`form-control ${
-                            errors.budget ? "is-invalid" : ""
-                          }`}
-                          {...register("budget", {
-                            required: "Budget is required",
-                            pattern: {
-                              value: /^\d+(\.\d{1,2})?$/,
-                              message: "Enter a valid amount",
-                            },
-                          })}
+                          name="you-postcode"
+                          className="form-control"
+                          placeholder="Postcode*"
+                          value={formData["you-postcode"]}
+                          onChange={handleChange}
+                          required
                         />
-                        {errors.budget && (
-                          <div className="invalid-feedback">
-                            {errors.budget.message}
-                          </div>
+                        {errors["you-postcode"] && (
+                          <small className="text-danger">
+                            {errors["you-postcode"]}
+                          </small>
                         )}
                       </div>
                     </div>
 
-                    {/* Requirements */}
                     <div className="col-lg-12">
                       <div className="form-group mb-20">
                         <textarea
+                          className="form-control"
+                          name="your-message"
+                          value={formData["your-message"]}
+                          onChange={handleChange}
+                          placeholder="How can we help you?*"
+                          required
                           rows={4}
-                          placeholder="Requirements (Description)*"
-                          className={`form-control ${
-                            errors.requirements ? "is-invalid" : ""
-                          }`}
-                          {...register("requirements", {
-                            required: "Please describe your requirement",
-                          })}
                         />
-                        {errors.requirements && (
-                          <div className="invalid-feedback">
-                            {errors.requirements.message}
-                          </div>
+                        {errors["your-message"] && (
+                          <small className="text-danger">
+                            {errors["your-message"]}
+                          </small>
                         )}
                       </div>
                     </div>
 
-                    {/* Submit */}
                     <div className="col-lg-12 text-center">
                       <button
                         type="submit"
+                        disabled={loading}
                         className="btn bg-blue4 fw-bold text-white text-light fs-12px"
-                        disabled={isSubmitting}
-                        onClick={handleSubmit(onSubmit)}
                       >
-                        {isSubmitting ? "SUBMITTING…" : "SUBMIT"}
+                        {loading ? "SUBMITTING..." : "SUBMIT"}
                       </button>
                     </div>
                   </div>
                 </form>
+
+                {/* Optional: small hint below the form */}
+                <p className="text-center mt-2" style={{ fontSize: 12 }}>
+                  * Required fields
+                </p>
               </div>
             </div>
           </div>

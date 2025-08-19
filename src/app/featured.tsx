@@ -65,7 +65,6 @@ export default function DealsOnlyCFS() {
       setLoading((s) => ({ ...s, [alt]: false }));
     }
   };
-
   useEffect(() => {
     loadCat(active); // load first tab on mount
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -74,307 +73,302 @@ export default function DealsOnlyCFS() {
   const items = data[active] ?? [];
   const hero = items[0];
   const rest = items.slice(1);
+  console.log("pr", items);
 
   return (
-    
-      <div className="container">
-        <div className="inside_col">
-          <div className="header_posistion">
-            <h2>
-              Find Exclusive{" "}
-              <Image
-                className="deal_icon hidden-xs"
-                src="/images/deal_icons.svg"
-                alt="deal icon"
-                width={30}
-                height={30}
-              />{" "}
-              Deals Only @ CFS
-            </h2>
-          </div>
+    <div className="container">
+      <div className="inside_col">
+        <div className="header_posistion">
+          <h2>
+            Find Exclusive{" "}
+            <Image
+              className="deal_icon hidden-xs"
+              src="/images/deal_icons.svg"
+              alt="deal icon"
+              width={30}
+              height={30}
+            />{" "}
+            Deals Only @ CFS
+          </h2>
+        </div>
 
-          {/* Tabs */}
-          <ul className="nav nav-pills" role="tablist">
-            {categories.map((cat) => (
-              <li className="nav-item" role="presentation" key={cat.alt}>
-                <button
-                  className={`nav-link ${active === cat.alt ? "active" : ""}`}
-                  type="button"
-                  role="tab"
-                  aria-selected={active === cat.alt}
-                  onClick={() => {
-                    setActive(cat.alt);
-                    if (!data[cat.alt]) {
-                      setLoading((s) => ({ ...s, [cat.alt]: true })); // start skeleton
-                      loadCat(cat.alt);
-                    }
-                  }}
-                >
-                  <span>{cat.name}</span>
-                </button>
-              </li>
-            ))}
-          </ul>
+        {/* Tabs */}
+        <ul className="nav nav-pills" role="tablist">
+          {categories.map((cat) => (
+            <li className="nav-item" role="presentation" key={cat.alt}>
+              <button
+                className={`nav-link ${active === cat.alt ? "active" : ""}`}
+                type="button"
+                role="tab"
+                aria-selected={active === cat.alt}
+                onClick={() => {
+                  setActive(cat.alt);
+                  if (!data[cat.alt]) {
+                    setLoading((s) => ({ ...s, [cat.alt]: true })); // start skeleton
+                    loadCat(cat.alt);
+                  }
+                }}
+              >
+                <span>{cat.name}</span>
+              </button>
+            </li>
+          ))}
+        </ul>
 
-          {/* Tab content */}
-          <div className="tab-content" id="pills-tabContent">
-            <div className="tab-pane fade show active">
-              {/* HERO */}
-              <div className="content-info text-center pb-0">
-                <div className="product_data">
-                  {loading[active] ? (
-                    <HeroSkeleton />
-                  ) : items.length ? (
-                    <div className="row">
-                      {/* image right on lg like your layout */}
-                      <div className="col-md-6 left_design order-lg-2">
-                        <div className="img_b">
-                          {hero?.image && (
-                            <Image
-                              src={hero.image}
-                              alt={hero.title ?? "caravan"}
-                              width={900}
-                              height={300}
-                              className="attachment-full size-full wp-post-image"
-                              unoptimized
-                              style={{ objectFit: "contain" }}
-                            />
-                          )}
-                        </div>
+        {/* Tab content */}
+        <div className="tab-content" id="pills-tabContent">
+          <div className="tab-pane fade show active">
+            {/* HERO */}
+            <div className="content-info text-center pb-0">
+              <div className="product_data">
+                {loading[active] ? (
+                  <HeroSkeleton />
+                ) : items.length ? (
+                  <div className="row">
+                    {/* image right on lg like your layout */}
+                    <div className="col-md-6 left_design order-lg-2">
+                      <div className="img_b">
+                        {hero?.image && (
+                          <Image
+                            src={hero.image}
+                            alt={hero.title ?? "caravan"}
+                            width={900}
+                            height={300}
+                            className="attachment-full size-full wp-post-image"
+                            unoptimized
+                            style={{ objectFit: "contain" }}
+                          />
+                        )}
                       </div>
+                    </div>
 
-                      <div className="col-md-6 right_design order-lg-1">
-                        <div className="deal_info">
-                          <div className="dd-title">
-                            <div className="metc1">
-                              <h3 className="title">{hero?.title ?? "—"}</h3>
-                            </div>
-                            <div className="caravan_type">
-                              <span>
-                                {categories.find((c) => c.alt === active)?.name}
-                              </span>
-                              {hero?.location && (
-                                <span>Location - {hero.location}</span>
-                              )}
-                            </div>
-                            <div className="metc2">
-                              <h5 className="slog">
-                                {hero?.sale_price ? (
-                                  <>
-                                    {money(hero.sale_price)}{" "}
-                                    <s>{money(hero.regular_price)}</s>
-                                  </>
-                                ) : hero?.regular_price ? (
-                                  money(hero.regular_price)
-                                ) : (
-                                  "POA"
-                                )}
-                              </h5>
-                              {(() => {
-                                const cleaned = (hero?.price_difference || "")
-                                  .toString()
-                                  .replace(/[^0-9.]/g, "");
-                                const numericValue = parseFloat(cleaned);
-                                return numericValue > 0 ? (
-                                  <p className="card-price">
-                                    <span>SAVE</span>
-                                    {money(numericValue)}
-                                  </p>
-                                ) : null;
-                              })()}
-                            </div>
+                    <div className="col-md-6 right_design order-lg-1">
+                      <div className="deal_info">
+                        <div className="dd-title">
+                          <div className="metc1">
+                            <h3 className="title">{hero?.title ?? "—"}</h3>
                           </div>
+                          <div className="caravan_type">
+                            <span>
+                              {categories.find((c) => c.alt === active)?.name}
+                            </span>
+                            {hero?.location && (
+                              <span>Location - {hero.location}</span>
+                            )}
+                          </div>
+                          <div className="metc2">
+                            <h5 className="slog">
+                              {hero?.sale_price ? (
+                                <>
+                                  {money(hero.sale_price)}{" "}
+                                  <s>{money(hero.regular_price)}</s>
+                                </>
+                              ) : hero?.regular_price ? (
+                                money(hero.regular_price)
+                              ) : (
+                                "POA"
+                              )}
+                            </h5>
+                            {(() => {
+                              const cleaned = (hero?.price_difference || "")
+                                .toString()
+                                .replace(/[^0-9.]/g, "");
+                              const numericValue = parseFloat(cleaned);
+                              return numericValue > 0 ? (
+                                <p className="card-price">
+                                  <span>SAVE</span>
+                                  {money(numericValue)}
+                                </p>
+                              ) : null;
+                            })()}
+                          </div>
+                        </div>
 
-                          <div className="d_feature">
-                            <ul>
-                              {hero?.attributes?.condition && (
-                                <li>{hero.attributes.condition}</li>
-                              )}
-                              {hero?.attributes?.length && (
-                                <li>{hero.attributes.length}</li>
-                              )}
-                              {hero?.attributes?.sleeps && (
-                                <li>{hero.attributes.sleeps} People</li>
-                              )}
-                            </ul>
-                          </div>
+                        <div className="d_feature">
+                          <ul>
+                            {hero?.condition && <li>{hero.condition}</li>}
+                            {hero?.sleeps && <li>{hero.sleeps} </li>}
+                            {hero?.length && <li>{hero.length}</li>}
+                          </ul>
+                        </div>
 
-                          <div className="sub_bttn">
-                            <Link
-                              className="btn"
-                              href={productHref(hero)}
-                              prefetch={false}
-                            >
-                              VIEW THIS DEAL
-                            </Link>
-                          </div>
+                        <div className="sub_bttn">
+                          <Link
+                            className="btn"
+                            href={productHref(hero)}
+                            prefetch={false}
+                          >
+                            VIEW THIS DEAL
+                          </Link>
                         </div>
                       </div>
                     </div>
-                  ) : (
-                    <div className="py-4 text-muted">
-                      No featured items found.
-                    </div>
-                  )}
+                  </div>
+                ) : (
+                  <div className="py-4 text-muted">
+                    No featured items found.
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* LIST / CAROUSEL */}
+            {loading[active] ? (
+              <div className="other_items">
+                <div className="related-products">
+                  <h3>
+                    Featured {categories.find((c) => c.alt === active)?.name}{" "}
+                    Caravans For Sale
+                  </h3>
+                  <CardSkeleton count={3} />
                 </div>
               </div>
-
-              {/* LIST / CAROUSEL */}
-              {loading[active] ? (
+            ) : (
+              !!rest.length && (
                 <div className="other_items">
                   <div className="related-products">
                     <h3>
                       Featured {categories.find((c) => c.alt === active)?.name}{" "}
                       Caravans For Sale
                     </h3>
-                    <CardSkeleton count={3} />
+                    <div className="featured-deals position-relative">
+                      <Swiper
+                        modules={[Navigation, Autoplay]}
+                        navigation={{
+                          nextEl: `.swiper-button-next-${active}`,
+                          prevEl: `.swiper-button-prev-${active}`,
+                        }}
+                        autoplay={{
+                          delay: 3000,
+                          disableOnInteraction: false,
+                        }}
+                        spaceBetween={20}
+                        slidesPerView={1}
+                        breakpoints={{
+                          640: { slidesPerView: 1, spaceBetween: 20 },
+                          768: { slidesPerView: 2, spaceBetween: 20 },
+                          1024: { slidesPerView: 3, spaceBetween: 20 },
+                        }}
+                        className="swiper-container"
+                      >
+                        {rest.map((it, i) => (
+                          <SwiperSlide key={it.id ?? i}>
+                            <Link href={productHref(it)} prefetch={false}>
+                              <div className="product-card">
+                                <div className="img">
+                                  {it.image && (
+                                    <Image
+                                      src={it.image}
+                                      alt={it.title ?? "caravan"}
+                                      width={300}
+                                      height={200}
+                                      unoptimized
+                                    />
+                                  )}
+                                </div>
+
+                                <div className="product_de">
+                                  <div className="info">
+                                    <h6 className="category">
+                                      <i className="fa fa-map-marker-alt" />
+                                      <span>{it.location ?? ""}</span>
+                                    </h6>
+                                    <h3 className="title">{it.title ?? "—"}</h3>
+                                  </div>
+
+                                  <div className="price">
+                                    <div className="metc2">
+                                      <h5 className="slog">
+                                        {parseFloat(
+                                          String(
+                                            it.regular_price ?? ""
+                                          ).replace(/[^0-9.]/g, "")
+                                        ) === 0
+                                          ? "POA"
+                                          : money(
+                                              it.sale_price ?? it.regular_price
+                                            )}
+                                        {it.sale_price && it.regular_price && (
+                                          <>
+                                            {" "}
+                                            <s>{money(it.regular_price)}</s>
+                                          </>
+                                        )}
+                                      </h5>
+                                      {(() => {
+                                        const cleaned = (
+                                          it?.price_difference || ""
+                                        )
+                                          .toString()
+                                          .replace(/[^0-9.]/g, "");
+                                        const numericValue =
+                                          parseFloat(cleaned);
+                                        return numericValue > 0 ? (
+                                          <p className="card-price">
+                                            <span>SAVE</span>
+                                            {money(numericValue)}
+                                          </p>
+                                        ) : null;
+                                      })()}
+                                    </div>
+                                  </div>
+                                  <ul className="vehicleDetailsWithIcons simple">
+                                    {it.condition && (
+                                      <li>
+                                        <span className="attribute3">
+                                          {it.condition}
+                                        </span>
+                                      </li>
+                                    )}
+                                    {it?.sleeps && (
+                                      <li>
+                                        <span className="attribute3">
+                                          {it.sleeps}
+                                        </span>
+                                      </li>
+                                    )}
+                                    {it?.length && (
+                                      <li>
+                                        <span className="attribute3">
+                                          {it.length}
+                                        </span>
+                                      </li>
+                                    )}
+                                  </ul>
+                                  <span className="btn">VIEW THIS DEAL</span>
+                                </div>
+                              </div>
+                            </Link>
+                          </SwiperSlide>
+                        ))}
+                      </Swiper>
+
+                      <div
+                        className={`swiper-button-next swiper-button-next-${active}`}
+                      />
+                      <div
+                        className={`swiper-button-prev swiper-button-prev-${active}`}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="d-flex justify-content-end">
+                    <Link
+                      className="floating_links"
+                      href={
+                        categories.find((c) => c.alt === active)?.listLink ??
+                        "#"
+                      }
+                    >
+                      See All <i className="bi bi-chevron-right" />
+                    </Link>
                   </div>
                 </div>
-              ) : (
-                !!rest.length && (
-                  <div className="other_items">
-                    <div className="related-products">
-                      <h3>
-                        Featured{" "}
-                        {categories.find((c) => c.alt === active)?.name}{" "}
-                        Caravans For Sale
-                      </h3>
-                      <div className="featured-deals position-relative">
-                        <Swiper
-                          modules={[Navigation, Autoplay]}
-                          navigation={{
-                            nextEl: `.swiper-button-next-${active}`,
-                            prevEl: `.swiper-button-prev-${active}`,
-                          }}
-                          autoplay={{
-                            delay: 3000,
-                            disableOnInteraction: false,
-                          }}
-                          spaceBetween={20}
-                          slidesPerView={1}
-                          breakpoints={{
-                            640: { slidesPerView: 1, spaceBetween: 20 },
-                            768: { slidesPerView: 2, spaceBetween: 20 },
-                            1024: { slidesPerView: 3, spaceBetween: 20 },
-                          }}
-                          className="swiper-container"
-                        >
-                          {rest.map((it, i) => (
-                            <SwiperSlide key={it.id ?? i}>
-                              <Link href={productHref(it)} prefetch={false}>
-                                <div className="product-card">
-                                  <div className="img">
-                                    {it.image && (
-                                      <Image
-                                        src={it.image}
-                                        alt={it.title ?? "caravan"}
-                                        width={300}
-                                        height={200}
-                                        unoptimized
-                                      />
-                                    )}
-                                  </div>
-
-                                  <div className="product_de">
-                                    <div className="info">
-                                      <h6 className="category">
-                                        <i className="fa fa-map-marker-alt" />
-                                        <span>{it.location ?? ""}</span>
-                                      </h6>
-                                      <h3 className="title">
-                                        {it.title ?? "—"}
-                                      </h3>
-                                    </div>
-
-                                    <div className="price">
-                                      <div className="metc2">
-                                        <h5 className="slog">
-                                          {parseFloat(
-                                            String(
-                                              it.regular_price ?? ""
-                                            ).replace(/[^0-9.]/g, "")
-                                          ) === 0
-                                            ? "POA"
-                                            : money(
-                                                it.sale_price ??
-                                                  it.regular_price
-                                              )}
-                                          {it.sale_price &&
-                                            it.regular_price && (
-                                              <>
-                                                {" "}
-                                                <s>{money(it.regular_price)}</s>
-                                              </>
-                                            )}
-                                        </h5>
-                                        {(() => {
-                                          const cleaned = (
-                                            it?.price_difference || ""
-                                          )
-                                            .toString()
-                                            .replace(/[^0-9.]/g, "");
-                                          const numericValue =
-                                            parseFloat(cleaned);
-                                          return numericValue > 0 ? (
-                                            <p className="card-price">
-                                              <span>SAVE</span>
-                                              {money(numericValue)}
-                                            </p>
-                                          ) : null;
-                                        })()}
-                                      </div>
-                                    </div>
-
-                                    <ul className="vehicleDetailsWithIcons simple">
-                                      {it.attributes?.condition && (
-                                        <li>
-                                          <span className="attribute3">
-                                            {it.attributes.condition}
-                                          </span>
-                                        </li>
-                                      )}
-                                      {it.attributes?.sleeps && (
-                                        <li>
-                                          <span className="attribute3">
-                                            {it.attributes.sleeps} people
-                                          </span>
-                                        </li>
-                                      )}
-                                    </ul>
-                                    <span className="btn">VIEW THIS DEAL</span>
-                                  </div>
-                                </div>
-                              </Link>
-                            </SwiperSlide>
-                          ))}
-                        </Swiper>
-
-                        <div
-                          className={`swiper-button-next swiper-button-next-${active}`}
-                        />
-                        <div
-                          className={`swiper-button-prev swiper-button-prev-${active}`}
-                        />
-                      </div>
-                    </div>
-
-                    <div className="d-flex justify-content-end">
-                      <Link
-                        className="floating_links"
-                        href={
-                          categories.find((c) => c.alt === active)?.listLink ??
-                          "#"
-                        }
-                      >
-                        See All <i className="bi bi-chevron-right" />
-                      </Link>
-                    </div>
-                  </div>
-                )
-              )}
-            </div>
+              )
+            )}
           </div>
         </div>
       </div>
+    </div>
   );
 }

@@ -44,8 +44,8 @@ const PostRequirement = () => {
                 <div className="location">Location</div>
                 <div className="budget">Budget</div>
               </div>
-              {items.map((item) => (
-                <div className="post_flip" key={item.id}>
+              {items.map((item, index) => (
+                <div className="post_flip" key={index}>
                   <a href="#" className="home-post__item d-flex">
                     <div className="type">
                       <Link

@@ -10,6 +10,9 @@ export type FeaturedItem = {
   sale_price?: string | number;
   price_difference?: string;
   attributes?: Record<string, string>;
+  sleeps?: string;
+  length?: string;
+  condition?: string;
 };
 
 type FeaturedResponse = FeaturedItem[] | { data?: FeaturedItem[] };

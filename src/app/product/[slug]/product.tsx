@@ -313,7 +313,9 @@ export default function ClientLogger({
                         <span className="woocommerce-Price-amount amount">
                           <bdi>
                             <span className="woocommerce-Price-currencySymbol"></span>
-                            {product.regular_price}
+                            {Number(product.regular_price).toLocaleString(
+                              "en-IN"
+                            )}{" "}
                           </bdi>
                         </span>
                       </span>

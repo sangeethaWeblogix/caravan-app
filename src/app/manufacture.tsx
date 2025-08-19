@@ -7,6 +7,7 @@ import "swiper/css/navigation";
 import Image from "next/image";
 import Link from "next/link";
 import { fetchRangeFeaturedCategories } from "@/api/homeMake/api";
+
 type MakeItem = {
   term_id: number;
   name: string;
@@ -14,40 +15,60 @@ type MakeItem = {
   description?: string;
   logo_url?: string | null;
   custom_link?: string | null;
-  caravan_type?: string | null;
+  caravan_type?: string | string[] | null; // be flexible
   is_top?: boolean | null;
 };
+
+const slugify = (s: string) =>
+  s
+    .toLowerCase()
+    .trim()
+    .replace(/&/g, "and")
+    .replace(/\s+|_+/g, "-")
+    .replace(/[^a-z0-9-]/g, "")
+    .replace(/-+/g, "-");
+const isError = (e: unknown): e is Error =>
+  typeof e === "object" && e !== null && "message" in e;
 const Manufacture = () => {
   const [items, setItems] = useState<MakeItem[]>([]);
   const [err, setErr] = useState<string | null>(null);
 
   useEffect(() => {
     let mounted = true;
-
     (async () => {
       try {
-        const res = await fetchRangeFeaturedCategories(); // returns array
-        if (mounted) {
-          setItems(res as MakeItem[]);
-        }
+        const res = await fetchRangeFeaturedCategories();
+        if (mounted) setItems((res || []) as MakeItem[]);
       } catch (e: unknown) {
         if (mounted) {
-          if (e instanceof Error) {
-            setErr(e.message);
-            console.error("Manufacture fetch error:", e);
-          } else {
-            setErr("Failed to load manufacturers");
-            console.error("Manufacture fetch error:", e);
-          }
+          const msg = isError(e) ? e.message : "Failed to load manufacturers";
+          setErr(msg);
+          console.error("Manufacture fetch error:", e);
         }
       }
     })();
-
     return () => {
       mounted = false;
     };
   }, []);
-  console.log("make-categories", items, err);
+
+  const normalizeCaravanType = (v: MakeItem["caravan_type"]) => {
+    if (!v) return [];
+    if (Array.isArray(v)) return v.filter(Boolean);
+    // if backend sends comma-separated string
+    return v
+      .split(",")
+      .map((s) => s.trim())
+      .filter(Boolean);
+  };
+
+  const buildHref = (man: MakeItem) => {
+    // Priority: custom_link → slug → slugify(name)
+    if (man.custom_link) return man.custom_link;
+    const value = (man.name && man.name.trim()) || slugify(man.name);
+    return `/listings/${encodeURIComponent(value)}`;
+  };
+
   return (
     <div>
       <div className="container">
@@ -67,6 +88,8 @@ const Manufacture = () => {
         </div>
 
         <div className="range-home position-relative">
+          {err && <p className="text-danger">{err}</p>}
+
           <Swiper
             modules={[Navigation, Autoplay]}
             navigation={{
@@ -83,70 +106,51 @@ const Manufacture = () => {
             }}
             className="swiper-container"
           >
-            {[
-              {
-                name: "Lotus Caravans",
-                image:
-                  "https://www.caravansforsale.com.au/wp-content/uploads/2025/01/Lotus.png",
-                description:
-                  "Lotus Caravans has been the standard for quality, innovation and durability in the Australian caravan industry...",
-                types: ["Off Road", "Semi Off Road"],
-                link: "/listings/lotus/",
-              },
-              {
-                name: "JB Caravans",
-                image:
-                  "https://www.caravansforsale.com.au/wp-content/uploads/2025/01/JB-caravans.png",
-                description:
-                  "Founded on a passion to create caravans that make every journey better, JB Caravans build durable and stylish caravans...",
-                types: ["Off Road", "Semi Off Road", "On Road", "Hybrid"],
-                link: "/listings/jb/",
-              },
-              {
-                name: "Coronet RV",
-                image:
-                  "https://www.caravansforsale.com.au/wp-content/uploads/2025/01/Coronet-RV.png",
-                description:
-                  "Coronet RV has been around since 1959. We specialise in semi off-road and off-road caravans...",
-                types: ["Off Road", "Semi Off Road", "On Road", "Family"],
-                link: "/listings/coronet-rv/",
-              },
-              {
-                name: "Jayco",
-                image:
-                  "https://www.caravansforsale.com.au/wp-content/uploads/2025/01/Jayco.png",
-                description:
-                  "Jayco has been Australia’s number one caravan manufacturer since 1975. We’re all about quality, innovation and reliability...",
-                types: ["Off Road", "On Road", "Hybrid", "Family"],
-                link: "/listings/jayco/",
-              },
-            ].map((man) => (
-              <SwiperSlide key={man.name}>
-                <div className="post_item">
-                  <div className="post_image">
-                    <Image
-                      src={man.image}
-                      alt={man.name}
-                      width={300}
-                      height={200}
-                    />
+            {items?.map((man) => {
+              const types = normalizeCaravanType(man.caravan_type);
+              const href = buildHref(man);
+              const logo = man.logo_url || "/placeholder-logo.svg"; // ensure you have this asset or swap
+              const desc =
+                (man.description || "").length > 140
+                  ? `${man.description!.slice(0, 140)}…`
+                  : man.description || "";
+
+              return (
+                <SwiperSlide key={`${man.term_id}-${man.name}`}>
+                  <div className="post_item">
+                    <div className="post_image">
+                      {/* If external domains are used, ensure they're whitelisted in next.config.js */}
+                      <Image
+                        src={logo}
+                        alt={man.name}
+                        width={300}
+                        height={200}
+                        style={{ objectFit: "contain" }}
+                      />
+                    </div>
+
+                    <div className="post_info">
+                      <h3>{man.name}</h3>
+                      {desc && <p className="mb-3">{desc}</p>}
+
+                      {!!types.length && (
+                        <ul className="mb-3">
+                          <li>
+                            <i className="bi bi-info-circle" />
+                            <span className="ms-2">{types.join(", ")}</span>
+                          </li>
+                        </ul>
+                      )}
+
+                      {/* UI shows the name, but href goes to listings/<value> */}
+                      <Link href={href}>
+                        View Listings <i className="bi bi-chevron-right" />
+                      </Link>
+                    </div>
                   </div>
-                  <div className="post_info">
-                    <h3>{man.name}</h3>
-                    <p>{man.description}</p>
-                    <ul>
-                      <li>
-                        <i className="bi bi-info-circle" />
-                        <span>{man.types.join(", ")}</span>
-                      </li>
-                    </ul>
-                    <Link href={man.link}>
-                      View Listings <i className="bi bi-chevron-right" />
-                    </Link>
-                  </div>
-                </div>
-              </SwiperSlide>
-            ))}
+                </SwiperSlide>
+              );
+            })}
           </Swiper>
 
           <div className="swiper-button-next swiper-button-next-manufacturer" />

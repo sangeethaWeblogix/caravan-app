@@ -140,7 +140,12 @@ export default function CaravanDetailModal({
                     <div className="vehicleThumbDetails__part__price pop_up_price">
                       <span>
                         <span className="woocommerce-Price-amount amount">
-                          <bdi>${product.regularPrice}</bdi>
+                          <bdi>
+                            ${" "}
+                            {Number(product.regularPrice).toLocaleString(
+                              "en-IN"
+                            )}{" "}
+                          </bdi>
                         </span>
                       </span>
                     </div>
@@ -148,26 +153,28 @@ export default function CaravanDetailModal({
 
                   <div className="single-product-slider">
                     <Swiper
-  modules={[Navigation, Pagination]}
-  navigation
-  pagination={{ clickable: true }}
-  loop={images.length > 1}
->
-  {images.map((img, idx) => (
-    <SwiperSlide key={idx} className="flex justify-center items-center">
-      <Image
-        src={img}
-        alt={`Slide ${idx + 1}`}
-        width={0}
-        height={0}
-        sizes="100vw"
-        className="w-full h-auto"
-        unoptimized
-      />
-    </SwiperSlide>
-  ))}
-</Swiper>
-
+                      modules={[Navigation, Pagination]}
+                      navigation
+                      pagination={{ clickable: true }}
+                      loop={images.length > 1}
+                    >
+                      {images.map((img, idx) => (
+                        <SwiperSlide
+                          key={idx}
+                          className="flex justify-center items-center"
+                        >
+                          <Image
+                            src={img}
+                            alt={`Slide ${idx + 1}`}
+                            width={0}
+                            height={0}
+                            sizes="100vw"
+                            className="w-full h-auto"
+                            unoptimized
+                          />
+                        </SwiperSlide>
+                      ))}
+                    </Swiper>
                   </div>
                 </div>
 

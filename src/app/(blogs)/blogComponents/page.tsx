@@ -1,9 +1,7 @@
 import Details from "./details";
-import FaqSection from "./FaqSection";
 import "./details.css";
 
 type RouteParams = { slug: string };
-type PageProps = { params: Promise<RouteParams> }; // ✅ params is a Promise
 async function fetchBlogDetail(slug: string) {
   const res = await fetch(
     `https://www.caravansforsale.com.au/wp-json/cfs/v1/blog-detail/${encodeURIComponent(
@@ -11,18 +9,19 @@ async function fetchBlogDetail(slug: string) {
     )}`,
     { cache: "no-store", headers: { Accept: "application/json" } }
   );
-  if (!res.ok) throw new Error("Failed to load product detail");
-  return res.json(); // <- type this if you have a response interface
+  if (!res.ok) throw new Error("Failed to load blog detail");
+  return res.json();
 }
 
-export default async function ProductBlogPage({ params }: PageProps) {
-  const { slug } = await params; // ✅ must await
+export default async function ProductBlogPage(
+  { params }: { params: Promise<RouteParams> } // ⬅️ match Next's PageProps (Promise)
+) {
+  const { slug } = await params; // ⬅️ await it
   const data = await fetchBlogDetail(slug);
-  console.log("pdata", data);
+
   return (
     <div>
       <Details data={data} />
-      <FaqSection />{" "}
     </div>
   );
 }

@@ -105,14 +105,20 @@ export default function ListingContent({
                 {Math.min(
                   pagination.current_page * pagination.per_page,
                   pagination.total_products
-                )}
+                )}{" "}
                 of {pagination.total_products} results
               </p>
             </div>
             <div className="col-4 d-lg-none d-md-none">
-              <button type="button" className="mobile_fltn navbar-toggler mytogglebutton" data-bs-toggle="offcanvas" data-bs-target="#mobileFilters" aria-controls="mobileFilters">
-              <i className="bi bi-search" /> &nbsp;Filter
-            </button>
+              <button
+                type="button"
+                className="mobile_fltn navbar-toggler mytogglebutton"
+                data-bs-toggle="offcanvas"
+                data-bs-target="#mobileFilters"
+                aria-controls="mobileFilters"
+              >
+                <i className="bi bi-search" /> &nbsp;Filter
+              </button>
             </div>
             <div className="col-lg-6 col-8">
               <div className="r-side">
