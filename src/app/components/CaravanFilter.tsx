@@ -121,7 +121,7 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
   const [locationInput, setLocationInput] = useState("");
   const [selectedMake, setSelectedMake] = useState<string | null>(null);
   const [selectedModel, setSelectedModel] = useState<string | null>(null);
-  const [selectedPostcode, setSelectedPostcode] = useState<string | null>(null);
+  const [selectedpincode, setSelectedpincode] = useState<string | null>(null);
 
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [selectedCategoryName, setSelectedCategoryName] = useState<
@@ -206,10 +206,10 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
   const buildShortAddress = (
     suburb?: string | null,
     state?: string | null,
-    postcode?: string | null
+    pincode?: string | null
   ) => {
     const abbr = state ? AUS_ABBR[state] || state : "";
-    return [suburb, abbr, postcode].filter(Boolean).join(" ");
+    return [suburb, abbr, pincode].filter(Boolean).join(" ");
   };
 
   useEffect(() => {
@@ -319,17 +319,17 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
     return reg?.name; // return canonical name if valid, else undefined
   };
   // useEffect(() => {
-  //   if (!selectedSuburbName || !selectedPostcode) return;
+  //   if (!selectedSuburbName || !selectedpincode) return;
   //   const shortAddr = buildShortAddress(
   //     selectedSuburbName,
   //     selectedStateName,
-  //     selectedPostcode
+  //     selectedpincode
   //   );
   //   if (locationInput !== shortAddr) {
   //     isUserTypingRef.current = false;
   //     setLocationInput(shortAddr);
   //   }
-  // }, [selectedSuburbName, selectedPostcode, selectedStateName]);
+  // }, [selectedSuburbName, selectedpincode, selectedStateName]);
 
   useEffect(() => {
     if (!filtersInitialized.current) {
@@ -419,7 +419,7 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
           state: selectedStateName || currentFilters.state,
           region: selectedRegionName || currentFilters.region,
           suburb: selectedSuburbName || currentFilters.suburb,
-          pincode: selectedPostcode || currentFilters.pincode,
+          pincode: selectedpincode || currentFilters.pincode,
         };
 
         setFilters(updatedFilters);
@@ -524,7 +524,7 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
     setSelectedRegion("");
     setSelectedRegionName(null);
     setSelectedSuburbName(null);
-    setSelectedPostcode(null);
+    setSelectedpincode(null);
     // setFilteredRegions([]);
     setFilteredSuburbs([]);
     setLocationInput("");
@@ -584,7 +584,7 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
     setSelectedRegion("");
     setSelectedRegionName(null);
     setSelectedSuburbName(null);
-    setSelectedPostcode(null);
+    setSelectedpincode(null);
     setFilteredSuburbs([]);
 
     const updatedFilters: Filters = {
@@ -633,7 +633,7 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
     // ✅ keep state & region
     // suppressLocationAutoClearRef.current = true; // 👈 tell the auto-clear effect to skip once
     setSelectedSuburbName(null);
-    setSelectedPostcode(null);
+    setSelectedpincode(null);
     setLocationInput("");
 
     // ✅ rehydrate suburb list for the currently selected region
@@ -676,12 +676,12 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
     // user must pick a suggestion
     if (!suburbClickedRef.current || !selectedSuggestion) return;
 
-    // uri looks like: "<suburb>-suburb/<region>-region/<state>-state/<postcode>"
+    // uri looks like: "<suburb>-suburb/<region>-region/<state>-state/<pincode>"
     const parts = selectedSuggestion.uri.split("/");
     const suburbSlug = parts[0] || "";
     const regionSlug = parts[1] || "";
     const stateSlug = parts[2] || "";
-    let postcode = parts[3] || "";
+    let pincode = parts[3] || "";
 
     const suburb = suburbSlug
       .replace(/-suburb$/, "")
@@ -697,9 +697,9 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
       .trim();
 
     // fallback: pull 4-digit pincode from address if needed
-    if (!/^\d{4}$/.test(postcode)) {
+    if (!/^\d{4}$/.test(pincode)) {
       const m = selectedSuggestion.address.match(/\b\d{4}\b/);
-      if (m) postcode = m[0];
+      if (m) pincode = m[0];
     }
 
     // ✅ validate region from suggestion against our states list
@@ -711,7 +711,7 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
     setSelectedStateName(state);
     setSelectedRegionName(validRegion || null); // ⬅️ only keep if valid
     setSelectedSuburbName(suburb);
-    setSelectedPostcode(postcode || null);
+    setSelectedpincode(pincode || null);
 
     const radiusForFilters =
       typeof radiusKms === "number" ? radiusKms : RADIUS_OPTIONS[0];
@@ -722,7 +722,7 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
       model: selectedModel || filters.model || currentFilters.model,
       category: selectedCategory || filters.category || currentFilters.category,
       suburb: suburb.toLowerCase(),
-      pincode: postcode || undefined,
+      pincode: pincode || undefined,
       state,
       region: validRegion, // undefined if invalid → API gets state+suburb only
       radius_kms: radiusForFilters,
@@ -736,7 +736,7 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
 
     const shortAddr =
       selectedSuggestion?.short_address ||
-      buildShortAddress(suburb, state, postcode);
+      buildShortAddress(suburb, state, pincode);
     isUserTypingRef.current = false;
     setLocationInput(shortAddr);
 
@@ -793,7 +793,7 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
     setSelectedStateName(null);
     setSelectedRegionName(null);
     setSelectedSuburbName(null);
-    setSelectedPostcode(null);
+    setSelectedpincode(null);
     setMinPrice(null);
     setMaxPrice(null);
     setAtmFrom(null);
@@ -890,7 +890,7 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
     if (currentFilters.state) setSelectedStateName(currentFilters.state);
     if (currentFilters.region) setSelectedRegionName(currentFilters.region); // only set if present
     if (currentFilters.suburb) setSelectedSuburbName(currentFilters.suburb);
-    if (currentFilters.pincode) setSelectedPostcode(currentFilters.pincode);
+    if (currentFilters.pincode) setSelectedpincode(currentFilters.pincode);
   }, [
     currentFilters.state,
     currentFilters.region,
@@ -914,7 +914,7 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
     if (
       !suburbFilterReadyRef.current ||
       !selectedSuburbName ||
-      !selectedPostcode ||
+      !selectedpincode ||
       !selectedStateName ||
       !selectedRegionName ||
       !locationInput
@@ -929,7 +929,7 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
       model: selectedModel || currentFilters.model,
       category: selectedCategory || currentFilters.category,
       suburb: selectedSuburbName.toLowerCase(),
-      pincode: selectedPostcode || currentFilters.pincode,
+      pincode: selectedpincode || currentFilters.pincode,
       state: selectedStateName,
       region: selectedRegionName || currentFilters.region,
     };
@@ -940,7 +940,7 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
     suburbClickedRef.current = false;
   }, [
     selectedSuburbName,
-    selectedPostcode,
+    selectedpincode,
     selectedStateName,
     selectedRegionName,
     locationInput,
@@ -1245,7 +1245,7 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
       state: selectedStateName || currentFilters.state,
       region: selectedRegionName || currentFilters.region,
       suburb: selectedSuburbName || currentFilters.suburb,
-      pincode: selectedPostcode || currentFilters.pincode,
+      pincode: selectedpincode || currentFilters.pincode,
     };
 
     setFilters(updatedFilters);
@@ -1298,7 +1298,7 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
       state: selectedStateName || matchedState?.name,
       region: matchedRegion.name, // keep region in local filters (UI needs it)
       suburb: selectedSuburbName,
-      pincode: selectedPostcode ?? "",
+      pincode: selectedpincode ?? "",
     }));
 
     // ✅ Close all panels so nothing re-opens on remount
@@ -1308,7 +1308,7 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
 
     // mark done
     regionSetAfterSuburbRef.current = true;
-  }, [selectedSuburbName, selectedStateName, states, selectedPostcode]);
+  }, [selectedSuburbName, selectedStateName, states, selectedpincode]);
 
   console.log("yy states", states);
   console.log("yy selectedState", selectedStateName);
@@ -1358,7 +1358,7 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
     suburb: string,
     region: string | null,
     state: string | null,
-    postcode: string | null,
+    pincode: string | null,
     suggestions: LocationSuggestion[]
   ): LocationSuggestion | null => {
     const ss = slug(suburb);
@@ -1371,7 +1371,7 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
       const matchSub = sub?.startsWith(`${ss}-suburb`);
       const matchReg = reg?.startsWith(`${rr}-region`);
       const matchSta = sta?.startsWith(`${st}-state`);
-      const matchPc = postcode ? (pc || "").includes(postcode) : true;
+      const matchPc = pincode ? (pc || "").includes(pincode) : true;
       return matchSub && matchReg && matchSta && matchPc;
     });
     if (byUri) return byUri;
@@ -1383,7 +1383,7 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
         A.includes(suburb.toLowerCase()) &&
         (!region || A.includes(region.toLowerCase())) &&
         (!state || A.includes(state.toLowerCase())) &&
-        (!postcode || A.includes(postcode))
+        (!pincode || A.includes(pincode))
       );
     });
     return byText || null;
@@ -1395,14 +1395,9 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
         selectedSuburbName ?? "",
         selectedRegionName ?? "",
         selectedStateName ?? "",
-        selectedPostcode ?? "",
+        selectedpincode ?? "",
       ].join("|"),
-    [
-      selectedSuburbName,
-      selectedRegionName,
-      selectedStateName,
-      selectedPostcode,
-    ]
+    [selectedSuburbName, selectedRegionName, selectedStateName, selectedpincode]
   );
 
   const hydratedKeyRef = useRef("");
@@ -1423,7 +1418,7 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
           selectedSuburbName,
           selectedRegionName,
           selectedStateName,
-          selectedPostcode || null,
+          selectedpincode || null,
           data || []
         );
         if (!match || cancelled) return;
@@ -1707,7 +1702,7 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
                   className="filter-accordion-item"
                   style={suburbStyle(suburb.name === selectedSuburbName)}
                   onClick={async () => {
-                    const postcode = suburb.value?.match(/\d{4}$/)?.[0] || null;
+                    const pincode = suburb.value?.match(/\d{4}$/)?.[0] || null;
 
                     // fetch suggestion (optional – keeps your existing logic)
                     let match: LocationSuggestion | null = null;
@@ -1717,7 +1712,7 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
                         suburb.name,
                         selectedRegionName,
                         selectedStateName,
-                        postcode,
+                        pincode,
                         res || []
                       );
                     } catch {}
@@ -1728,20 +1723,20 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
                       const uReg = slug(selectedRegionName || "");
                       const uSta = slug(selectedStateName || "");
                       match = {
-                        key: `${uSub}-${uReg}-${uSta}-${postcode || ""}`,
+                        key: `${uSub}-${uReg}-${uSta}-${pincode || ""}`,
                         uri: `${uSub}-suburb/${uReg}-region/${uSta}-state/${
-                          postcode || ""
+                          pincode || ""
                         }`,
                         address: [
                           suburb.name,
                           selectedRegionName || "",
                           selectedStateName || "",
-                          postcode || "",
+                          pincode || "",
                         ]
                           .filter(Boolean)
                           .join(", "),
                         short_address: `${suburb.name}${
-                          postcode ? ` ${postcode}` : ""
+                          pincode ? ` ${pincode}` : ""
                         }`,
                       };
                     }
@@ -1759,7 +1754,7 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
                     setSelectedSuggestion(match);
                     setLocationInput(match.short_address);
                     setSelectedSuburbName(suburb.name);
-                    setSelectedPostcode(postcode || null);
+                    setSelectedpincode(pincode || null);
                     setSelectedRegionName(validRegion || null); // drop invalid region in UI
 
                     // close panels
@@ -1773,7 +1768,7 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
                       state: safeState || undefined,
                       region: validRegion, // undefined if invalid
                       suburb: suburb.name.toLowerCase(),
-                      pincode: postcode || undefined,
+                      pincode: pincode || undefined,
                       radius_kms:
                         typeof radiusKms === "number" && radiusKms !== 50
                           ? radiusKms
@@ -1799,9 +1794,9 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
         )}
       </div>
 
-      {/* Suburb / Postcode */}
+      {/* Suburb / pincode */}
       <div className="cs-full_width_section">
-        <h5 className="cfs-filter-label">Suburb / Postcode</h5>
+        <h5 className="cfs-filter-label">Suburb / pincode</h5>
         <input
           type="text"
           id="afilter_locations_text"
@@ -1813,7 +1808,7 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
         />
 
         {/* ✅ Show selected suburb below input, like a pill with X */}
-        {selectedSuburbName && selectedStateName && selectedPostcode && (
+        {selectedSuburbName && selectedStateName && selectedpincode && (
           <div className="filter-chip">
             {locationInput}
             <span className="filter-chip-close" onClick={resetSuburbFilters}>
@@ -2502,7 +2497,7 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
                 <h5 className="cfs-filter-label">Select Location</h5>
                 <input
                   type="text"
-                  placeholder="Suburb, Postcode..."
+                  placeholder="Suburb, pincode..."
                   className="filter-dropdown cfs-select-input"
                   autoComplete="off"
                   value={formatLocationInput(modalInput)} // 👈 use modalInput

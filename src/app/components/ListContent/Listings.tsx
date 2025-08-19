@@ -193,7 +193,7 @@ export default function ListingsPage({ page, ...incomingFilters }: Props) {
           state: appliedFilters.state,
           region: appliedFilters.region,
           suburb: appliedFilters.suburb,
-          postcode: appliedFilters.pincode,
+          pincode: appliedFilters.pincode,
           orderby: appliedFilters.orderby,
           radius_kms: radiusParam,
         });
