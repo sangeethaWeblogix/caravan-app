@@ -7,14 +7,9 @@ import Navbar from "./navbar/Navbar";
 import Footer from "./footer/Footer";
 import React from "react";
 import { Metadata } from "next";
-import { Montserrat } from "next/font/google";
 
-const montserrat = Montserrat({
-  subsets: ["latin"],
-  weight: ["100", "200", "300", "400", "500", "600", "700", "800", "900"],
-});
 export const metadata: Metadata = {
-  title: { default: "Caravan Listings", template: "%s " },
+  title: { default: "Caravan Listings", template: "%s | Caravan Listings" },
   description: "Browse all available caravans.",
   icons: { icon: "/favicon.ico" },
 };
@@ -26,10 +21,26 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
+      <head>
+        {/* Google Fonts via link (runtime load) */}
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link
+          rel="preconnect"
+          href="https://fonts.gstatic.com"
+          crossOrigin=""
+        />
+        <link
+          href="https://fonts.googleapis.com/css2?family=Montserrat:wght@100;200;300;400;500;600;700;800;900&display=swap"
+          rel="stylesheet"
+        />
+      </head>
       <body
-        className={`${montserrat.className} flex flex-col min-h-screen new_font`}
+        className="flex flex-col min-h-screen new_font"
+        style={{
+          fontFamily:
+            "Montserrat, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, 'Apple Color Emoji', 'Segoe UI Emoji'",
+        }}
       >
-        {" "}
         <Navbar />
         <main className="product-page style-5">{children}</main>
         <Footer />

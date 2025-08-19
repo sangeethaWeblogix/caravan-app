@@ -37,7 +37,6 @@ type ApiOk = {
   success: true;
   title?: string;
   seo?: SEOBlock;
-  [k: string]: any;
 };
 type ApiErr = {
   success: false;
@@ -91,7 +90,7 @@ function parsePricePair(minPrice?: string, maxPrice?: string) {
     if (xp.startsWith("under-")) to_price = num(xp);
     else if (/^\d+$/g.test(xp)) to_price = xp;
     else if (xp.includes("to") && /^\d/.test(xp)) {
-      const [_, b] = xp.split("to").map((v) => num(v));
+      const [, b] = xp.split("to").map((v) => num(v));
       if (b) to_price = b;
     }
   }
@@ -140,7 +139,7 @@ function parseAtmPair(minKg?: string, maxKg?: string) {
     } else if (/^\d+$/g.test(mx)) {
       to_atm = `${mx}kg`;
     } else if (mx.includes("to") && /\d/.test(mx)) {
-      const [_, b] = mx.split("to").map((v) => num(v));
+      const [, b] = mx.split("to").map((v) => num(v));
       if (b) to_atm = `${b}kg`;
     }
   }
@@ -264,7 +263,6 @@ export async function generateMetadata({
     });
 
     const statusInfo = `${groupResponse.status} ${groupResponse.statusText}`;
-    const contentType = groupResponse.headers.get("content-type") || "";
     const raw = await groupResponse.text();
 
     console.log("SEO fetch URL:", url);

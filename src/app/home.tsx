@@ -12,6 +12,7 @@ import Link from "next/link";
 import Image from "next/image";
 import FeaturedSection from "./featured";
 import BlogSection from "./blogSection";
+import PostRequirement from "./postRequirement";
 
 const suggestions: string[] = [
   "caravans for sale",
@@ -235,7 +236,9 @@ export default function ProductPage() {
       <section className="deal-of-month product-details section-padding">
         <FeaturedSection />
       </section>
-
+      <section className="post-requirements product-details section-padding">
+        <PostRequirement />
+      </section>
       {/* Caravans by State Section */}
       <section className="caravans_by_state related-products services section-padding style-1">
         <div className="container">
@@ -310,11 +313,7 @@ export default function ProductPage() {
                   <SwiperSlide key={index}>
                     <div className="service-box">
                       <div className="sec_left">
-                        <h5>
-                          
-                            {state.state}
-                          
-                        </h5>
+                        <h5>{state.state}</h5>
                         <div className="info">
                           <div className="quick_linkss">
                             {state.cities.map((city, i) => (

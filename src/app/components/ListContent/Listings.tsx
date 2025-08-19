@@ -419,15 +419,6 @@ export default function ListingsPage({ page, ...incomingFilters }: Props) {
     import("bootstrap/js/dist/offcanvas").catch(() => {});
   }, []);
 
-  const hideMobileFilters = useCallback(async () => {
-    const { default: Offcanvas } = await import("bootstrap/js/dist/offcanvas");
-    if (!mobileFiltersRef.current) return;
-    const inst =
-      Offcanvas.getInstance(mobileFiltersRef.current) ??
-      new Offcanvas(mobileFiltersRef.current);
-    inst.hide();
-  }, []);
-
   console.log("metaaa", metaTitle);
   return (
     <>
@@ -463,7 +454,6 @@ export default function ListingsPage({ page, ...incomingFilters }: Props) {
 
             <h1 className="page-title">{pageTitle}</h1>
 
-            
             {/* Desktop grid: 3/9 split. On mobile, listings go full width */}
             <div className="row ">
               {/* Desktop sidebar filters */}
@@ -485,22 +475,21 @@ export default function ListingsPage({ page, ...incomingFilters }: Props) {
               </div>
 
               {/* Listings area */}
-              
-                {isLoading ? (
-                  <SkeletonListing />
-                ) : (
-                  <Listing
-                    products={products}
-                    pagination={pagination}
-                    onNext={handleNextPage}
-                    onPrev={handlePrevPage}
-                    metaDescription={metaDescription}
-                    metaTitle={metaTitle}
-                    onFilterChange={handleFilterChange}
-                    currentFilters={filters}
-                  />
-                )}
-              
+
+              {isLoading ? (
+                <SkeletonListing />
+              ) : (
+                <Listing
+                  products={products}
+                  pagination={pagination}
+                  onNext={handleNextPage}
+                  onPrev={handlePrevPage}
+                  metaDescription={metaDescription}
+                  metaTitle={metaTitle}
+                  onFilterChange={handleFilterChange}
+                  currentFilters={filters}
+                />
+              )}
             </div>
           </div>
         </div>

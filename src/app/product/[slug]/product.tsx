@@ -435,23 +435,25 @@ export default function ClientLogger({
                                   <li key={f.label}>
                                     <strong>{f.label}:</strong>{" "}
                                     <span>
-
-                                    {links
-                                      ? links.map((lnk, idx) => (
-                                          <span key={lnk.href}>
-                                            <Link
-                                              href={lnk.href}
-                                              prefetch={false}
-                                            >
-                                              {lnk.text}
-                                            </Link>
-                                            {idx < links.length - 1 ? ", " : ""}
-                                          </span>
-                                        ))
-                                      : String(f.value)}
-                                      </span>
-
-                                      
+                                      {links
+                                        ? links.map((lnk, idx) => (
+                                            <span key={lnk.href}>
+                                              <Link
+                                                href={lnk.href}
+                                                prefetch={false}
+                                              >
+                                                {lnk.text}
+                                              </Link>
+                                              {idx < links.length - 1
+                                                ? ", "
+                                                : ""}
+                                            </span>
+                                          ))
+                                        : String(f.value)}
+                                    </span>
+                                  </li>
+                                );
+                              })}
                           </ul>
                         </div>
                       </div>
@@ -545,15 +547,15 @@ export default function ClientLogger({
               >
                 <div className="contactSeller__container">
                   <div
-  className="price_section"
-  style={{
-    boxShadow: "0px 4px 15px #0000000d",
-    display: "block",
-    border: "1px solid #ddd",
-    padding: "10px 0px",
-    borderRadius: "6px",
-  }}
->
+                    className="price_section"
+                    style={{
+                      boxShadow: "0px 4px 15px #0000000d",
+                      display: "block",
+                      border: "1px solid #ddd",
+                      padding: "10px 0px",
+                      borderRadius: "6px",
+                    }}
+                  >
                     <div className="divide-2">
                       <div className="price_section border-0">
                         <div className="price-shape">
@@ -603,9 +605,8 @@ export default function ClientLogger({
                         className="btn btn-primary "
                         onClick={() => setShowModal(true)}
                       >
- 
                         Contact Dealer{" "}
-                       </button>
+                      </button>
                     </div>
                   </div>
                 </div>
