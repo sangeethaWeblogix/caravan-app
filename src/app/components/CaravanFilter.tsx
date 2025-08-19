@@ -16,6 +16,7 @@ import { fetchModelsByMake } from "@/api/model/api";
 import "./filter.css";
 import { buildSlugFromFilters } from "./slugBuilter";
 import { buildUpdatedFilters } from "./buildUpdatedFilters";
+import { fetchListings } from "@/api/listings/api";
 type LocationSuggestion = {
   key: string;
   uri: string;
@@ -276,6 +277,17 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
     };
     loadFilters();
   }, []);
+
+  useEffect(() => {
+    const loadFilters = async () => {
+      const res = await fetchListings();
+      if (res?.data) {
+        setMakes(res.data.make_options || []);
+      }
+    };
+    loadFilters();
+  }, []);
+  console.log("dataresmake", makes);
   useEffect(() => {
     if (typeof currentFilters.radius_kms === "number") {
       setRadiusKms(currentFilters.radius_kms);

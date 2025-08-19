@@ -63,7 +63,7 @@ const Manufacture = () => {
   const buildHref = (man: MakeItem) => {
     // Priority: custom_link → slug → slugify(name)
     if (man.custom_link) return man.custom_link;
-    const value = (man.slug && man.slug.trim()) || slugify(man.name);
+    const value = (man.name && man.name.trim()) || slugify(man.name);
     return `/listings/${encodeURIComponent(value)}`;
   };
 

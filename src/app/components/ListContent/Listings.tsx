@@ -203,7 +203,7 @@ export default function ListingsPage({ page, ...incomingFilters }: Props) {
         );
 
         const productsFound = response?.data?.products?.length > 0;
-
+        console.log("productsFound", products);
         if (productsFound && response?.pagination) {
           setProducts(response.data.products);
           setCategories(response.data.all_categories);
@@ -249,7 +249,7 @@ export default function ListingsPage({ page, ...incomingFilters }: Props) {
     },
     [] // ✅ keep as-is
   );
-  // console.log("data pr", products);
+  console.log("data pr", categories);
 
   // after
   useEffect(() => {
