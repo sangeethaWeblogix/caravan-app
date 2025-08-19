@@ -1,5 +1,6 @@
+ 
  // src/app/blog/page/[page]/page.tsx
-"use client";
+ "use client";
 export const dynamic = "force-dynamic";
 import React, { useEffect, useMemo, useState } from "react";
 import Image from "next/image";
@@ -36,7 +37,13 @@ export default function BlogPage() {
   const [currentPage, setCurrentPage] = useState<number>(initialPage);
   const [totalPages, setTotalPages] = useState<number>(1);
   const [loading, setLoading] = useState<boolean>(false);
-
+   function decodeHTML(str: string = "") {
+    if (!str) return "";
+    if (typeof window === "undefined") return str; // SSR safe
+    const doc = new DOMParser().parseFromString(str, "text/html");
+    return doc.documentElement.textContent || "";
+  }
+ 
   // React to route segment changes (back/forward, manual URL input)
   useEffect(() => {
     const urlPage = Math.max(1, Number(params?.page || 1));
@@ -80,24 +87,26 @@ export default function BlogPage() {
     const slug = (p.slug ?? "").trim() || toSlug(p.title ?? "");
     return slug ? `/blog/${slug}/` : "#";
   };
-
+ 
  const prevUrl = currentPage <= 2 ? "/blog/" : `/blog/page/${currentPage - 1}/`;
-  const nextUrl = `/blog/page/${Math.min(totalPages, currentPage + 1)}/`;
+   const nextUrl = `/blog/page/${Math.min(totalPages, currentPage + 1)}/`;
 
   return (
     <div className="blog-page style-5">
       <section className="all-news bg-light-gray blog-listing section-padding blog bg-transparent style-3">
         <div className="container">
           <div className="section-head mb-60 style-5">
+ 
             <h2>Valuable News, Reviews &amp; Advice From Caravan Marketplace</h2>
-          </div>
+           </div>
         </div>
 
         <div className="container">
           <div className="row">
             <div className="col-lg-9">
+ 
               {loading && <div className="text-center py-5">Loading posts…</div>}
-
+ 
               {!loading && blogPosts.length === 0 && (
                 <div className="text-center py-5">No posts found.</div>
               )}
@@ -134,7 +143,8 @@ export default function BlogPage() {
                             <Link href={href} className="card-title mb-10">
                               {post.title}
                             </Link>
-                            <p>{post.excerpt}</p>
+                             <p>{decodeHTML(post.excerpt)}</p>{" "
+                           
                             <Link
                               href={href}
                               className="btn rounded-pill bg-blue4 fw-bold text-white mt-10"
@@ -176,8 +186,9 @@ export default function BlogPage() {
                       </span>
                     ) : (
                       <Link
+ 
                         key={`page-${p}`}href={p === 1 ? "/blog/" : `/blog/page/${p}/`}
-                        aria-current={p === currentPage ? "page" : undefined}
+                         aria-current={p === currentPage ? "page" : undefined}
                         className={`page-numbers px-3 py-1 border rounded ${
                           p === currentPage ? "current fw-bold" : ""
                         }`}

@@ -20,9 +20,9 @@ export default async function ProductBlogPage({ params }: PageProps) {
   const data = await fetchBlogDetail(slug);
   console.log("pdata", data);
   return (
-    <main className="container mx-auto p-4">
+    <div>
       <Details data={data} />
       <FaqSection />{" "}
-    </main>
+    </div>
   );
 }

@@ -201,11 +201,11 @@ export default function Navbar() {
               </ul>
             </li>
 
-            <li>
+            {/* <li>
               <Link href="/caravan-dealers/" onClick={closeNav}>
                 Caravan Dealers
               </Link>
-            </li>
+            </li> */}
             <li>
               <Link href="/listings/" onClick={closeNav}>
                 All Listings

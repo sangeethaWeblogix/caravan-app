@@ -80,12 +80,14 @@ export default function ListingContent({
     const slug = p.slug?.trim() || toSlug(p.name);
     return slug ? `/product/${slug}/` : ""; // trailing slash optional
   };
-  console.log("data li pro", products);
+  // console.log("data li pro", products);
   return (
     <>
       <Head>
         <title>{metaTitle}</title> {/* Dynamically set title */}
         <meta name="description" content={metaDescription} />
+        <meta property="og:type" content="website" />
+        <meta property="robot" content="index, follow" />
         <meta property="og:title" content={metaTitle} />
         <meta property="og:description" content={metaDescription} />
         <meta name="twitter:title" content={metaTitle} />
@@ -108,9 +110,9 @@ export default function ListingContent({
               </p>
             </div>
             <div className="col-4 d-lg-none d-md-none">
-              <button className="mobile_fltn navbar-toggler mytogglebutton">
-                <i className="bi bi-search" /> &nbsp;Filter
-              </button>
+              <button type="button" className="mobile_fltn navbar-toggler mytogglebutton" data-bs-toggle="offcanvas" data-bs-target="#mobileFilters" aria-controls="mobileFilters">
+              <i className="bi bi-search" /> &nbsp;Filter
+            </button>
             </div>
             <div className="col-lg-6 col-8">
               <div className="r-side">

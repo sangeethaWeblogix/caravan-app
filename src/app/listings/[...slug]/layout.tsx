@@ -32,8 +32,8 @@ export async function generateMetadata({
   const [
     categorySlug,
     makeSlug,
-    minPrice,
-    maxPrice,
+    from_price,
+    to_price,
     minKg,
     maxKg,
     condition,
@@ -56,8 +56,8 @@ export async function generateMetadata({
     page?: number;
     category?: string;
     make?: string;
-    minPrice?: string;
-    maxPrice?: string;
+    from_price?: string;
+    to_price?: string;
     minKg?: string;
     maxKg?: string;
     condition?: string;
@@ -78,8 +78,8 @@ export async function generateMetadata({
     page: 1,
     category: categorySlug,
     make: makeSlug,
-    minPrice,
-    maxPrice,
+    from_price,
+    to_price,
     minKg,
     maxKg,
     condition,
@@ -109,8 +109,8 @@ export async function generateMetadata({
   if (filters.state) qs.append("state", filters.state);
   if (filters.region) qs.append("region", filters.region);
   if (filters.suburb) qs.append("suburb", filters.suburb);
-  if (filters.minPrice) qs.append("from_price", `${filters.minPrice}`);
-  if (filters.maxPrice) qs.append("to_price", `${filters.maxPrice}`);
+  if (filters.from_price) qs.append("from_price", `${filters.from_price}`);
+  if (filters.to_price) qs.append("to_price", `${filters.to_price}`);
   if (filters.minKg) qs.append("from_atm", `${filters.minKg}kg`);
   if (filters.maxKg) qs.append("to_atm", `${filters.maxKg}kg`);
   if (filters.from_length) qs.append("from_length", `${filters.from_length}`);

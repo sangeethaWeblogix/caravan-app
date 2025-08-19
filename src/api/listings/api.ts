@@ -4,8 +4,8 @@ interface Filters {
   page?: number;
   category?: string;
   make?: string;
-  minPrice?: string;
-  maxPrice?: string;
+  from_price?: string;
+  to_price?: string;
   minKg?: string;
   maxKg?: string;
   condition?: string;
@@ -18,7 +18,7 @@ interface Filters {
   from_length?: string;
   to_length?: string;
   model?: string;
-  postcode?: string;
+  pincode?: string;
   orderby?: string;
   slug?: string;
   radius_kms?: string;
@@ -29,8 +29,8 @@ export const fetchListings = async (filters: Filters = {}) => {
     page = 1,
     category,
     make,
-    minPrice,
-    maxPrice,
+    from_price,
+    to_price,
     minKg,
     maxKg,
     from_length,
@@ -39,7 +39,7 @@ export const fetchListings = async (filters: Filters = {}) => {
     state,
     region,
     suburb,
-    postcode,
+    pincode,
     orderby,
     slug,
     radius_kms,
@@ -54,13 +54,13 @@ export const fetchListings = async (filters: Filters = {}) => {
   if (slug) params.append("category", slug);
 
   if (make) params.append("make", make);
-  if (postcode) params.append("pincode", postcode);
+  if (pincode) params.append("pincode", pincode);
 
   if (state) params.append("state", state);
   if (region) params.append("region", region);
   if (suburb) params.append("suburb", suburb);
-  if (minPrice) params.append("from_price", `${minPrice}`);
-  if (maxPrice) params.append("to_price", `${maxPrice}`);
+  if (from_price) params.append("from_price", `${from_price}`);
+  if (to_price) params.append("to_price", `${to_price}`);
   if (minKg) params.append("from_atm", `${minKg}kg`);
   if (maxKg) params.append("to_atm", `${maxKg}kg`);
   if (from_length) params.append("from_length", `${from_length}`);
@@ -81,6 +81,6 @@ export const fetchListings = async (filters: Filters = {}) => {
   if (!res.ok) throw new Error("API failed");
 
   const data = await res.json();
-  console.log("data", data);
+  // console.log("data", data);
   return data;
 };

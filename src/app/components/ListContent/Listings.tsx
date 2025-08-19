@@ -182,8 +182,8 @@ export default function ListingsPage({ page, ...incomingFilters }: Props) {
           minKg: appliedFilters.minKg?.toString(),
           maxKg: appliedFilters.maxKg?.toString(),
           sleeps: appliedFilters.sleeps,
-          minPrice: appliedFilters.from_price?.toString(),
-          maxPrice: appliedFilters.to_price?.toString(),
+          from_price: appliedFilters.from_price?.toString(),
+          to_price: appliedFilters.to_price?.toString(),
           acustom_fromyears: appliedFilters.from_year?.toString(),
           acustom_toyears: appliedFilters.to_year?.toString(),
           from_length: appliedFilters.from_length?.toString(),
@@ -193,7 +193,7 @@ export default function ListingsPage({ page, ...incomingFilters }: Props) {
           state: appliedFilters.state,
           region: appliedFilters.region,
           suburb: appliedFilters.suburb,
-          postcode: appliedFilters.pincode,
+          pincode: appliedFilters.pincode,
           orderby: appliedFilters.orderby,
           radius_kms: radiusParam,
         });
@@ -249,7 +249,7 @@ export default function ListingsPage({ page, ...incomingFilters }: Props) {
     },
     [] // ✅ keep as-is
   );
-  console.log("data pr", products);
+  // console.log("data pr", products);
 
   // after
   useEffect(() => {
@@ -411,6 +411,13 @@ export default function ListingsPage({ page, ...incomingFilters }: Props) {
       setFiltersReady(true); // let the URL watcher effect do the fetching
     }
   }, []);
+  const mobileFiltersRef = useRef<HTMLDivElement>(null);
+  const [draftFilters, setDraftFilters] = useState<Filters>({});
+
+  useEffect(() => {
+    // load Bootstrap JS once
+    import("bootstrap/js/dist/offcanvas").catch(() => {});
+  }, []);
 
   console.log("metaaa", metaTitle);
   return (
@@ -434,7 +441,7 @@ export default function ListingsPage({ page, ...incomingFilters }: Props) {
         />
       </Head>
 
-      <section className="services bg-gray-100 section-padding pb-30 style-1">
+      <section className="services product_listing bg-gray-100 section-padding pb-30 style-1">
         <div className="container">
           <div className="content">
             <div className="text-sm text-gray-600 header">
@@ -444,10 +451,13 @@ export default function ListingsPage({ page, ...incomingFilters }: Props) {
               &gt;
               <span className="font-medium text-black"> Listings</span>
             </div>
+
             <h1 className="page-title">{pageTitle}</h1>
 
-            <div className="row justify-content-center mt-8">
-              <div className="col-lg-3 col-12 col-md-4">
+            {/* Desktop grid: 3/9 split. On mobile, listings go full width */}
+            <div className="row ">
+              {/* Desktop sidebar filters */}
+              <div className="col-lg-3 d-none d-lg-block">
                 <div className="filter">
                   <Suspense fallback={<div>Loading filters...</div>}>
                     <CaravanFilter
@@ -455,12 +465,16 @@ export default function ListingsPage({ page, ...incomingFilters }: Props) {
                       makes={makes}
                       models={models}
                       states={stateOptions}
-                      onFilterChange={handleFilterChange}
+                      onFilterChange={(partial) => {
+                        handleFilterChange(partial); // <-- live update (fetch + URL)
+                      }}
                       currentFilters={filters}
                     />
                   </Suspense>
                 </div>
               </div>
+
+              {/* Listings area */}
 
               {isLoading ? (
                 <SkeletonListing />
@@ -476,12 +490,61 @@ export default function ListingsPage({ page, ...incomingFilters }: Props) {
                   currentFilters={filters}
                 />
               )}
-
-              <div className="col-lg-3 rightbar-stick"></div>
             </div>
           </div>
         </div>
       </section>
+
+      {/* Mobile Offcanvas lives OUTSIDE the grid to avoid layout issues */}
+      <div
+        ref={mobileFiltersRef}
+        id="mobileFilters"
+        className="offcanvas offcanvas-end d-lg-none"
+        tabIndex={-1}
+        aria-labelledby="mobileFiltersLabel"
+        data-bs-scroll="true"
+        data-bs-backdrop="true"
+        style={{ maxHeight: "100dvh" }}
+      >
+        <div className="offcanvas-header mobile_filter_xs sticky-top bg-white">
+          <h5 className="offcanvas-title mb-0" id="mobileFiltersLabel">
+            Filters
+          </h5>
+          <button
+            type="button"
+            className="btn-close"
+            data-bs-dismiss="offcanvas"
+            aria-label="Close"
+          />
+        </div>
+
+        <div className="offcanvas-body pt-2">
+          <Suspense fallback={<div>Loading filters...</div>}>
+            <CaravanFilter
+              categories={categories}
+              makes={makes}
+              models={models}
+              states={stateOptions}
+              currentFilters={draftFilters}
+              onFilterChange={(partial) => {
+                setDraftFilters((prev) => ({ ...prev, ...partial }));
+              }}
+            />
+          </Suspense>
+        </div>
+
+        {/* <div className="p-3 border-top bg-white position-sticky bottom-0">
+          <div className="d-flex gap-2">
+            <button
+              type="button"
+              className="btn btn-secondary flex-grow-1"
+              onClick={() => handleFilterChange({} as Filters)} // clear all, live
+            >
+              Clear
+            </button>
+          </div>
+        </div> */}
+      </div>
     </>
   );
 }

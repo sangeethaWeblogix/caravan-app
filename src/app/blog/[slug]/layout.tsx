@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import DeatilsPage from "./details";
+import "./details.css";
 
 type RouteParams = { slug: string };
 type PageProps = { params: Promise<RouteParams> };
@@ -61,8 +62,8 @@ export default async function ProductDetailPage({ params }: PageProps) {
   const data = await fetchBlogDetail(slug);
 
   return (
-    <main className="container mx-auto p-4">
+    <div>
       <DeatilsPage data={data} />
-    </main>
+    </div>
   );
 }
