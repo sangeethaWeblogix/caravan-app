@@ -402,3 +402,58 @@ form.submitting .newsletter-content .wpcf7-spinner {
     color: #0d6efd !important;
     text-decoration: underline !important
 }
+
+.wp-block-image img {
+    box-sizing: border-box;
+    vertical-align: bottom;
+    max-width: 100%;
+    height: auto;
+    width: 100%;
+}
+
+.all-news h2.wp-block-heading {
+    color: #000;
+    margin-bottom: 15px;
+    font-size: 26px;
+    font-weight: 700;
+}
+
+.all-news h3.wp-block-heading {
+    margin-bottom: 15px;
+    font-size: 23px;
+    color: #000;
+    font-weight: 700;
+}
+
+.all-news h4.wp-block-heading {
+  font-weight: 700;
+  font-size: 20px;
+}
+
+.all-news p {
+    font-size: 18px;
+    color: #000;
+    text-align: left;
+    margin-bottom: 12px;
+}
+
+.single_blog ul, .single_blog ol {
+    padding-left: 20px;
+}
+
+.single_blog ul li {
+    padding-bottom: 10px;
+    font-size: 17px;
+    list-style: disc;
+    color: #000;
+}
+
+.single_blog {
+      border-top: 1px solid #e1e1e1;
+}
+
+@media (max-width: 767px) { 
+.section-padding {
+    padding: 30px 0;
+}
+}

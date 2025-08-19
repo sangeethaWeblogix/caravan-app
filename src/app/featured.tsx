@@ -76,7 +76,7 @@ export default function DealsOnlyCFS() {
   const rest = items.slice(1);
 
   return (
-    <section className="deal-of-month product-details section-padding">
+    
       <div className="container">
         <div className="inside_col">
           <div className="header_posistion">
@@ -137,7 +137,7 @@ export default function DealsOnlyCFS() {
                               height={300}
                               className="attachment-full size-full wp-post-image"
                               unoptimized
-                              style={{ width: "100%", height: "50%" }}
+                              style={{ objectFit: "contain" }}
                             />
                           )}
                         </div>
@@ -376,6 +376,5 @@ export default function DealsOnlyCFS() {
           </div>
         </div>
       </div>
-    </section>
   );
 }

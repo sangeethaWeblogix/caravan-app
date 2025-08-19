@@ -20,7 +20,7 @@ export default async function ProductDetailPage({ params }: PageProps) {
   const data = await fetchProductDetail(slug);
   console.log("pdata", data);
   return (
-    <main className="container mx-auto p-4">
+    <main className="container mx-auto">
       <ClientLogger data={data} />
     </main>
   );
