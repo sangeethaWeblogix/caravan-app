@@ -52,21 +52,19 @@ export async function createRequirementCF7(
   const fd = new FormData();
 
   // ---- Contact fields (must match your CF7 [text* ...] names) ----
-  fd.append("name", payload.name);
-  fd.append("email", payload.email);
-  fd.append("phone", payload.phone);
+  fd.append("your-name", payload.name);
+  fd.append("your-email", payload.email);
+  fd.append("your-postcode", payload.phone);
 
   // ---- Requirement fields ----
   // If your CF7 inputs are named differently (e.g. req_type), change keys below accordingly.
-  fd.append("category", toSlug(payload.type)); // send as lowercase-hyphen
+  fd.append("caravan-type", toSlug(payload.type)); // send as lowercase-hyphen
   fd.append("condition", toSlug(payload.condition)); // e.g. "near-new"
   fd.append("location", payload.location); // postcode
-  fd.append("requirements", payload.requirements);
-  fd.append("budget", payload.budget);
+  // fd.append("requirements", payload.requirements);
+  // fd.append("budget", payload.budget);
 
   // Optional flags (only if you created hidden fields with these names in CF7)
-  if (payload.featured) fd.append("featured", payload.featured);
-  if (payload.active) fd.append("active", payload.active);
 
   const res = await fetch(CF7_ENDPOINT, {
     method: "POST",

@@ -1,88 +1,58 @@
-// src/api/enquiry/api.ts
+// src/app/api/contact/route.ts
+import { NextResponse } from "next/server";
 
-// ---------- PRODUCT ENQUIRY (existing pattern) ----------
-const API_BASE = process.env.NEXT_PUBLIC_CFS_API_BASE;
-// e.g. "https://www.dev.caravansforsale.com.au/wp-json/cfs/v1"
+const CFS_API_BASE = process.env.CFS_API_BASE!; // e.g. https://www.caravansforsale.com.au/wp-json/cfs/v1
+const CFS_FORM_ID = process.env.CFS_FORM_ID || "155838";
 
-export type ProductEnquiryPayload = {
-  product_id: number | string;
-  email: string;
-  name: string;
-  phone: string;
-  postcode: string;
-};
+const DEST = `${CFS_API_BASE.replace(
+  /\/$/,
+  ""
+)}/contact-forms/${CFS_FORM_ID}/feedback`;
 
-export type ProductEnquiryResponse = {
-  success?: boolean;
-  message?: string;
-  data?: unknown;
-};
-
-export async function createProductEnquiry(
-  payload: ProductEnquiryPayload
-): Promise<ProductEnquiryResponse> {
-  if (!API_BASE) throw new Error("Missing NEXT_PUBLIC_CFS_API_BASE");
-
-  const res = await fetch(`${API_BASE}/product_enquiry`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload),
-    cache: "no-store",
-  });
-
-  const raw = await res.text();
-  let json: ProductEnquiryResponse;
+export async function POST(req: Request) {
   try {
-    json = raw ? JSON.parse(raw) : {};
-  } catch {
-    json = { message: raw || "Invalid JSON from server" };
+    const p = await req.json();
+
+    // Map to your CFS/CF7 tag names (you asked for: your-name, your-emai, your-postcode, message)
+    const fd = new FormData();
+    fd.append("your-name", p.name);
+    // Handle both spellings just in case the form tag is "your-emai" (without 'l')
+    fd.append("your-emai", p.email);
+    fd.append("your-email", p.email);
+    fd.append("your-postcode", p.postcode);
+    fd.append("message", p.message);
+    // Optional: include phone if your form has that field (won't break if it doesn't)
+    if (p.phone) fd.append("your-phone", p.phone);
+
+    const upstream = await fetch(DEST, {
+      method: "POST",
+      body: fd,
+      headers: { Accept: "application/json" },
+      cache: "no-store",
+    });
+
+    const ct = upstream.headers.get("content-type") || "";
+    const text = await upstream.text();
+
+    if (!ct.includes("application/json")) {
+      return NextResponse.json(
+        {
+          status: "mail_failed",
+          message: "CFS returned non-JSON",
+          preview: text.slice(0, 200),
+        },
+        { status: 502 }
+      );
+    }
+
+    const data = JSON.parse(text);
+    // Forward JSON. Use 200 if mail_sent, else 400 so client shows toast error.
+    const ok = upstream.ok && data?.status === "mail_sent";
+    return NextResponse.json(data, { status: ok ? 200 : 400 });
+  } catch (e: any) {
+    return NextResponse.json(
+      { status: "mail_failed", message: e?.message || "Contact proxy failed" },
+      { status: 500 }
+    );
   }
-
-  if (!res.ok) {
-    throw new Error(json.message || "Product enquiry failed");
-  }
-
-  return json;
-}
-
-// ---------- CONTACT (CF7 via Next.js proxy: /api/contact) ----------
-const CONTACT_API_BASE = process.env.NEXT_PUBLIC_CONTACT_API_BASE || "/api";
-
-export type ContactFormPayload = {
-  name: string;
-  email: string;
-  phone: string;
-  postcode: string;
-  message: string;
-};
-
-export type ContactResponse = {
-  status?: "mail_sent" | "validation_failed" | "mail_failed" | string;
-  message?: string;
-  invalid_fields?: Array<{ into?: string; field: string; message: string }>;
-};
-
-export async function createContactEnquiry(
-  payload: ContactFormPayload
-): Promise<ContactResponse> {
-  const res = await fetch(`${CONTACT_API_BASE}/contact`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload),
-    cache: "no-store",
-  });
-
-  const raw = await res.text();
-  let json: ContactResponse;
-  try {
-    json = raw ? JSON.parse(raw) : {};
-  } catch {
-    json = { message: raw || "Invalid JSON from server" };
-  }
-
-  if (!res.ok) {
-    throw new Error(json.message || "Contact enquiry failed");
-  }
-
-  return json;
 }

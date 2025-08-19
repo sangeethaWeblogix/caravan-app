@@ -1,8 +1,91 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 
 export default function ContactSection() {
+  const [loading, setLoading] = useState(false);
+
+  const [message, setMessage] = useState("");
+
+  const [formData, setFormData] = useState({
+    "your-name": "",
+
+    "your-email": "",
+
+    "your-phone": "",
+
+    "you-postcode": "",
+
+    "your-message": "",
+  });
+
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    setLoading(true);
+
+    setMessage("");
+
+    try {
+      const form = new FormData();
+
+      form.append("_wpcf7", "3290");
+
+      form.append("_wpcf7_version", "5.9.3");
+
+      form.append("_wpcf7_locale", "en_US");
+
+      form.append("_wpcf7_unit_tag", "wpcf7-f3290-p45-o1");
+
+      form.append("_wpcf7_container_post", "45");
+
+      // append actual form values
+
+      Object.entries(formData).forEach(([key, value]) => {
+        form.append(key, value);
+      });
+
+      const res = await fetch(
+        "https://www.caravansforsale.com.au/wp-json/contact-form-7/v1/contact-forms/3290/feedback",
+        {
+          method: "POST",
+
+          body: form,
+        }
+      );
+
+      const data = await res.json();
+
+      if (data.status === "mail_sent") {
+        setMessage("✅ Message sent successfully!");
+
+        setFormData({
+          "your-name": "",
+
+          "your-email": "",
+
+          "your-phone": "",
+
+          "you-postcode": "",
+
+          "your-message": "",
+        });
+      } else {
+        setMessage("❌ Error: " + data.message);
+      }
+    } catch (error) {
+      console.error("Error:", error);
+
+      setMessage("❌ Something went wrong.");
+    } finally {
+      setLoading(false);
+    }
+  };
   return (
     <>
       <section className="community contact_top section-padding style-5">
@@ -18,7 +101,10 @@ export default function ContactSection() {
           <div className="content">
             <div className="row justify-content-center">
               <div className="col-lg-8">
-                <form action="" className="form" method="post">
+                <form
+                  onSubmit={handleSubmit}
+                  className="flex flex-col gap-3 max-w-md mx-auto p-4 border rounded-lg shadow"
+                >
                   <p className="text-center text-danger fs-12px mb-30">
                     The field is required mark as *
                   </p>
@@ -27,9 +113,11 @@ export default function ContactSection() {
                       <div className="form-group mb-20">
                         <input
                           type="text"
-                          name="name"
+                          name="your-name"
                           className="form-control"
                           placeholder="Name*"
+                          value={formData["your-name"]}
+                          onChange={handleChange}
                         />
                       </div>
                     </div>
@@ -38,9 +126,11 @@ export default function ContactSection() {
                       <div className="form-group mb-20">
                         <input
                           type="text"
-                          name="email"
+                          name="your-email"
                           className="form-control"
                           placeholder="Email*"
+                          value={formData["your-email"]}
+                          onChange={handleChange}
                         />
                       </div>
                     </div>
@@ -49,9 +139,11 @@ export default function ContactSection() {
                       <div className="form-group mb-20">
                         <input
                           type="text"
-                          name="phone"
+                          name="your-phone"
                           className="form-control"
                           placeholder="Phone*"
+                          value={formData["your-phone"]}
+                          onChange={handleChange}
                         />
                       </div>
                     </div>
@@ -60,9 +152,11 @@ export default function ContactSection() {
                       <div className="form-group mb-20">
                         <input
                           type="text"
-                          name="postcode"
+                          name="you-postcode"
                           className="form-control"
                           placeholder="Postcode*"
+                          value={formData["you-postcode"]}
+                          onChange={handleChange}
                         />
                       </div>
                     </div>
@@ -71,6 +165,9 @@ export default function ContactSection() {
                       <div className="form-group mb-20">
                         <textarea
                           className="form-control"
+                          name="your-message"
+                          value={formData["your-message"]}
+                          onChange={handleChange}
                           placeholder="How can we help you?"
                         ></textarea>
                       </div>
@@ -80,6 +177,7 @@ export default function ContactSection() {
                       <input
                         type="submit"
                         value="SUBMIT"
+                        disabled={loading}
                         className="btn bg-blue4 fw-bold text-white text-light fs-12px"
                       />
                     </div>

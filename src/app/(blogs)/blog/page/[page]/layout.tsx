@@ -1,4 +1,4 @@
-import Blogs from "./page/[page]/page";
+import Blogs from "./page";
 import "./blog.css";
 import { Metadata } from "next";
 
