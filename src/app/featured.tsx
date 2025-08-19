@@ -73,7 +73,7 @@ export default function DealsOnlyCFS() {
   const items = data[active] ?? [];
   const hero = items[0];
   const rest = items.slice(1);
-  console.log("pr", hero);
+  console.log("pr", items);
 
   return (
     <div className="container">
@@ -186,15 +186,9 @@ export default function DealsOnlyCFS() {
 
                         <div className="d_feature">
                           <ul>
-                            {hero?.attributes?.condition && (
-                              <li>{hero.attributes.condition}</li>
-                            )}
-                            {hero?.attributes?.length && (
-                              <li>{hero.attributes.length}</li>
-                            )}
-                            {hero?.attributes?.sleeps && (
-                              <li>{hero.attributes.sleeps} People</li>
-                            )}
+                            {hero?.condition && <li>{hero.condition}</li>}
+                            {hero?.sleeps && <li>{hero.sleeps} </li>}
+                            {hero?.length && <li>{hero.length}</li>}
                           </ul>
                         </div>
 
@@ -318,19 +312,25 @@ export default function DealsOnlyCFS() {
                                       })()}
                                     </div>
                                   </div>
-
                                   <ul className="vehicleDetailsWithIcons simple">
-                                    {it.attributes?.condition && (
+                                    {it.condition && (
                                       <li>
                                         <span className="attribute3">
-                                          {it.attributes.condition}
+                                          {it.condition}
                                         </span>
                                       </li>
                                     )}
-                                    {it.attributes?.sleeps && (
+                                    {it?.sleeps && (
                                       <li>
                                         <span className="attribute3">
-                                          {it.attributes.sleeps} people
+                                          {it.sleeps}
+                                        </span>
+                                      </li>
+                                    )}
+                                    {it?.length && (
+                                      <li>
+                                        <span className="attribute3">
+                                          {it.length}
                                         </span>
                                       </li>
                                     )}
