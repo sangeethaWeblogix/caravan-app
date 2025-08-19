@@ -5,7 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import CaravanDetailModal from "./CaravanDetailModal";
 import "./product.css";
-
+import DOMPurify from "dompurify";
 type Attribute = {
   label?: string;
   value?: string;
@@ -56,6 +56,67 @@ export default function ClientLogger({
   const pd: ApiData = data?.data ?? {};
   const productDetails: ProductData = pd.product_details ?? {};
   const product: ProductData = productDetails;
+  const isBrowser = typeof window !== "undefined";
+  // const safeHtml = DOMPurify.sanitize(
+  //   (productDetails.description || "")
+  //     .replace(/\\n/g, "\n")
+  //     .replace(/\n/g, "<br>")
+  // );
+
+  function decodeEntities(s: string) {
+    if (!isBrowser) {
+      // minimal decode for SSR pass (no DOM)
+      return s
+        .replace(/&lt;/g, "<")
+        .replace(/&gt;/g, ">")
+        .replace(/&amp;/g, "&")
+        .replace(/&quot;/g, '"')
+        .replace(/&#39;/g, "'");
+    }
+    const el = document.createElement("textarea");
+    el.innerHTML = s;
+    return el.value;
+  }
+
+  function buildSafeDescription(raw?: string) {
+    const base = (raw ?? "").replace(/\\n/g, "\n");
+    const decoded = decodeEntities(base);
+
+    // SSR-safe fast path (no document/DOMPurify)
+    if (!isBrowser) {
+      // strip/convert headings without DOM
+      const noHeadings = decoded
+        .replace(/<\s*h[1-6][^>]*>/gi, "<strong>")
+        .replace(/<\s*\/\s*h[1-6]\s*>/gi, "</strong>");
+      // remove script/style just in case
+      const stripped = noHeadings
+        .replace(/<script[\s\S]*?<\/script>/gi, "")
+        .replace(/<style[\s\S]*?<\/style>/gi, "");
+      return stripped.replace(/\n/g, "<br>");
+    }
+
+    // Client path: use real DOM + DOMPurify
+    const tmp = document.createElement("div");
+    tmp.innerHTML = decoded;
+
+    tmp.querySelectorAll("h1,h2,h3,h4,h5,h6").forEach((h) => {
+      const strong = document.createElement("strong");
+      strong.textContent = h.textContent ?? "";
+      h.replaceWith(strong);
+    });
+
+    const purified = DOMPurify.sanitize(tmp.innerHTML, {
+      ALLOWED_TAGS: ["br", "p", "ul", "ol", "li", "strong", "em", "b", "i"],
+      ALLOWED_ATTR: [],
+    });
+
+    return purified.replace(/\n/g, "<br>");
+  }
+  const [safeHtml, setSafeHtml] = useState<string>("");
+
+  useEffect(() => {
+    setSafeHtml(buildSafeDescription(productDetails.description));
+  }, [productDetails.description]);
 
   const productImage: string =
     productDetails.main_image || pd.main_image || "/images/img.png";
@@ -374,6 +435,7 @@ export default function ClientLogger({
                                   <li key={f.label}>
                                     <strong>{f.label}:</strong>{" "}
                                     <span>
+
                                     {links
                                       ? links.map((lnk, idx) => (
                                           <span key={lnk.href}>
@@ -388,18 +450,18 @@ export default function ClientLogger({
                                         ))
                                       : String(f.value)}
                                       </span>
-                                  </li>
-                                );
-                              })}
+
+                                      
                           </ul>
                         </div>
                       </div>
                     </div>
                   )}
                   {activeTab === "description" && (
-                    <div className="tab-pane fade show active">
-                      {productDetails.description}
-                    </div>
+                    <div
+                      className="tab-pane fade show active product-description"
+                      dangerouslySetInnerHTML={{ __html: safeHtml }}
+                    />
                   )}
                 </div>
               </section>
@@ -541,8 +603,9 @@ export default function ClientLogger({
                         className="btn btn-primary "
                         onClick={() => setShowModal(true)}
                       >
-                        Contact Dealer
-                      </button>
+ 
+                        Contact Dealer{" "}
+                       </button>
                     </div>
                   </div>
                 </div>
