@@ -38,5 +38,7 @@ export function buildUpdatedFilters(
     location: updates.location ?? currentFilters.location,
     orderby: updates.orderby ?? currentFilters.orderby,
     radius_kms: nextRadius, // ✅ only updates when > 50
+    search: updates.search ?? currentFilters.search,
+    keyword: updates.keyword ?? currentFilters.keyword,
   };
 }

@@ -22,6 +22,8 @@ interface Filters {
   orderby?: string;
   slug?: string;
   radius_kms?: string;
+  search?: string;
+  keyword?: string;
 }
 
 export const fetchListings = async (filters: Filters = {}) => {
@@ -43,6 +45,8 @@ export const fetchListings = async (filters: Filters = {}) => {
     orderby,
     slug,
     radius_kms,
+    search,
+    keyword,
   } = filters;
 
   const params = new URLSearchParams();
@@ -75,7 +79,8 @@ export const fetchListings = async (filters: Filters = {}) => {
     params.append("condition", condition.toLowerCase().replace(/\s+/g, "-"));
   if (filters.sleeps) params.append("sleep", filters.sleeps);
   if (orderby) params.append("orderby", orderby); // Add the orderby to the URL
-
+  if (filters.search) params.append("search", filters.search);
+  if (filters.keyword) params.append("keyword", filters.keyword);
   const res = await fetch(`${API_BASE}/new-list?${params.toString()}`);
 
   if (!res.ok) throw new Error("API failed");

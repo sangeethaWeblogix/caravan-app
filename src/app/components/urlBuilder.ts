@@ -17,6 +17,8 @@ export interface Filters {
   make?: string;
   model?: string;
   orderby?: string;
+  search?: string;
+  keyword?: string;
 }
 
 const conditionMap: Record<string, string> = {
@@ -109,3 +111,13 @@ export function parseSlugToFilters(slugParts: string[]): Filters {
 
   return filters;
 }
+// export function buildListingsUrl(filters: Filters): string {
+//   // precedence: keyword > search
+//   if (filters.keyword?.trim()) {
+//     return `/listings/keyword=${encodeURIComponent(filters.keyword.trim())}`;
+//   }
+//   if (filters.search?.trim()) {
+//     return `/listings/search=${encodeURIComponent(filters.search.trim())}`;
+//   }
+//   return "/listings";
+// }

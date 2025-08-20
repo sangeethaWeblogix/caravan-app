@@ -17,6 +17,11 @@ import "./filter.css";
 import { buildSlugFromFilters } from "./slugBuilter";
 import { buildUpdatedFilters } from "./buildUpdatedFilters";
 import { fetchListings } from "@/api/listings/api";
+import {
+  fetchKeywordSuggestions,
+  fetchHomeSearchList,
+} from "@/api/homeSearch/api";
+
 type LocationSuggestion = {
   key: string;
   uri: string;
@@ -54,7 +59,7 @@ export interface Filters {
   category?: string;
   make?: string;
   location?: string | null;
-  from_price?: string | number; // ✅ add this
+  from_price?: string | number;
   to_price?: string | number;
   condition?: string;
   sleeps?: string;
@@ -71,6 +76,8 @@ export interface Filters {
   suburb?: string;
   pincode?: string;
   radius_kms?: number | string; // <- allow both
+  search?: string; // <- for search
+  keyword?: string; // <- for keyword search
 }
 
 interface CaravanFilterProps {
@@ -96,6 +103,15 @@ type Suburb = {
   value: string;
 };
 
+type HomeSearchItem = {
+  label?: string;
+  name?: string;
+  title?: string;
+  keyword?: string;
+  value?: string;
+  slug?: string;
+};
+
 const CaravanFilter: React.FC<CaravanFilterProps> = ({
   onFilterChange,
   currentFilters,
@@ -109,6 +125,12 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
   const [categories, setCategories] = useState<Option[]>([]);
   const [makes, setMakes] = useState<Option[]>([]);
   const [model, setModel] = useState<Model[]>([]);
+  const toSlug = (s: string) =>
+    s
+      .toLowerCase()
+      .trim()
+      .replace(/\s+/g, "-")
+      .replace(/[^a-z0-9-]/g, "");
 
   const [states, setStates] = useState<StateOption[]>([]);
   const [makeOpen, setMakeOpen] = useState(false);
@@ -119,6 +141,8 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
   const [conditionOpen, setConditionOpen] = useState(false);
   const [sleepsOpen, setSleepsOpen] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isKeywordModalOpen, setIsKeywordModalOpen] = useState(false);
+
   const [locationInput, setLocationInput] = useState("");
   const [selectedMake, setSelectedMake] = useState<string | null>(null);
   const [selectedModel, setSelectedModel] = useState<string | null>(null);
@@ -152,7 +176,13 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
   );
   const [selectedSuggestion, setSelectedSuggestion] =
     useState<LocationSuggestion | null>(null);
-
+  const [keywordInput, setKeywordInput] = useState("");
+  const [keywordSuggestions, setKeywordSuggestions] = useState<string[]>([]);
+  const [baseKeywords, setBaseKeywords] = useState<string[]>([]);
+  const [keywordLoading, setKeywordLoading] = useState(false);
+  const [baseLoading, setBaseLoading] = useState(false);
+  const [keywordError, setKeywordError] = useState<string>("");
+  const pickedSourceRef = useRef<"base" | "typed" | null>(null);
   const [atmFrom, setAtmFrom] = useState<number | null>(null);
   const [atmTo, setAtmTo] = useState<number | null>(null);
   const [lengthFrom, setLengthFrom] = useState<number | null>(null);
@@ -202,6 +232,131 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
     Tasmania: "TAS",
     "Northern Territory": "NT",
     "Australian Capital Territory": "ACT",
+  };
+  const isNonEmpty = (s: string | undefined | null): s is string =>
+    typeof s === "string" && s.trim().length > 0;
+
+  // pick a human-readable text from item
+  const toHuman = (it: HomeSearchItem) =>
+    (
+      it.label ??
+      it.name ??
+      it.title ??
+      it.keyword ??
+      it.value ??
+      it.slug ??
+      ""
+    ).toString();
+
+  // works for (HomeSearchItem | string)[]
+  const labelsFrom = (arr: Array<HomeSearchItem | string> = []): string[] =>
+    arr.map((x) => (typeof x === "string" ? x : toHuman(x))).filter(isNonEmpty);
+  useEffect(() => {
+    if (!isKeywordModalOpen) return;
+    setBaseLoading(true);
+    fetchHomeSearchList()
+      .then((list) => {
+        // list: HomeSearchItem[] | string[]
+        const names = labelsFrom(list).slice(0, 20);
+        setBaseKeywords([...new Set(names)]);
+      })
+      .catch(() => setBaseKeywords([]))
+      .finally(() => setBaseLoading(false));
+  }, [isKeywordModalOpen]);
+
+  useEffect(() => {
+    if (!isKeywordModalOpen) return;
+
+    const q = keywordInput.trim();
+    if (q.length < 2) {
+      setKeywordSuggestions([]);
+      setKeywordError("");
+      setKeywordLoading(false);
+      return;
+    }
+
+    const ctrl = new AbortController();
+    setKeywordLoading(true);
+    setKeywordError("");
+
+    const t = setTimeout(async () => {
+      try {
+        const list = await fetchKeywordSuggestions(q, ctrl.signal); // HomeSearchItem[] | string[]
+        const names = labelsFrom(list).slice(0, 20);
+        setKeywordSuggestions(Array.from(new Set(names)));
+      } catch (e: any) {
+        if (e?.name !== "AbortError") setKeywordError(e?.message ?? "Failed");
+      } finally {
+        setKeywordLoading(false);
+      }
+    }, 300);
+
+    return () => {
+      ctrl.abort();
+      clearTimeout(t);
+    };
+  }, [isKeywordModalOpen, keywordInput]);
+
+  // ✅ Base list apply → search=<raw>
+  const applyBaseSearch = (human: string) => {
+    const next: Filters = {
+      ...currentFilters,
+      search: human.trim(), // <-- raw, NOT toSlug
+      keyword: undefined,
+    };
+    setFilters(next);
+    setKeywordInput(human);
+    filtersInitialized.current = true;
+    setIsKeywordModalOpen(false);
+    pickedSourceRef.current = "base";
+
+    startTransition(() => {
+      onFilterChange(next);
+      updateAllFiltersAndURL(next);
+    });
+  };
+  // add near other useMemos
+  const keywordText = useMemo(() => {
+    const v = (currentFilters.keyword ??
+      currentFilters.search ??
+      filters.keyword ??
+      filters.search ??
+      "") as string;
+    return v.toString();
+  }, [
+    currentFilters.keyword,
+    currentFilters.search,
+    filters.keyword,
+    filters.search,
+  ]);
+
+  // keep the read-only input in sync
+  useEffect(() => {
+    if (keywordInput !== keywordText) setKeywordInput(keywordText);
+  }, [keywordText]);
+
+  // ✅ One button for modal footer
+  // ✅ Modal submit → base => search, typed/suggested => keyword
+  const applyKeywordFromModal = () => {
+    const raw = keywordInput.trim();
+    if (!raw) return;
+
+    const isBase = pickedSourceRef.current === "base";
+    const next: Filters = isBase
+      ? { ...currentFilters, search: raw, keyword: undefined } // keep spaces
+      : { ...currentFilters, keyword: toSlug(raw), search: undefined }; // slug
+
+    // show in the input immediately
+    // inside applyKeywordFromModal
+    setKeywordInput(isBase ? raw : toSlug(raw)); // keeps UI instant
+
+    setIsKeywordModalOpen(false);
+    setFilters(next);
+    filtersInitialized.current = true;
+
+    startTransition(() => {
+      updateAllFiltersAndURL(next); // ✅ parent currentFilters gets updated
+    });
   };
 
   const buildShortAddress = (
@@ -264,6 +419,30 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
       delete out.pincode;
 
     return out;
+  };
+  // near other handlers
+  const clearKeyword = () => {
+    // reset local UI
+    pickedSourceRef.current = null;
+    setKeywordInput("");
+    setKeywordSuggestions([]);
+    // if you keep a base list in state:
+    // setBaseKeywords([]);
+
+    // reset filters
+    const next: Filters = {
+      ...currentFilters,
+      keyword: undefined,
+      search: undefined,
+    };
+
+    setFilters(next);
+    filtersInitialized.current = true;
+
+    startTransition(() => {
+      onFilterChange(next); // parent -> API payload clear
+      updateAllFiltersAndURL(next); // URL params keyword/search remove + page=1
+    });
   };
 
   useEffect(() => {
@@ -526,6 +705,51 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
     });
     // Allow React to flush UI state
   };
+  useEffect(() => {
+    // if already have a value, do nothing
+    if (currentFilters.keyword || currentFilters.search) return;
+    if (!pathname) return;
+
+    const m = pathname.match(/(?:^|\/)(keyword|search)=([^/?#]+)/i);
+    if (!m) return;
+
+    const kind = m[1].toLowerCase();
+    const raw = decodeURIComponent(m[2]); // slug part after '='
+
+    // search = human text (spaces), keyword = slug
+    const next: Filters =
+      kind === "keyword"
+        ? { ...currentFilters, keyword: raw, search: undefined }
+        : {
+            ...currentFilters,
+            search: raw.replace(/-/g, " "),
+            keyword: undefined,
+          };
+
+    setKeywordInput(kind === "keyword" ? raw : (next.search as string)); // show in field
+    setFilters(next); // local filters
+    filtersInitialized.current = true;
+    lastSentFiltersRef.current = next;
+    onFilterChange(next); // notify parent
+    // IMPORTANT: don't call updateAllFiltersAndURL() here, or you'll push again and risk clearing
+  }, [pathname]);
+
+  // 🔁 Keep the read-only Keyword input in sync with the applied filters
+  useEffect(() => {
+    const v = (
+      currentFilters.keyword ??
+      currentFilters.search ??
+      filters.keyword ??
+      filters.search ??
+      ""
+    ).toString();
+    if (keywordInput !== v) setKeywordInput(v);
+  }, [
+    currentFilters.keyword,
+    currentFilters.search,
+    filters.keyword,
+    filters.search,
+  ]);
 
   const resetStateFilters = () => {
     console.log("❌ State Reset Triggered");
@@ -730,7 +954,9 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
 
     // ✅ build filters with validated region
     const updatedFilters = buildUpdatedFilters(currentFilters, {
-      make: selectedMake || filters.make || currentFilters.make,
+      make: (selectedMake || filters.make || currentFilters.make)?.includes("=")
+        ? undefined
+        : selectedMake || filters.make || currentFilters.make,
       model: selectedModel || filters.model || currentFilters.model,
       category: selectedCategory || filters.category || currentFilters.category,
       suburb: suburb.toLowerCase(),
@@ -819,7 +1045,7 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
     makeInitializedRef.current = false;
     regionSetAfterSuburbRef.current = false;
     suburbClickedRef.current = false;
-
+    clearKeyword();
     // ✅ Fix: Call parent state update
     onFilterChange(reset);
 
@@ -1115,6 +1341,8 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
     "from_length",
     "to_length",
     "radius_kms",
+    "search",
+    "keyword",
   ];
 
   const normalizeFilters = (f: Filters): Filters => {
@@ -1205,6 +1433,7 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
       });
     }
   }, [filters]);
+
   const lastSentFiltersRef = useRef<Filters | null>(null);
 
   // ✅ Update all filters and URL with validation
@@ -1802,6 +2031,43 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
                 </div>
               ))
             )}
+          </div>
+        )}
+      </div>
+      {/* Keyword (opens its own modal) */}
+      {/* Keyword (opens its own modal) */}
+      <div className="cs-full_width_section">
+        <h5 className="cfs-filter-label">Keyword</h5>
+        <input
+          type="text"
+          className="cfs-select-input"
+          placeholder="Click to choose / type"
+          value={keywordInput.replace(/-/g, " ")} // ⬅️ show nicely
+          onClick={() => {
+            pickedSourceRef.current = null;
+            setIsKeywordModalOpen(true);
+          }}
+          readOnly
+        />
+
+        {keywordText && (
+          <div className="filter-chip">
+            <span>{keywordText.replace(/-/g, " ")}</span>
+            <span
+              className="filter-chip-close"
+              onClick={() => {
+                const next = {
+                  ...currentFilters,
+                  keyword: undefined,
+                  search: undefined,
+                };
+                setFilters(next);
+                setKeywordInput("");
+                updateAllFiltersAndURL(next);
+              }}
+            >
+              ×
+            </span>
           </div>
         )}
       </div>
@@ -2607,6 +2873,141 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
                   setIsModalOpen(false);
                   setLocationSuggestions([]); // ✅ close modal
                 }}
+              >
+                Search
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {isKeywordModalOpen && (
+        <div className="cfs-modal">
+          <div className="cfs-modal-content">
+            <div className="cfs-modal-header">
+              <span
+                onClick={() => setIsKeywordModalOpen(false)}
+                className="cfs-close"
+              >
+                ×
+              </span>
+            </div>
+
+            <div className="cfs-modal-body">
+              <div className="cfs-modal-search-section">
+                <h5 className="cfs-filter-label">Search by Keyword</h5>
+
+                <input
+                  type="text"
+                  placeholder="eg: offroad, bunk, ensuite…"
+                  className="filter-dropdown cfs-select-input"
+                  autoComplete="off"
+                  value={keywordInput}
+                  onChange={(e) => {
+                    pickedSourceRef.current = "typed";
+                    setKeywordInput(e.target.value);
+                  }}
+                  onFocus={() => {
+                    if (!baseKeywords.length) {
+                      setBaseLoading(true);
+                      fetchHomeSearchList()
+                        .then((list) => {
+                          // list: HomeSearchItem[] | string[]
+                          const names = (list as Array<HomeSearchItem | string>)
+                            .map((x) =>
+                              typeof x === "string"
+                                ? x
+                                : x.label ??
+                                  x.name ??
+                                  x.title ??
+                                  x.keyword ??
+                                  x.value ??
+                                  x.slug ??
+                                  ""
+                            )
+                            .filter(
+                              (s): s is string =>
+                                typeof s === "string" && s.trim().length > 0
+                            );
+
+                          // unique + cap at 20
+                          setBaseKeywords([...new Set(names)].slice(0, 20));
+                        })
+                        .catch(() => setBaseKeywords([]))
+                        .finally(() => setBaseLoading(false));
+                    }
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") applyKeywordFromModal();
+                  }}
+                />
+
+                {/* Base list (when < 2 chars) */}
+                {/* Base list (when < 2 chars) */}
+                {keywordInput.trim().length < 2 &&
+                  (baseLoading ? (
+                    <div style={{ marginTop: 8 }}>Loading…</div>
+                  ) : (
+                    <ul
+                      className="location-suggestions"
+                      style={{ marginTop: 8 }}
+                    >
+                      {baseKeywords.length ? (
+                        baseKeywords.map((k, i) => (
+                          <li
+                            key={`${k}-${i}`}
+                            className="suggestion-item"
+                            // 👇 just call here
+                            onMouseDown={(e) => {
+                              e.preventDefault(); // avoid focus/blur race
+                              pickedSourceRef.current = "base";
+                              setKeywordInput(k); // just fill the field
+                            }}
+                          >
+                            {k}
+                          </li>
+                        ))
+                      ) : (
+                        <li className="suggestion-item">No popular items</li>
+                      )}
+                    </ul>
+                  ))}
+
+                {/* Typed suggestions (>= 2 chars) */}
+                {keywordInput.trim().length >= 2 &&
+                  (keywordLoading ? (
+                    <div style={{ marginTop: 8 }}>Loading…</div>
+                  ) : (
+                    <ul
+                      className="location-suggestions"
+                      style={{ marginTop: 8 }}
+                    >
+                      {keywordSuggestions.length ? (
+                        keywordSuggestions.map((k, i) => (
+                          <li
+                            key={`${k}-${i}`}
+                            className="suggestion-item"
+                            onMouseDown={() => {
+                              pickedSourceRef.current = "typed";
+                              setKeywordInput(k); // field-ல set
+                            }}
+                          >
+                            {k}
+                          </li>
+                        ))
+                      ) : (
+                        <li className="suggestion-item">No matches</li>
+                      )}
+                    </ul>
+                  ))}
+              </div>
+            </div>
+
+            <div className="cfs-modal-footer">
+              <button
+                type="button"
+                className="cfs-btn btn"
+                onClick={applyKeywordFromModal}
+                disabled={!keywordInput.trim()}
               >
                 Search
               </button>

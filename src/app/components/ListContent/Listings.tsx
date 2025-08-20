@@ -72,6 +72,8 @@ export interface Filters {
   suburb?: string;
   pincode?: string;
   orderby?: string;
+  search?: string;
+  keyword?: string; // <- for keyword search
   radius_kms?: number | string; // <- allow both
 }
 
@@ -97,6 +99,9 @@ interface Props {
   to_year?: string | number;
   sleeps?: string;
   page?: string | number;
+  serach?: string;
+  keyword?: string;
+  orderby?: string;
 }
 interface Props extends Filters {
   page?: string | number;
@@ -168,7 +173,11 @@ export default function ListingsPage({ page, ...incomingFilters }: Props) {
       window.scrollTo({ top: 0, behavior: "smooth" });
 
       try {
+        const safeFilters = normalizeSearchFromMake(appliedFilters);
+        console.log("Fetching listings :", safeFilters);
         // inside loadListings, just before calling fetchListings
+        console.log("🔗 Fetching listings with filters:", safeFilters);
+
         const radiusNum = asNumber(appliedFilters.radius_kms);
         const radiusParam =
           typeof radiusNum === "number" && radiusNum !== DEFAULT_RADIUS
@@ -178,27 +187,29 @@ export default function ListingsPage({ page, ...incomingFilters }: Props) {
         const response = await fetchListings({
           ...appliedFilters,
           page,
-          condition: appliedFilters.condition,
-          minKg: appliedFilters.minKg?.toString(),
-          maxKg: appliedFilters.maxKg?.toString(),
-          sleeps: appliedFilters.sleeps,
-          from_price: appliedFilters.from_price?.toString(),
-          to_price: appliedFilters.to_price?.toString(),
-          acustom_fromyears: appliedFilters.from_year?.toString(),
-          acustom_toyears: appliedFilters.to_year?.toString(),
-          from_length: appliedFilters.from_length?.toString(),
-          to_length: appliedFilters.to_length?.toString(),
-          make: appliedFilters.make,
-          model: appliedFilters.model,
-          state: appliedFilters.state,
-          region: appliedFilters.region,
-          suburb: appliedFilters.suburb,
-          pincode: appliedFilters.pincode,
-          orderby: appliedFilters.orderby,
+          condition: safeFilters.condition,
+          minKg: safeFilters.minKg?.toString(),
+          maxKg: safeFilters.maxKg?.toString(),
+          sleeps: safeFilters.sleeps,
+          from_price: safeFilters.from_price?.toString(),
+          to_price: safeFilters.to_price?.toString(),
+          acustom_fromyears: safeFilters.from_year?.toString(),
+          acustom_toyears: safeFilters.to_year?.toString(),
+          from_length: safeFilters.from_length?.toString(),
+          to_length: safeFilters.to_length?.toString(),
+          make: safeFilters.make,
+          model: safeFilters.model,
+          state: safeFilters.state,
+          region: safeFilters.region,
+          suburb: safeFilters.suburb,
+          pincode: safeFilters.pincode,
+          orderby: safeFilters.orderby,
+          search: safeFilters.search,
+          keyword: safeFilters.keyword,
           radius_kms: radiusParam,
         });
-        console.log("appl", appliedFilters);
-        const hasFilters = Object.values(appliedFilters).some(
+        console.log("fetching appl", safeFilters);
+        const hasFilters = Object.values(safeFilters).some(
           (val) => val !== undefined && val !== null && val !== ""
         );
 
@@ -250,6 +261,21 @@ export default function ListingsPage({ page, ...incomingFilters }: Props) {
     [] // ✅ keep as-is
   );
   console.log("data pr", categories);
+
+  const normalizeSearchFromMake = (f: Filters): Filters => {
+    if (!f?.make) return f;
+    const decoded = decodeURIComponent(String(f.make));
+    if (!decoded.includes("=")) return f;
+
+    const [k, v = ""] = decoded.split("=", 2);
+    if (k === "search" || k === "keyword") {
+      const copy: Filters = { ...f, [k]: v };
+      delete (copy as any).make;
+      if (copy.keyword) copy.search = undefined;
+      return copy;
+    }
+    return f;
+  };
 
   // after
   useEffect(() => {

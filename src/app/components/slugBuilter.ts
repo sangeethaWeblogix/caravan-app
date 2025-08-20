@@ -86,7 +86,11 @@ export const buildSlugFromFilters = (
   if (page && page > 1) {
     query.set("page", page.toString());
   }
-
+  if (filters.keyword?.trim()) {
+    return `/listings/keyword=${encodeURIComponent(filters.keyword.trim())}`;
+  } else if (filters.search?.trim()) {
+    return `/listings/search=${encodeURIComponent(filters.search.trim())}`;
+  }
   const queryString = query.toString();
   const base = `/listings/${slugParts.join("/")}/`;
 
