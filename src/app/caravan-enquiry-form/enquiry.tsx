@@ -94,7 +94,15 @@ export default function ContactSection() {
       form.append("_wpcf7_locale", "en_US");
       form.append("_wpcf7_unit_tag", "wpcf7-f3290-p45-o1");
       form.append("_wpcf7_container_post", "45");
-
+      form.append("your-name", formData["your-name"]);
+      form.append("your-email", formData["your-email"]);
+      form.append("your-phone", formData["your-phone"]);
+      form.append("you-postcode", formData["you-postcode"]);
+      form.append("caravan-type", formData["caravan-type"]);
+      form.append("condition", formData.condition);
+      form.append("budget", formData.budget);
+      form.append("requirements", formData.requirements);
+      form.append("your-message", formData["your-message"]);
       Object.entries(formData).forEach(([key, value]) =>
         form.append(key, value)
       );
@@ -131,7 +139,7 @@ export default function ContactSection() {
       setLoading(false);
     }
   };
-
+  console.log("formData", formData);
   const hasAnyError = Object.values(errors).some(Boolean);
 
   return (
@@ -250,12 +258,12 @@ export default function ContactSection() {
                           <option value="">
                             What type of caravan are you looking for?
                           </option>
-                          <option value="off-road">Off Road</option>
-                          <option value="hybrid">Hybrid</option>
-                          <option value="pop-top">Pop Top</option>
-                          <option value="luxury">Luxury</option>
-                          <option value="family">Family</option>
-                          <option value="touring">Touring</option>
+                          <option value="Off Road">Off Road</option>
+                          <option value="Hybrid">Hybrid</option>
+                          <option value="Pop Top">Pop Top</option>
+                          <option value="Luxury">Luxury</option>
+                          <option value="Family">Family</option>
+                          <option value="Touring">Touring</option>
                         </select>
                         {errors["caravan-type"] && (
                           <small className="text-danger">
@@ -276,9 +284,9 @@ export default function ContactSection() {
                           required
                         >
                           <option value="">Select Condition</option>
-                          <option value="new">New</option>
-                          <option value="near-new">Near New</option>
-                          <option value="used">Used</option>
+                          <option value="New">New</option>
+                          <option value="Near New">Near New</option>
+                          <option value="Used">Used</option>
                         </select>
                         {errors.condition && (
                           <small className="text-danger">
