@@ -50,9 +50,7 @@ export default function ContactSection() {
     if (!formData["you-postcode"].trim()) {
       next["you-postcode"] = "Postcode is required.";
     }
-    if (!formData["your-message"].trim()) {
-      next["your-message"] = "Message is required.";
-    }
+
     setErrors(next);
     return Object.keys(next).length === 0;
   };
@@ -63,7 +61,7 @@ export default function ContactSection() {
 
     if (loading) return; // guard
     if (!validate()) {
-      setMessage("⚠️ All fields are required.");
+      setMessage("⚠️ All fields are required. Description is optional.");
       return;
     }
 
@@ -110,8 +108,6 @@ export default function ContactSection() {
     }
   };
 
-  const hasAnyError = Object.values(errors).some(Boolean);
-
   return (
     <>
       <section className="community contact_top section-padding style-5">
@@ -133,11 +129,7 @@ export default function ContactSection() {
                   noValidate
                 >
                   {/* Top alert only when errors exist */}
-                  {hasAnyError && (
-                    <p className="text-center text-danger fs-12px mb-30">
-                      All fields are required.
-                    </p>
-                  )}
+
                   {/* Show server message */}
                   {message && (
                     <p className="text-center mb-2" aria-live="polite">
@@ -230,14 +222,8 @@ export default function ContactSection() {
                           value={formData["your-message"]}
                           onChange={handleChange}
                           placeholder="How can we help you?*"
-                          required
                           rows={4}
                         />
-                        {errors["your-message"] && (
-                          <small className="text-danger">
-                            {errors["your-message"]}
-                          </small>
-                        )}
                       </div>
                     </div>
 
@@ -254,9 +240,6 @@ export default function ContactSection() {
                 </form>
 
                 {/* Optional: small hint below the form */}
-                <p className="text-center mt-2" style={{ fontSize: 12 }}>
-                  * Required fields
-                </p>
               </div>
             </div>
           </div>

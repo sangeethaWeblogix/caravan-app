@@ -171,6 +171,58 @@ export default function ClientLogger({
     .filter(isNonEmpty);
 
   const makeValue = getAttr("Make");
+  const atmOptions = [
+    "600 Kg",
+    "800 Kg",
+    "1,000 Kg",
+    "1,250 Kg",
+    "1,500 Kg",
+    "1,750 Kg",
+    "2,000 Kg",
+    "2,250 Kg",
+    "2,500 Kg",
+    "2,750 Kg",
+    "3,000 Kg",
+    "3,500 Kg",
+    "4,000 Kg",
+    "4,500 Kg",
+  ];
+  const lengthOptions = [
+    "12 ft",
+    "13 ft",
+    "14 ft",
+    "15 ft",
+    "16 ft",
+    "17 ft",
+    "18 ft",
+    "19 ft",
+    "20 ft",
+    "21 ft",
+    "22 ft",
+    "23 ft",
+    "24 ft",
+    "25 ft",
+    "26 ft",
+    "27 ft",
+    "28 ft",
+  ];
+  const numFrom = (v: string | number | undefined) => {
+    const n = Number(String(v ?? "").replace(/[^0-9.]/g, ""));
+    return Number.isFinite(n) ? n : NaN;
+  };
+  const ceilToOption = (val: number, options: number[]) => {
+    const opts = [...options].sort((a, b) => a - b);
+    for (const o of opts) if (val <= o) return o;
+    return opts[opts.length - 1]; // clamp to max
+  };
+
+  // 3) numeric arrays of options
+  const atmOptionNums = atmOptions
+    .map((s) => numFrom(s))
+    .filter((n) => !Number.isNaN(n)) as number[];
+  const lengthOptionNums = lengthOptions
+    .map((s) => numFrom(s))
+    .filter((n) => !Number.isNaN(n)) as number[];
 
   const specFields = [
     { label: "Type", value: categoryNames.join(", ") || getAttr("Type") },
@@ -178,13 +230,11 @@ export default function ClientLogger({
     { label: "Model", value: getAttr("Model") },
     { label: "Year", value: getAttr("Years") },
     { label: "Condition", value: getAttr("Conditions") },
-    { label: "Axle Configuration", value: getAttr("AxleConfiguration") },
     { label: "Length", value: getAttr("length") },
     { label: "Sleep", value: getAttr("sleeps") },
     { label: "ATM", value: getAttr("ATM") },
     { label: "Tare Mass", value: getAttr("Tare Mass") },
     { label: "Ball Weight", value: getAttr("Ball Weight") },
-    { label: "Extras", value: getAttr("Extras") },
     { label: "Location", value: getAttr("Location") },
   ] as const;
 
@@ -217,10 +267,16 @@ export default function ClientLogger({
     }
 
     if (L === "atm") {
-      const kg = toInt(v);
-      return kg ? [{ href: `/listings/under-${kg}-kg-atm/`, text: v }] : null;
+      const kgRaw = numFrom(v);
+      if (!Number.isFinite(kgRaw)) return null;
+      const kg = ceilToOption(kgRaw, atmOptionNums);
+      return [
+        {
+          href: `/listings/under-${kg}-kg-atm/`,
+          text: `${kg.toLocaleString("en-AU")} Kg`,
+        },
+      ];
     }
-
     if (L === "location" || L === "state") {
       return [{ href: `/listings/${slugify(v)}-state/`, text: v }];
     }
@@ -245,10 +301,12 @@ export default function ClientLogger({
     }
 
     if (L === "length") {
-      const ft = toInt(v);
-      return ft
-        ? [{ href: `/listings/under-${ft}-length-in-feet/`, text: v }]
-        : null;
+      const ftRaw = numFrom(v);
+      if (!Number.isFinite(ftRaw)) return null;
+      const ft = ceilToOption(ftRaw, lengthOptionNums);
+      return [
+        { href: `/listings/under-${ft}-length-in-feet/`, text: `${ft} ft` },
+      ];
     }
 
     if (L === "condition" || L === "conditions") {

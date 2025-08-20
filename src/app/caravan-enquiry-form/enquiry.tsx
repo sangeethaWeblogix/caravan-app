@@ -8,6 +8,10 @@ type FormState = {
   "your-phone": string;
   "you-postcode": string; // keep as-is since your CF7 works with this key
   "your-message": string;
+  "caravan-type": "";
+  condition: "";
+  budget: "";
+  requirements: "";
 };
 
 export default function ContactSection() {
@@ -19,15 +23,22 @@ export default function ContactSection() {
     "your-phone": "",
     "you-postcode": "",
     "your-message": "",
+    "caravan-type": "",
+    condition: "",
+    budget: "",
+    requirements: "",
   });
   const [errors, setErrors] = useState<
     Partial<Record<keyof FormState, string>>
   >({});
 
   const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+    e: React.ChangeEvent<
+      HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
+    >
   ) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
+
     // clear field error on change
     if (errors[e.target.name as keyof FormState]) {
       setErrors((prev) => ({ ...prev, [e.target.name]: undefined }));
@@ -50,9 +61,16 @@ export default function ContactSection() {
     if (!formData["you-postcode"].trim()) {
       next["you-postcode"] = "Postcode is required.";
     }
-    if (!formData["your-message"].trim()) {
-      next["your-message"] = "Message is required.";
+    if (!formData["caravan-type"].trim()) {
+      next["caravan-type"] = "type is required.";
     }
+    if (!formData["condition"].trim()) {
+      next["condition"] = "condition is required.";
+    }
+    if (!formData["budget"].trim()) {
+      next["budget"] = "budget is required.";
+    }
+
     setErrors(next);
     return Object.keys(next).length === 0;
   };
@@ -82,7 +100,7 @@ export default function ContactSection() {
       );
 
       const res = await fetch(
-        "https://www.caravansforsale.com.au/wp-json/contact-form-7/v1/contact-forms/3290/feedback",
+        "https://www.caravansforsale.com.au/wp-json/contact-form-7/v1/contact-forms/155838/feedback",
         { method: "POST", body: form }
       );
 
@@ -97,6 +115,10 @@ export default function ContactSection() {
           "your-phone": "",
           "you-postcode": "",
           "your-message": "",
+          "caravan-type": "",
+          condition: "",
+          budget: "",
+          requirements: "",
         });
         setErrors({});
       } else {
@@ -117,7 +139,9 @@ export default function ContactSection() {
       <section className="community contact_top section-padding style-5">
         <div className="container">
           <div className="section-head text-center style-4">
-            <h2 className="text-center mb-20">Get in Touch</h2>
+            <h2 className="text-center mb-20">
+              Exclusive Offers From Select<br></br>Quality Caravan Manufacturers
+            </h2>
           </div>
         </div>
       </section>
@@ -127,26 +151,14 @@ export default function ContactSection() {
           <div className="content">
             <div className="row justify-content-center">
               <div className="col-lg-8">
-                <form
-                  onSubmit={handleSubmit}
-                  className="flex flex-col gap-3 max-w-md mx-auto p-4 border rounded-lg shadow"
-                  noValidate
-                >
-                  {/* Top alert only when errors exist */}
-                  {hasAnyError && (
-                    <p className="text-center text-danger fs-12px mb-30">
-                      All fields are required.
-                    </p>
-                  )}
-                  {/* Show server message */}
-                  {message && (
-                    <p className="text-center mb-2" aria-live="polite">
-                      {message}
-                    </p>
-                  )}
-
+                <form onSubmit={handleSubmit} className="form" method="post">
+                  <p className="text-center text-danger fs-12px mb-30">
+                    Fill out the form below, and we&apos;ll send you exclusive
+                    deals for the best caravans in the market.
+                  </p>
                   <div className="row">
-                    <div className="col-lg-12">
+                    {/* Name */}
+                    <div className="col-lg-6">
                       <div className="form-group mb-20">
                         <input
                           type="text"
@@ -165,13 +177,14 @@ export default function ContactSection() {
                       </div>
                     </div>
 
-                    <div className="col-lg-12">
+                    {/* Email */}
+                    <div className="col-lg-6">
                       <div className="form-group mb-20">
                         <input
-                          type="email"
+                          type="text"
                           name="your-email"
                           className="form-control"
-                          placeholder="Email*"
+                          placeholder="Email Address*"
                           value={formData["your-email"]}
                           onChange={handleChange}
                           required
@@ -184,13 +197,14 @@ export default function ContactSection() {
                       </div>
                     </div>
 
-                    <div className="col-lg-12">
+                    {/* Phone */}
+                    <div className="col-lg-6">
                       <div className="form-group mb-20">
                         <input
-                          type="tel"
+                          type="text"
                           name="your-phone"
                           className="form-control"
-                          placeholder="Phone*"
+                          placeholder="Phone Number*"
                           value={formData["your-phone"]}
                           onChange={handleChange}
                           required
@@ -203,7 +217,8 @@ export default function ContactSection() {
                       </div>
                     </div>
 
-                    <div className="col-lg-12">
+                    {/* Postcode */}
+                    <div className="col-lg-6">
                       <div className="form-group mb-20">
                         <input
                           type="text"
@@ -222,41 +237,131 @@ export default function ContactSection() {
                       </div>
                     </div>
 
-                    <div className="col-lg-12">
+                    {/* Caravan Type */}
+                    <div className="col-lg-6">
                       <div className="form-group mb-20">
-                        <textarea
+                        <select
+                          name="caravan-type"
                           className="form-control"
-                          name="your-message"
-                          value={formData["your-message"]}
+                          value={formData["caravan-type"]}
                           onChange={handleChange}
-                          placeholder="How can we help you?*"
                           required
-                          rows={4}
-                        />
-                        {errors["your-message"] && (
+                        >
+                          <option value="">
+                            What type of caravan are you looking for?
+                          </option>
+                          <option value="off-road">Off Road</option>
+                          <option value="hybrid">Hybrid</option>
+                          <option value="pop-top">Pop Top</option>
+                          <option value="luxury">Luxury</option>
+                          <option value="family">Family</option>
+                          <option value="touring">Touring</option>
+                        </select>
+                        {errors["caravan-type"] && (
                           <small className="text-danger">
-                            {errors["your-message"]}
+                            {errors["caravan-type"]}
                           </small>
                         )}
                       </div>
                     </div>
 
-                    <div className="col-lg-12 text-center">
-                      <button
-                        type="submit"
-                        disabled={loading}
-                        className="btn bg-blue4 fw-bold text-white text-light fs-12px"
-                      >
-                        {loading ? "SUBMITTING..." : "SUBMIT"}
-                      </button>
+                    {/* Condition */}
+                    <div className="col-lg-6">
+                      <div className="form-group mb-20">
+                        <select
+                          name="condition"
+                          className="form-control"
+                          value={formData.condition}
+                          onChange={handleChange}
+                          required
+                        >
+                          <option value="">Select Condition</option>
+                          <option value="new">New</option>
+                          <option value="near-new">Near New</option>
+                          <option value="used">Used</option>
+                        </select>
+                        {errors.condition && (
+                          <small className="text-danger">
+                            {errors.condition}
+                          </small>
+                        )}
+                      </div>
                     </div>
+
+                    {/* Budget */}
+                    <div className="col-lg-12">
+                      <div className="form-group mb-20">
+                        <input
+                          type="text"
+                          name="budget"
+                          className="form-control"
+                          placeholder="What is your budget?*"
+                          value={formData.budget}
+                          onChange={handleChange}
+                          required
+                        />
+                        {errors.budget && (
+                          <small className="text-danger">{errors.budget}</small>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Requirements */}
+                    <div className="col-lg-12">
+                      <div className="form-group mb-20">
+                        <textarea
+                          name="requirements"
+                          className="form-control"
+                          placeholder="Requirements (Description)*"
+                          value={formData.requirements}
+                          onChange={handleChange}
+                          required
+                        />
+                        {errors.requirements && (
+                          <small className="text-danger">
+                            {errors.requirements}
+                          </small>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Message (optional) */}
+                    <div className="col-lg-12">
+                      <div className="form-group mb-20">
+                        <textarea
+                          name="your-message"
+                          className="form-control"
+                          placeholder="Additional message (optional)"
+                          value={formData["your-message"]}
+                          onChange={handleChange}
+                        />
+                      </div>
+                    </div>
+
+                    {/* Submit Button */}
+                    <div className="col-lg-12 text-center">
+                      <input
+                        type="submit"
+                        value={loading ? "Submitting..." : "SUBMIT"}
+                        className="btn bg-blue4 fw-bold text-white text-light fs-12px"
+                        disabled={loading}
+                      />
+                    </div>
+
+                    {/* Message */}
+                    {message && (
+                      <div className="col-lg-12 mt-3 text-center">
+                        <p
+                          className={
+                            hasAnyError ? "text-danger" : "text-success"
+                          }
+                        >
+                          {message}
+                        </p>
+                      </div>
+                    )}
                   </div>
                 </form>
-
-                {/* Optional: small hint below the form */}
-                <p className="text-center mt-2" style={{ fontSize: 12 }}>
-                  * Required fields
-                </p>
               </div>
             </div>
           </div>

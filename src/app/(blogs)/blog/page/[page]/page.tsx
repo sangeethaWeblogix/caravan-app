@@ -31,7 +31,7 @@ export default function BlogPage() {
   const router = useRouter();
   const params = useParams<{ page?: string }>();
   const initialPage = Math.max(1, Number(params?.page || 1));
-
+  const [navigating, setNavigating] = useState(false);
   const [blogPosts, setBlogPosts] = useState<BlogPost[]>([]);
   const [currentPage, setCurrentPage] = useState<number>(initialPage);
   const [totalPages, setTotalPages] = useState<number>(1);
@@ -147,6 +147,7 @@ export default function BlogPage() {
                             <p>{decodeHTML(post.excerpt)}</p>{" "}
                             <Link
                               href={href}
+                              onClick={() => setNavigating(true)}
                               className="btn rounded-pill bg-blue4 fw-bold text-white mt-10"
                             >
                               <small> Read More </small>
@@ -217,6 +218,22 @@ export default function BlogPage() {
           </div>
         </div>
       </section>
+      {navigating && (
+        <div
+          className="position-fixed top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center"
+          style={{
+            background: "rgba(255,255,255,0.6)",
+            backdropFilter: "blur(2px)",
+            zIndex: 9999,
+          }}
+          aria-live="polite"
+        >
+          <div className="text-center">
+            <div className="spinner-border" role="status" />
+            <div className="mt-2 fw-semibold">Loading…</div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

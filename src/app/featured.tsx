@@ -48,7 +48,7 @@ export default function DealsOnlyCFS() {
 
   const productHref = (p?: FeaturedItem) => {
     if (!p) return "#";
-    const slug = p.slug ?? toSlug(p.title ?? "product");
+    const slug = p.slug ?? toSlug(p.slug ?? "product");
     return `/product/${slug}/`;
   };
   // fetch a category once
