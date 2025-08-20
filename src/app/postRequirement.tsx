@@ -2,20 +2,21 @@
 import React, { useEffect, useState } from "react";
 import { fetchRequirements, Requirement } from "@/api/postRquirements/api";
 import Link from "next/link";
+
 const PostRequirement = () => {
   const [items, setItems] = useState<Requirement[]>([]);
-  const load = async () => {
-    try {
-      const data = await fetchRequirements();
-      setItems(data);
-    } catch (error) {
-      console.error("Failed to fetch requirements:", error);
-    }
-  };
-  console.log("reqitems", items);
+
   useEffect(() => {
-    load();
+    (async () => {
+      try {
+        const data = await fetchRequirements();
+        setItems(data);
+      } catch (err) {
+        console.error("Failed to fetch requirements:", err);
+      }
+    })();
   }, []);
+
   return (
     <div>
       <div className="container">
@@ -33,7 +34,6 @@ const PostRequirement = () => {
             </p>
           </div>
 
-          {/* Example Post Requirement */}
           <div className="home-post__items info top_cta_container">
             <div className="top_cta bg-white">
               <div className="home_post_middle hidden-xs">
@@ -44,33 +44,43 @@ const PostRequirement = () => {
                 <div className="location">Location</div>
                 <div className="budget">Budget</div>
               </div>
+
               {items.map((item, index) => (
                 <div className="post_flip" key={index}>
-                  <a href="#" className="home-post__item d-flex">
+                  {/* ⬇️ outer container is a div, not <a> */}
+                  <div className="home-post__item d-flex">
                     <div className="type">
                       <Link
                         href={`/listings/${item.type.toLowerCase()}-category/`}
                       >
-                        {" "}
                         {item.type}
                       </Link>
                     </div>
+
                     <div className="condition">
                       <Link
                         href={`/listings/${item.condition.toLowerCase()}-condition/`}
                       >
-                        {" "}
                         {item.condition}
-                      </Link>{" "}
+                      </Link>
                     </div>
+
                     <div className="requirements">{item.requirements}</div>
+
                     <div className="status">
                       <i className="fa fa-check" />{" "}
                       {item.active === "1" ? "Active" : "Inactive"}
                     </div>
+
                     <div className="location">{item.location}</div>
-                    <div className="budget">{item.budget}</div>
-                  </a>
+                    <div className="budget">
+                      {new Intl.NumberFormat("en-US", {
+                        style: "currency",
+                        currency: "USD",
+                        minimumFractionDigits: 0,
+                      }).format(Number(item.budget))}{" "}
+                    </div>
+                  </div>
                 </div>
               ))}
             </div>
