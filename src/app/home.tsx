@@ -15,45 +15,12 @@ import BlogSection from "./blogSection";
 import PostRequirement from "./postRequirement";
 import Manufactures from "./manufacture";
 import SearchSection from "./searchSection";
-const suggestions: string[] = [
-  "caravans for sale",
-  "jayco crosstrak for sale",
-  "lotus caravans for sale",
-  "off road caravans for sale",
-  "top 10 caravan manufacturers australia",
-];
 
 /* --------------------------------- Page ---------------------------------- */
 export default function ProductPage() {
-  const [isSuggestionBoxOpen, setIsSuggestionBoxOpen] =
-    useState<boolean>(false);
   const [adIndex, setAdIndex] = useState<number>(0);
 
   const bannerSectionRef = useRef<HTMLDivElement | null>(null);
-  const searchInputRef = useRef<HTMLInputElement | null>(null);
-
-  const searchLocationho = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    // prefer currentTarget for typed value
-    console.log(e.currentTarget.value);
-  };
-
-  // const search_by_header = (): void => {
-  //   console.log("Search button clicked");
-  // };
-
-  const showSuggestions = (): void => {
-    setIsSuggestionBoxOpen(true);
-    if (typeof document !== "undefined") {
-      document.body.style.overflow = "hidden";
-    }
-  };
-
-  const closeSuggestions = (): void => {
-    setIsSuggestionBoxOpen(false);
-    if (typeof document !== "undefined") {
-      document.body.style.overflow = "auto";
-    }
-  };
 
   useEffect(() => {
     if (typeof window === "undefined" || typeof document === "undefined")
@@ -86,14 +53,6 @@ export default function ProductPage() {
       }
     };
   }, []);
-
-  const handleSuggestionClick = (keyword: string): void => {
-    if (searchInputRef.current) {
-      searchInputRef.current.value = keyword;
-      searchInputRef.current.focus();
-    }
-    closeSuggestions();
-  };
 
   // Handle banner ad rotation
   useEffect(() => {

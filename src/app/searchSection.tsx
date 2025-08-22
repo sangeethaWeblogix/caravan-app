@@ -10,17 +10,16 @@ import {
   fetchKeywordSuggestions, // GET /home_search/?keyword=<q> (typed list)
 } from "@/api/homeSearch/api";
 
-type Item = Record<string, any>;
-
-// slugify so URLs are clean (no %20)
-const toSlug = (s: string) =>
-  s
-    .toLowerCase()
-    .trim()
-    .replace(/&/g, "and")
-    .replace(/\s+/g, "-")
-    .replace(/[^a-z0-9-]/g, "")
-    .replace(/-+/g, "-");
+type Item = {
+  title?: string;
+  name?: string;
+  heading?: string;
+  make?: string;
+  model?: string;
+  variant?: string;
+  slug?: string | number;
+  id?: string | number;
+} & Record<string, unknown>;
 
 // Safe label extractor (avoid mixing ?? and || without parens)
 const labelOf = (x: Item): string => {
@@ -63,8 +62,8 @@ export default function SearchSection() {
       ).slice(0, 15);
       setBaseSuggestions(labels);
       setSuggestions(labels); // show immediately
-    } catch (e: any) {
-      setError(e?.message ?? "Failed to load");
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : "Failed to load");
     } finally {
       setLoading(false);
     }
@@ -92,8 +91,9 @@ export default function SearchSection() {
             15
           );
           setSuggestions(uniq);
-        } catch (e: any) {
-          if (e?.name !== "AbortError") setError(e?.message ?? "Failed");
+        } catch (e: unknown) {
+          if (e instanceof DOMException && e.name === "AbortError") return;
+          setError(e instanceof Error ? e.message : "Failed");
         } finally {
           setLoading(false);
         }
@@ -137,10 +137,6 @@ export default function SearchSection() {
     // Encode but show + for spaces
     const encoded = encodeURIComponent(human).replace(/%20/g, "+");
     router.push(`/listings/search=${encoded}`, { scroll: true });
-  };
-
-  const handleSuggestionClick = (keyword: string) => {
-    navigateWithKeyword(keyword);
   };
 
   const handleKeyDown: React.KeyboardEventHandler<HTMLInputElement> = (e) => {

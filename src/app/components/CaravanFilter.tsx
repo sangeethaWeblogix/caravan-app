@@ -126,12 +126,6 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
   const [categories, setCategories] = useState<Option[]>([]);
   const [makes, setMakes] = useState<Option[]>([]);
   const [model, setModel] = useState<Model[]>([]);
-  const toSlug = (s: string) =>
-    s
-      .toLowerCase()
-      .trim()
-      .replace(/\s+/g, "-")
-      .replace(/[^a-z0-9-]/g, "");
 
   const [states, setStates] = useState<StateOption[]>([]);
   const [makeOpen, setMakeOpen] = useState(false);
@@ -182,7 +176,6 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
   const [baseKeywords, setBaseKeywords] = useState<string[]>([]);
   const [keywordLoading, setKeywordLoading] = useState(false);
   const [baseLoading, setBaseLoading] = useState(false);
-  const [keywordError, setKeywordError] = useState<string>("");
   const pickedSourceRef = useRef<"base" | "typed" | null>(null);
   const [atmFrom, setAtmFrom] = useState<number | null>(null);
   const [atmTo, setAtmTo] = useState<number | null>(null);
@@ -271,22 +264,21 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
     const q = keywordInput.trim();
     if (q.length < 2) {
       setKeywordSuggestions([]);
-      setKeywordError("");
       setKeywordLoading(false);
       return;
     }
 
     const ctrl = new AbortController();
     setKeywordLoading(true);
-    setKeywordError("");
 
     const t = setTimeout(async () => {
       try {
         const list = await fetchKeywordSuggestions(q, ctrl.signal); // HomeSearchItem[] | string[]
         const names = labelsFrom(list).slice(0, 20);
         setKeywordSuggestions(Array.from(new Set(names)));
-      } catch (e: any) {
-        if (e?.name !== "AbortError") setKeywordError(e?.message ?? "Failed");
+      } catch (e: unknown) {
+        if (e instanceof DOMException && e.name === "AbortError") return;
+        console.warn("[keyword] fetch failed:", e);
       } finally {
         setKeywordLoading(false);
       }
@@ -333,21 +325,6 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
   // ✅ One button for modal footer
   // ✅ Modal submit → base => search, typed/suggested => keyword
   // Base list -> search=<plus joined>
-  const applyBaseSearch = (human: string) => {
-    const next: Filters = {
-      ...currentFilters,
-      search: toQueryPlus(human),
-      keyword: undefined,
-    };
-    setKeywordInput(human); // show as spaces in the field
-    setFilters(next);
-    filtersInitialized.current = true;
-    setIsKeywordModalOpen(false);
-    pickedSourceRef.current = "base";
-    startTransition(() => {
-      updateAllFiltersAndURL(next);
-    });
-  };
 
   // Modal primary button -> always search=<plus joined>
   const applyKeywordFromModal = () => {
@@ -834,23 +811,6 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
   //   currentFilters.pincode,
   //   selectedStateName,
   // ]);
-  const mergeQuery = (
-    url: string,
-    extra: Record<string, string | undefined>
-  ) => {
-    const u = new URL(
-      url,
-      typeof window !== "undefined"
-        ? window.location.origin
-        : "http://localhost"
-    );
-    for (const [k, v] of Object.entries(extra)) {
-      if (v == null || v === "") u.searchParams.delete(k);
-      else u.searchParams.set(k, v);
-    }
-    const qs = u.searchParams.toString();
-    return `${u.pathname}${qs ? `?${qs}` : ""}`;
-  };
 
   const resetRegionFilters = () => {
     setSelectedRegion("");

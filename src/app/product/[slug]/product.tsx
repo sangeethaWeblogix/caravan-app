@@ -172,16 +172,6 @@ export default function ClientLogger({
 
   const makeValue = getAttr("Make");
 
-  const numFrom = (v: string | number | undefined) => {
-    const n = Number(String(v ?? "").replace(/[^0-9.]/g, ""));
-    return Number.isFinite(n) ? n : NaN;
-  };
-  const ceilToOption = (val: number, options: number[]) => {
-    const opts = [...options].sort((a, b) => a - b);
-    for (const o of opts) if (val <= o) return o;
-    return opts[opts.length - 1]; // clamp to max
-  };
-
   // 3) numeric arrays of options
 
   const specFields = [

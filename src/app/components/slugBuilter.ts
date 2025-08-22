@@ -88,8 +88,8 @@ export const buildSlugFromFilters = (
   const pageNum = Number(page);
   if (pageNum > 1) q.set("page", String(pageNum));
   // Special cases: keyword / search segment (encode RHS only)
-  const encodeRhsKeepPlus = (raw: string) =>
-    encodeURIComponent(raw.trim().replace(/\s+/g, "+")).replace(/%2B/gi, "+"); // turn encoded '+' back to '+'
+  // const encodeRhsKeepPlus = (raw: string) =>
+  //   encodeURIComponent(raw.trim().replace(/\s+/g, "+")).replace(/%2B/gi, "+"); // turn encoded '+' back to '+'
   // if (filters.keyword?.trim()) {
   //   const rhs = encodeRhsKeepPlus(filters.keyword);
   //   const path = `/listings/search=${rhs}/`;

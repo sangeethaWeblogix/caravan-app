@@ -270,10 +270,10 @@ export default function ListingsPage({ page, ...incomingFilters }: Props) {
 
     const [k, v = ""] = decoded.split("=", 2);
     if (k === "search" || k === "keyword") {
-      const copy: Filters = { ...f, [k]: v };
-      delete (copy as any).make;
-      if (copy.keyword) copy.search = undefined;
-      return copy;
+      const out: Filters = { ...f, [k]: v };
+      delete out.make; // cleanly drop make
+      if (out.keyword) out.search = undefined;
+      return out;
     }
     return f;
   };
