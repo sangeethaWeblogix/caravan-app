@@ -127,38 +127,25 @@ export default function SearchSection() {
   //     setIsSuggestionBoxOpen(false);
   //   };
   // ------------- navigate helper (two routes) -------------
-  const navigateWithKeyword = (kwRaw: string, fromKeywordApi: boolean) => {
+  const navigateWithKeyword = (kwRaw: string) => {
     const human = kwRaw.trim();
     if (!human) return;
 
-    // update controlled input first
     flushSync(() => setQuery(human));
     setIsSuggestionBoxOpen(false);
 
-    // const slug = toSlug(human);
-
-    // const url = fromKeywordApi
-    //   ? `/listings/keyword=${slug}`
-    //   : `/listings/search=${slug}`;
-    const url = fromKeywordApi
-      ? `/listings/keyword=${encodeURIComponent(human)}`
-      : `/listings/search=${encodeURIComponent(human)}`;
-
-    router.push(url);
+    // Encode but show + for spaces
+    const encoded = encodeURIComponent(human).replace(/%20/g, "+");
+    router.push(`/listings/search=${encoded}`, { scroll: true });
   };
 
-  const handleSuggestionClick = (keyword: string, fromKeywordApi: boolean) => {
-    navigateWithKeyword(keyword, fromKeywordApi);
+  const handleSuggestionClick = (keyword: string) => {
+    navigateWithKeyword(keyword);
   };
 
   const handleKeyDown: React.KeyboardEventHandler<HTMLInputElement> = (e) => {
     if (e.key === "Enter") {
-      // If currently showing typed results (≥3 chars), treat as keyword API route
-      const fromKeywordApi = query.length >= 3;
-      navigateWithKeyword(
-        (e.currentTarget as HTMLInputElement).value,
-        fromKeywordApi
-      );
+      navigateWithKeyword((e.currentTarget as HTMLInputElement).value);
     }
     if (e.key === "Escape") closeSuggestions();
   };
@@ -238,12 +225,9 @@ export default function SearchSection() {
                           <li
                             key={`${keyword}-${idx}`}
                             // Use onMouseDown so it fires before blur
-                            onMouseDown={(e) => {
+                            onPointerDown={(e) => {
                               e.preventDefault();
-                              handleSuggestionClick(
-                                keyword,
-                                showingFromKeywordApi
-                              );
+                              navigateWithKeyword(keyword);
                             }}
                             style={{ cursor: "pointer" }}
                             role="option"
