@@ -17,6 +17,8 @@ export interface Filters {
   make?: string;
   model?: string;
   orderby?: string;
+  search?: string;
+  keyword?: string;
 }
 
 const conditionMap: Record<string, string> = {
@@ -29,6 +31,28 @@ export function parseSlugToFilters(slugParts: string[]): Filters {
   const filters: Filters = {};
 
   slugParts.forEach((part) => {
+    if (part.startsWith("search=")) {
+      const rhs = part.slice("search=".length);
+      // decode defensively, but keep '+' as '+'
+      const val = decodeURIComponent(rhs)
+        .replace(/%20/g, "+")
+        .replace(/%2B/gi, "+")
+        .replace(/\s+/g, "+");
+      filters.search = val;
+      filters.keyword = undefined;
+      return;
+    }
+    if (part.startsWith("keyword=")) {
+      const rhs = part.slice("keyword=".length);
+      const val = decodeURIComponent(rhs)
+        .replace(/%20/g, "+")
+        .replace(/%2B/gi, "+")
+        .replace(/\s+/g, "+");
+      // canonicalize to `search` so the rest of the app has a single source
+      filters.search = val;
+      filters.keyword = undefined;
+      return;
+    }
     if (part.endsWith("-category")) {
       filters.category = part.replace("-category", "");
     } else if (part.endsWith("-condition")) {
@@ -109,3 +133,13 @@ export function parseSlugToFilters(slugParts: string[]): Filters {
 
   return filters;
 }
+// export function buildListingsUrl(filters: Filters): string {
+//   // precedence: keyword > search
+//   if (filters.keyword?.trim()) {
+//     return `/listings/keyword=${encodeURIComponent(filters.keyword.trim())}`;
+//   }
+//   if (filters.search?.trim()) {
+//     return `/listings/search=${encodeURIComponent(filters.search.trim())}`;
+//   }
+//   return "/listings";
+// }

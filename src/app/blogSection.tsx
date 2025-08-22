@@ -87,10 +87,12 @@ export default function HomeLatestBlogs() {
                           </div>
                           <div className="info">
                             <h4 className="title">
-                              <Link href={href}>{post.title}</Link>
+                              <Link href={href} scroll>
+                                {post.title}
+                              </Link>
                             </h4>
                             <div className="date-author">
-                              <Link href={href} className="date">
+                              <Link href={href} scroll className="date">
                                 {formatPostDate(post.date ?? "")}
                               </Link>
                             </div>

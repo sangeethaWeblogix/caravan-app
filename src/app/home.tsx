@@ -14,45 +14,13 @@ import FeaturedSection from "./featured";
 import BlogSection from "./blogSection";
 import PostRequirement from "./postRequirement";
 import Manufactures from "./manufacture";
-const suggestions: string[] = [
-  "caravans for sale",
-  "jayco crosstrak for sale",
-  "lotus caravans for sale",
-  "off road caravans for sale",
-  "top 10 caravan manufacturers australia",
-];
+import SearchSection from "./searchSection";
 
 /* --------------------------------- Page ---------------------------------- */
 export default function ProductPage() {
-  const [isSuggestionBoxOpen, setIsSuggestionBoxOpen] =
-    useState<boolean>(false);
   const [adIndex, setAdIndex] = useState<number>(0);
 
   const bannerSectionRef = useRef<HTMLDivElement | null>(null);
-  const searchInputRef = useRef<HTMLInputElement | null>(null);
-
-  const searchLocationho = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    // prefer currentTarget for typed value
-    console.log(e.currentTarget.value);
-  };
-
-  // const search_by_header = (): void => {
-  //   console.log("Search button clicked");
-  // };
-
-  const showSuggestions = (): void => {
-    setIsSuggestionBoxOpen(true);
-    if (typeof document !== "undefined") {
-      document.body.style.overflow = "hidden";
-    }
-  };
-
-  const closeSuggestions = (): void => {
-    setIsSuggestionBoxOpen(false);
-    if (typeof document !== "undefined") {
-      document.body.style.overflow = "auto";
-    }
-  };
 
   useEffect(() => {
     if (typeof window === "undefined" || typeof document === "undefined")
@@ -85,14 +53,6 @@ export default function ProductPage() {
       }
     };
   }, []);
-
-  const handleSuggestionClick = (keyword: string): void => {
-    if (searchInputRef.current) {
-      searchInputRef.current.value = keyword;
-      searchInputRef.current.focus();
-    }
-    closeSuggestions();
-  };
 
   // Handle banner ad rotation
   useEffect(() => {
@@ -128,108 +88,7 @@ export default function ProductPage() {
     <div>
       {/* Hero Section */}
       <section className="home_top style-1">
-        <div className="container">
-          <div className="row align-items-center justify-content-center">
-            <div className="col-lg-12">
-              <div className="section-head text-center">
-                <h1 className="divide-orange">
-                  Browse New & Used Caravans For Sale
-                </h1>
-                <p>
-                  CFS is dedicated to revolutionising your caravan buying
-                  experience.
-                </p>
-
-                <div
-                  className="overlay_search"
-                  id="overlay_search"
-                  style={{ display: isSuggestionBoxOpen ? "block" : "none" }}
-                  onClick={closeSuggestions}
-                />
-
-                <div className="search-container">
-                  <div className="search-wrapper">
-                    <i className="bi bi-search search-icon" />
-                    <input
-                      ref={searchInputRef}
-                      type="text"
-                      className="search-box"
-                      placeholder="Search by caravans..."
-                      id="searchInput"
-                      autoComplete="off"
-                      onKeyUp={searchLocationho}
-                      onFocus={showSuggestions}
-                      onClick={showSuggestions}
-                    />
-                    <div
-                      className="close-btn"
-                      id="closeBtn"
-                      style={{
-                        display: isSuggestionBoxOpen ? "block" : "none",
-                      }}
-                      onClick={closeSuggestions}
-                      role="button"
-                      aria-label="Close suggestions"
-                    >
-                      <i className="bi bi-x-lg" />
-                    </div>
-                  </div>
-
-                  <div
-                    className="suggestions"
-                    id="suggestionBox"
-                    style={{ display: isSuggestionBoxOpen ? "block" : "none" }}
-                  >
-                    <h4>
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        viewBox="0 0 500 500"
-                      >
-                        <path d="M487.9 254.7c-1.3.8-1.2 2.4-1.8 3.6a20 20 0 0 1-21 11.3c-8.2-1-15-7.5-16.4-16a40 40 0 0 1-.5-6.9v-61.3c0-1.6.5-3.4-.7-5.3l-4 3.8-147.8 147.8c-6.3 6.3-13.4 9.3-22.2 6.6a24 24 0 0 1-9.5-6.5q-40-39.9-79.7-79.9c-2.8-2.9-4.2-3-7.1-.1L47.5 381.6c-6.3 6.3-13.4 8.9-21.9 6.1a19.6 19.6 0 0 1-8.6-31.5q1.5-1.8 3.2-3.3l144.2-144.2c11-11 21.6-11 32.6 0l79.5 79.5c2.3 2.3 3.6 3.1 6.5.3l133.9-134.1c.8-.8 2-1.5 2.2-2.9-1.5-1-3.3-.5-4.9-.5q-32.2.1-64.6-.1c-13.6-.1-22.6-11.4-19.7-24.3a19 19 0 0 1 18.3-15q14-.2 27.9-.1l91.5-.2c10.4 0 16.7 6 20.3 15.3z" />
-                      </svg>
-                      Suggested searches
-                    </h4>
-                    <ul id="suggestionList">
-                      {suggestions.map((keyword, index) => (
-                        <li
-                          key={index}
-                          onClick={() => handleSuggestionClick(keyword)}
-                          style={{ cursor: "pointer" }}
-                        >
-                          {keyword}
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                </div>
-
-                <div className="row justify-content-center">
-                  <div className="col-lg-3 col-4">
-                    <Link
-                      href="/listings/new-condition/"
-                      className="btn btn-primary"
-                    >
-                      New
-                    </Link>
-                  </div>
-                  <div className="col-lg-3 col-4">
-                    <Link
-                      href="/listings/used-condition/"
-                      className="btn btn-primary"
-                    >
-                      Used
-                    </Link>
-                  </div>
-                  <div className="col-lg-3 col-4">
-                    <Link href="/listings/" className="btn btn-primary">
-                      All
-                    </Link>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
+        <SearchSection />
       </section>
 
       {/* Deal of the Month Section */}

@@ -171,58 +171,8 @@ export default function ClientLogger({
     .filter(isNonEmpty);
 
   const makeValue = getAttr("Make");
-  const atmOptions = [
-    "600 Kg",
-    "800 Kg",
-    "1,000 Kg",
-    "1,250 Kg",
-    "1,500 Kg",
-    "1,750 Kg",
-    "2,000 Kg",
-    "2,250 Kg",
-    "2,500 Kg",
-    "2,750 Kg",
-    "3,000 Kg",
-    "3,500 Kg",
-    "4,000 Kg",
-    "4,500 Kg",
-  ];
-  const lengthOptions = [
-    "12 ft",
-    "13 ft",
-    "14 ft",
-    "15 ft",
-    "16 ft",
-    "17 ft",
-    "18 ft",
-    "19 ft",
-    "20 ft",
-    "21 ft",
-    "22 ft",
-    "23 ft",
-    "24 ft",
-    "25 ft",
-    "26 ft",
-    "27 ft",
-    "28 ft",
-  ];
-  const numFrom = (v: string | number | undefined) => {
-    const n = Number(String(v ?? "").replace(/[^0-9.]/g, ""));
-    return Number.isFinite(n) ? n : NaN;
-  };
-  const ceilToOption = (val: number, options: number[]) => {
-    const opts = [...options].sort((a, b) => a - b);
-    for (const o of opts) if (val <= o) return o;
-    return opts[opts.length - 1]; // clamp to max
-  };
 
   // 3) numeric arrays of options
-  const atmOptionNums = atmOptions
-    .map((s) => numFrom(s))
-    .filter((n) => !Number.isNaN(n)) as number[];
-  const lengthOptionNums = lengthOptions
-    .map((s) => numFrom(s))
-    .filter((n) => !Number.isNaN(n)) as number[];
 
   const specFields = [
     { label: "Type", value: categoryNames.join(", ") || getAttr("Type") },
@@ -265,18 +215,11 @@ export default function ClientLogger({
         return { href: `/listings/${slugify(t)}-category/`, text: t };
       });
     }
-
-    if (L === "atm") {
-      const kgRaw = numFrom(v);
-      if (!Number.isFinite(kgRaw)) return null;
-      const kg = ceilToOption(kgRaw, atmOptionNums);
-      return [
-        {
-          href: `/listings/under-${kg}-kg-atm/`,
-          text: `${kg.toLocaleString("en-AU")} Kg`,
-        },
-      ];
+    if (L === "atm" || L === "ATM") {
+      const s = toInt(v);
+      return s ? [{ href: `/listings/under-${s}-kg`, text: v }] : null;
     }
+
     if (L === "location" || L === "state") {
       return [{ href: `/listings/${slugify(v)}-state/`, text: v }];
     }
@@ -300,13 +243,11 @@ export default function ClientLogger({
         : null;
     }
 
-    if (L === "length") {
-      const ftRaw = numFrom(v);
-      if (!Number.isFinite(ftRaw)) return null;
-      const ft = ceilToOption(ftRaw, lengthOptionNums);
-      return [
-        { href: `/listings/under-${ft}-length-in-feet/`, text: `${ft} ft` },
-      ];
+    if (L === "length" || L === "Length") {
+      const s = toInt(v);
+      return s
+        ? [{ href: `/listings/under-${s}-length-in-feet`, text: v }]
+        : null;
     }
 
     if (L === "condition" || L === "conditions") {
