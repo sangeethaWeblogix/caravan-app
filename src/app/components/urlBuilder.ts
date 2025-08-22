@@ -31,6 +31,28 @@ export function parseSlugToFilters(slugParts: string[]): Filters {
   const filters: Filters = {};
 
   slugParts.forEach((part) => {
+    if (part.startsWith("search=")) {
+      const rhs = part.slice("search=".length);
+      // decode defensively, but keep '+' as '+'
+      const val = decodeURIComponent(rhs)
+        .replace(/%20/g, "+")
+        .replace(/%2B/gi, "+")
+        .replace(/\s+/g, "+");
+      filters.search = val;
+      filters.keyword = undefined;
+      return;
+    }
+    if (part.startsWith("keyword=")) {
+      const rhs = part.slice("keyword=".length);
+      const val = decodeURIComponent(rhs)
+        .replace(/%20/g, "+")
+        .replace(/%2B/gi, "+")
+        .replace(/\s+/g, "+");
+      // canonicalize to `search` so the rest of the app has a single source
+      filters.search = val;
+      filters.keyword = undefined;
+      return;
+    }
     if (part.endsWith("-category")) {
       filters.category = part.replace("-category", "");
     } else if (part.endsWith("-condition")) {

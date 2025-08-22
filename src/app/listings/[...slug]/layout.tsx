@@ -97,7 +97,7 @@ export async function generateMetadata({
     atm,
     radius_kms,
   };
-
+  console.log("final", filters);
   const qs = new URLSearchParams();
   qs.append("page", String(filters.page ?? 1));
   if (filters.category) qs.append("category", filters.category);

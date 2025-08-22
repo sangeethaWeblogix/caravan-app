@@ -56,7 +56,6 @@ interface Model {
   slug: string;
 }
 export interface Filters {
-  page?: number | string; // <- allow both
   category?: string;
   make?: string;
   location?: string | null;
@@ -67,8 +66,8 @@ export interface Filters {
   states?: string;
   minKg?: string | number;
   maxKg?: string | number;
-  acustom_fromyears?: number | string;
-  acustom_toyears?: number | string;
+  from_year?: number | string;
+  to_year?: number | string;
   from_length?: string | number;
   to_length?: string | number;
   model?: string;
@@ -319,17 +318,9 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
   useEffect(() => {
     if (keywordInput !== keywordText) setKeywordInput(keywordText);
   }, [keywordText]);
-  // const toQueryPlus = (s: string) =>
-  //   s.trim().toLowerCase().replace(/\s+/g, "+");
   const toQueryPlus = (s: string) =>
-    s
-      .trim()
-      .toLowerCase()
-      .replace(/[+\-]+/g, " ")
-      .replace(/\s+/g, "+");
+    s.trim().toLowerCase().replace(/\s+/g, "+");
 
-  const toHumanFromQuery = (s?: string) =>
-    (s ?? "").toString().replace(/\+/g, " ").replace(/-/g, " ");
   // ✅ One button for modal footer
   // ✅ Modal submit → base => search, typed/suggested => keyword
   // Base list -> search=<plus joined>
@@ -834,23 +825,6 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
   //   currentFilters.pincode,
   //   selectedStateName,
   // ]);
-  const mergeQuery = (
-    url: string,
-    extra: Record<string, string | undefined>
-  ) => {
-    const u = new URL(
-      url,
-      typeof window !== "undefined"
-        ? window.location.origin
-        : "http://localhost"
-    );
-    for (const [k, v] of Object.entries(extra)) {
-      if (v == null || v === "") u.searchParams.delete(k);
-      else u.searchParams.set(k, v);
-    }
-    const qs = u.searchParams.toString();
-    return `${u.pathname}${qs ? `?${qs}` : ""}`;
-  };
 
   const resetRegionFilters = () => {
     setSelectedRegion("");
@@ -907,8 +881,6 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
     setSelectedSuburbName(null);
     setSelectedpincode(null);
     setLocationInput("");
-    setRadiusKms(RADIUS_OPTIONS[0]); // reset radius to default
-    setLocationSuggestions([]);
 
     // ✅ rehydrate suburb list for the currently selected region
     if (selectedStateName && selectedRegionName) {
@@ -932,7 +904,6 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
       region: selectedRegionName || currentFilters.region,
       suburb: undefined,
       pincode: undefined,
-      radius_kms: RADIUS_OPTIONS[0], // reset radius to default
     };
 
     setFilters(updatedFilters);
@@ -1019,7 +990,7 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
     setLocationInput(shortAddr);
 
     setShowSuggestions(false);
-    // setRadiusKms(RADIUS_OPTIONS[0]);
+    setRadiusKms(RADIUS_OPTIONS[0]);
     setIsModalOpen(false);
     setLocationSuggestions([]);
     suburbClickedRef.current = false;
@@ -1048,8 +1019,8 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
       sleeps: undefined,
       from_length: undefined,
       to_length: undefined,
-      acustom_fromyears: undefined,
-      acustom_toyears: undefined,
+      from_year: undefined,
+      to_year: undefined,
       location: null,
       radius_kms: RADIUS_OPTIONS[0], // ✅ 50 in payload
     };
@@ -1407,8 +1378,8 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
     "to_price",
     "minKg",
     "maxKg",
-    "acustom_fromyears",
-    "acustom_toyears",
+    "from_year",
+    "to_year",
     "from_length",
     "to_length",
     "radius_kms",
@@ -1500,7 +1471,6 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
   const lastSentFiltersRef = useRef<Filters | null>(null);
 
   // ✅ Update all filters and URL with validation
-  // 🔁 replace this whole function
   const updateAllFiltersAndURL = (override?: Filters) => {
     const DEFAULT_RADIUS = 50;
     // const nextRaw: Filters = override ?? filters;
@@ -1523,13 +1493,10 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
     // 3) build URL once
     const slugPath = buildSlugFromFilters(next);
     const query = new URLSearchParams();
-    if (next.acustom_fromyears)
-      query.set("acustom_fromyears", String(next.acustom_fromyears));
-    if (next.acustom_toyears)
-      query.set("acustom_toyears", String(next.acustom_toyears));
-    if (next.page && Number(next.page) > 1) {
-      query.set("page", String(next.page));
-    }
+    if (next.from_year) query.set("acustom_fromyears", String(next.from_year));
+    if (next.to_year) query.set("acustom_toyears", String(next.to_year));
+
+    query.set("page", "1");
 
     const safeSlugPath = slugPath.endsWith("/") ? slugPath : `${slugPath}/`;
     const finalURL = query.toString() ? `${slugPath}?${query}` : safeSlugPath;
@@ -2113,7 +2080,7 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
           type="text"
           className="cfs-select-input"
           placeholder="Click to choose / type"
-          value={toHumanFromQuery(keywordInput)} // ⬅️ show nicely
+          value={keywordInput.replace(/-/g, " ")} // ⬅️ show nicely
           onClick={() => {
             pickedSourceRef.current = null;
             setIsKeywordModalOpen(true);
@@ -2123,7 +2090,7 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
 
         {keywordText && (
           <div className="filter-chip">
-            <span>{toHumanFromQuery(keywordInput)}</span>
+            <span>{keywordText.replace(/-/g, " ")}</span>
             <span
               className="filter-chip-close"
               onClick={() => {
@@ -2643,16 +2610,12 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
 
                 const updatedFilters: Filters = {
                   ...currentFilters,
-                  acustom_fromyears: val ?? undefined, // ✅ Use val directly!
-                  acustom_toyears: yearTo ?? filters.acustom_toyears,
+                  from_year: val ?? undefined, // ✅ Use val directly!
+                  to_year: yearTo ?? filters.to_year,
                 };
 
                 setFilters(updatedFilters);
                 filtersInitialized.current = true;
-                // onFilterChange(updatedFilters);
-                startTransition(() => {
-                  updateAllFiltersAndURL(updatedFilters);
-                });
               }}
             >
               <option value="">Min</option>
@@ -2674,15 +2637,12 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
 
                 const updatedFilters: Filters = {
                   ...currentFilters,
-                  acustom_fromyears: yearFrom ?? filters.acustom_fromyears,
-                  acustom_toyears: val ?? undefined, // ✅ Use val directly!
+                  from_year: yearFrom ?? filters.from_year,
+                  to_year: val ?? undefined, // ✅ Use val directly!
                 };
 
                 setFilters(updatedFilters);
                 filtersInitialized.current = true;
-                startTransition(() => {
-                  updateAllFiltersAndURL(updatedFilters);
-                });
               }}
             >
               <option value="">Max</option>
@@ -2707,8 +2667,8 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
 
                 const updatedFilters: Filters = {
                   ...currentFilters,
-                  acustom_fromyears: undefined,
-                  acustom_toyears: undefined,
+                  from_year: undefined,
+                  to_year: undefined,
                 };
 
                 setFilters(updatedFilters);
@@ -2979,7 +2939,7 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
                   placeholder="eg: offroad, bunk, ensuite…"
                   className="filter-dropdown cfs-select-input"
                   autoComplete="off"
-                  value={toHumanFromQuery(keywordInput)}
+                  value={keywordInput.replace(/-/g, " ")} // ⬅️ show nicely
                   onChange={(e) => {
                     pickedSourceRef.current = "typed";
                     setKeywordInput(e.target.value);

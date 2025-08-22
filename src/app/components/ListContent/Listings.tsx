@@ -62,8 +62,8 @@ export interface Filters {
   states?: string;
   minKg?: string | number;
   maxKg?: string | number;
-  from_year?: number | string;
-  to_year?: number | string;
+  acustom_fromyears?: number | string;
+  acustom_toyears?: number | string;
   from_length?: string | number;
   to_length?: string | number;
   model?: string;
@@ -95,8 +95,8 @@ interface Props {
   maxKg?: string | number;
   from_length?: string | number;
   to_length?: string | number;
-  from_year?: string | number;
-  to_year?: string | number;
+  acustom_fromyears?: string | number;
+  acustom_toyears?: string | number;
   sleeps?: string;
   page?: string | number;
   serach?: string;
@@ -176,16 +176,17 @@ export default function ListingsPage({ page, ...incomingFilters }: Props) {
         const safeFilters = normalizeSearchFromMake(appliedFilters);
         console.log("Fetching listings :", safeFilters);
         // inside loadListings, just before calling fetchListings
-        console.log("🔗 Fetching listings with filters:", safeFilters);
+        console.log("Fetching listings with filters:", safeFilters);
 
-        const radiusNum = asNumber(appliedFilters.radius_kms);
+        const radiusNum = asNumber(safeFilters.radius_kms);
         const radiusParam =
           typeof radiusNum === "number" && radiusNum !== DEFAULT_RADIUS
             ? String(radiusNum) // API as string
             : undefined;
+        console.log("Fetching listings with  :", radiusParam);
 
         const response = await fetchListings({
-          ...appliedFilters,
+          ...safeFilters,
           page,
           condition: safeFilters.condition,
           minKg: safeFilters.minKg?.toString(),
@@ -193,8 +194,8 @@ export default function ListingsPage({ page, ...incomingFilters }: Props) {
           sleeps: safeFilters.sleeps,
           from_price: safeFilters.from_price?.toString(),
           to_price: safeFilters.to_price?.toString(),
-          acustom_fromyears: safeFilters.from_year?.toString(),
-          acustom_toyears: safeFilters.to_year?.toString(),
+          acustom_fromyears: safeFilters.acustom_fromyears?.toString(),
+          acustom_toyears: safeFilters.acustom_toyears?.toString(),
           from_length: safeFilters.from_length?.toString(),
           to_length: safeFilters.to_length?.toString(),
           make: safeFilters.make,
@@ -331,13 +332,14 @@ export default function ListingsPage({ page, ...incomingFilters }: Props) {
 
   const updateURLWithFilters = useCallback(
     (filters: Filters, page: number) => {
+      console.log("updateURLWithFilters called with filters:", filters);
       const slug = buildSlugFromFilters(filters); // no ?page=1 inside it
       const query = new URLSearchParams();
       if (filters.orderby) query.set("orderby", String(filters.orderby)); // ✅ add this
-      if (filters.from_year)
-        query.set("acustom_fromyears", filters.from_year.toString());
-      if (filters.to_year)
-        query.set("acustom_toyears", filters.to_year.toString());
+      if (filters.acustom_fromyears)
+        query.set("acustom_fromyears", filters.acustom_fromyears.toString());
+      if (filters.acustom_toyears)
+        query.set("acustom_toyears", filters.acustom_toyears.toString());
       // ✅ Only add page if greater than 1
       const r = Number(filters.radius_kms);
       if (!Number.isNaN(r) && r !== DEFAULT_RADIUS) {
@@ -367,43 +369,66 @@ export default function ListingsPage({ page, ...incomingFilters }: Props) {
     }
   };
   const noResultsRedirectingRef = useRef(false);
+  // Make a stable key for query changes
+  const searchKey = typeof window !== "undefined" ? window.location.search : "";
+
+  // Keep a stable snapshot of incomingFilters values (optional if those never change)
+  const incomingFiltersRef = useRef<Filters>(incomingFilters);
+  useEffect(() => {
+    // only update ref if values actually changed (cheap compare)
+    const prev = JSON.stringify(incomingFiltersRef.current);
+    const next = JSON.stringify(incomingFilters);
+    if (prev !== next) incomingFiltersRef.current = incomingFilters;
+  }, [incomingFilters]);
 
   useEffect(() => {
     if (!filtersInitializedRef.current) return;
 
     const path = typeof window !== "undefined" ? window.location.pathname : "";
+    console.log("parsedFromURL path:", path);
     const slugParts = path.split("/listings/")[1]?.split("/") || [];
     const parsedFromURL = parseSlugToFilters(slugParts);
-
-    // ✅ read query params (orderby, years, etc.)
-    const pageFromURL = parseInt(searchParams.get("page") || "1", 10);
-    const orderbyQP = searchParams.get("orderby") || undefined;
-    const radiusQP = searchParams.get("radius_kms");
+    console.log("parsedFromURL", parsedFromURL);
+    const pageFromURL = parseInt(
+      new URLSearchParams(searchKey).get("page") || "1",
+      10
+    );
+    const orderbyQP =
+      new URLSearchParams(searchKey).get("orderby") || undefined;
+    const radiusQP = new URLSearchParams(searchKey).get("radius_kms");
     const radiusFromURL = radiusQP
       ? Math.max(5, parseInt(radiusQP, 10))
       : undefined;
-    // const fromYearsQP = searchParams.get("acustom_fromyears") || undefined;
-    // const toYearsQP = searchParams.get("acustom_toyears") || undefined;
 
-    // ✅ include them in filtersRef/current
-    filtersRef.current = {
+    // Single merged filters (path + query + incoming snapshot)
+    const merged: Filters = {
       ...parsedFromURL,
-      ...incomingFilters,
+      ...incomingFiltersRef.current,
       orderby: orderbyQP,
       radius_kms:
         typeof radiusFromURL === "number" && radiusFromURL !== DEFAULT_RADIUS
           ? radiusFromURL
-          : undefined, // ✅ crucial: makes requestKey change
-      // from_year: fromYearsQP ?? parsedFromURL.from_year,
-      // to_year: toYearsQP ?? parsedFromURL.to_year,
+          : undefined,
     };
-    setFilters(filtersRef.current);
+    console.log("parsedFrom", merged);
 
-    const requestKey = JSON.stringify({
-      page: pageFromURL,
-      filters: filtersRef.current, // now includes orderby
-    });
+    // ✅ Only update state when it actually changed
+    const prevFiltersJson = JSON.stringify(filtersRef.current);
+    const nextFiltersJson = JSON.stringify(merged);
 
+    if (prevFiltersJson !== nextFiltersJson) {
+      filtersRef.current = merged;
+      setFilters(merged);
+    }
+
+    // Only update pagination when page changed
+    setPagination((prev) =>
+      prev.current_page === pageFromURL
+        ? prev
+        : { ...prev, current_page: pageFromURL }
+    );
+
+    const requestKey = JSON.stringify({ page: pageFromURL, filters: merged });
     if (
       lastRequestKeyRef.current === requestKey ||
       inFlightKeyRef.current === requestKey
@@ -414,29 +439,15 @@ export default function ListingsPage({ page, ...incomingFilters }: Props) {
     lastRequestKeyRef.current = requestKey;
     inFlightKeyRef.current = requestKey;
 
-    setPagination((prev) => ({ ...prev, current_page: pageFromURL }));
-
-    loadListings(pageFromURL, filtersRef.current)
+    loadListings(pageFromURL, merged)
       .catch(() => {})
       .finally(() => {
         if (inFlightKeyRef.current === requestKey) inFlightKeyRef.current = "";
+        setHasSearched(true);
       });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchParams]);
+    // ⬇️ Depend on the stable string and nothing that changes every render
+  }, [searchKey /* not incomingFilters, not loadListings */]);
 
-  useEffect(() => {
-    if (!filtersInitializedRef.current) {
-      const path =
-        typeof window !== "undefined" ? window.location.pathname : "";
-      const slugParts = path.split("/listings/")[1]?.split("/") || [];
-      const parsed = parseSlugToFilters(slugParts);
-
-      setInitialFilters(parsed);
-      filtersRef.current = parsed;
-      filtersInitializedRef.current = true;
-      setFiltersReady(true); // let the URL watcher effect do the fetching
-    }
-  }, []);
   const mobileFiltersRef = useRef<HTMLDivElement>(null);
   const [draftFilters, setDraftFilters] = useState<Filters>({});
 
