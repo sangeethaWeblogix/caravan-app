@@ -75,10 +75,10 @@ export const buildSlugFromFilters = (
 
   // query params (shared)
   const q = new URLSearchParams();
-  if (filters.acustom_fromyears)
-    q.set("acustom_fromyears", String(filters.acustom_fromyears));
-  if (filters.acustom_toyears)
-    q.set("acustom_toyears", String(filters.acustom_toyears));
+  // if (filters.acustom_fromyears)
+  //   q.set("acustom_fromyears", String(filters.acustom_fromyears));
+  // if (filters.acustom_toyears)
+  //   q.set("acustom_toyears", String(filters.acustom_toyears));
   if (
     typeof filters.radius_kms === "number" &&
     filters.radius_kms > DEFAULT_RADIUS
