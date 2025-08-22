@@ -9,7 +9,7 @@ import React from "react";
 import { Metadata } from "next";
 import ScrollToTop from "./ScrollToTop";
 export const metadata: Metadata = {
-  title: { default: "Caravan Listings", template: "%s | Caravan Listings" },
+  title: { default: "Caravan Listings", template: "%s " },
   description: "Browse all available caravans.",
   icons: { icon: "/favicon.ico" },
 };

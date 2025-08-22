@@ -6,6 +6,7 @@ import Link from "next/link";
 import CaravanDetailModal from "./CaravanDetailModal";
 import "./product.css";
 import DOMPurify from "dompurify";
+
 type Attribute = {
   label?: string;
   value?: string;
@@ -23,7 +24,6 @@ interface ApiData {
   main_image?: string;
   images?: string[];
   categories?: Category[];
-  // If the API ever includes these at the top level, keep optional:
   id?: string | number;
   slug?: string;
 }
@@ -57,15 +57,9 @@ export default function ClientLogger({
   const productDetails: ProductData = pd.product_details ?? {};
   const product: ProductData = productDetails;
   const isBrowser = typeof window !== "undefined";
-  // const safeHtml = DOMPurify.sanitize(
-  //   (productDetails.description || "")
-  //     .replace(/\\n/g, "\n")
-  //     .replace(/\n/g, "<br>")
-  // );
 
   function decodeEntities(s: string) {
     if (!isBrowser) {
-      // minimal decode for SSR pass (no DOM)
       return s
         .replace(/&lt;/g, "<")
         .replace(/&gt;/g, ">")
@@ -82,20 +76,16 @@ export default function ClientLogger({
     const base = (raw ?? "").replace(/\\n/g, "\n");
     const decoded = decodeEntities(base);
 
-    // SSR-safe fast path (no document/DOMPurify)
     if (!isBrowser) {
-      // strip/convert headings without DOM
       const noHeadings = decoded
         .replace(/<\s*h[1-6][^>]*>/gi, "<strong>")
         .replace(/<\s*\/\s*h[1-6]\s*>/gi, "</strong>");
-      // remove script/style just in case
       const stripped = noHeadings
         .replace(/<script[\s\S]*?<\/script>/gi, "")
         .replace(/<style[\s\S]*?<\/style>/gi, "");
       return stripped.replace(/\n/g, "<br>");
     }
 
-    // Client path: use real DOM + DOMPurify
     const tmp = document.createElement("div");
     tmp.innerHTML = decoded;
 
@@ -112,15 +102,15 @@ export default function ClientLogger({
 
     return purified.replace(/\n/g, "<br>");
   }
-  const [safeHtml, setSafeHtml] = useState<string>("");
 
+  const [safeHtml, setSafeHtml] = useState<string>("");
   useEffect(() => {
     setSafeHtml(buildSafeDescription(productDetails.description));
   }, [productDetails.description]);
 
   const productImage: string =
     productDetails.main_image || pd.main_image || "/images/img.png";
-  console.log("img", productImage);
+
   const productSubImage: string[] = useMemo(
     () =>
       Array.isArray(productDetails.images)
@@ -150,10 +140,23 @@ export default function ClientLogger({
     ? productDetails.attribute_urls
     : [];
 
+  // ---------- helpers ----------
   const getAttr = (label: string): string =>
     attributes.find(
       (a) => String(a?.label ?? "").toLowerCase() === label.toLowerCase()
     )?.value ?? "";
+
+  const findAttr = (label: string): Attribute | undefined =>
+    attributes.find(
+      (a) => String(a?.label ?? "").toLowerCase() === label.toLowerCase()
+    );
+
+  // build listings link from API-provided url (segment or query)
+  const linkFromApiUrl = (rawUrl: string, text: string) => {
+    const u = (rawUrl || "").trim().replace(/^\/+|\/+$/g, "");
+    const href = /[=&]/.test(u) ? `/listings/?${u}` : `/listings/${u}/`;
+    return { href, text };
+  };
 
   const isNonEmpty = (s: unknown): s is string =>
     typeof s === "string" && s.trim().length > 0;
@@ -172,22 +175,6 @@ export default function ClientLogger({
 
   const makeValue = getAttr("Make");
 
-  // 3) numeric arrays of options
-
-  const specFields = [
-    { label: "Type", value: categoryNames.join(", ") || getAttr("Type") },
-    { label: "Make", value: getAttr("Make") },
-    { label: "Model", value: getAttr("Model") },
-    { label: "Year", value: getAttr("Years") },
-    { label: "Condition", value: getAttr("Conditions") },
-    { label: "Length", value: getAttr("length") },
-    { label: "Sleep", value: getAttr("sleeps") },
-    { label: "ATM", value: getAttr("ATM") },
-    { label: "Tare Mass", value: getAttr("Tare Mass") },
-    { label: "Ball Weight", value: getAttr("Ball Weight") },
-    { label: "Location", value: getAttr("Location") },
-  ] as const;
-
   const slugify = (s: string) => s.trim().toLowerCase().replace(/\s+/g, "-");
   const toInt = (s: string) => {
     const n = parseInt(String(s).replace(/[^\d]/g, ""), 10);
@@ -195,34 +182,67 @@ export default function ClientLogger({
   };
 
   type LinkOut = { href: string; text: string };
+  type SpecItem = { label: string; value: string; url?: string };
 
-  const linksForSpec = (label: string, value: string): LinkOut[] | null => {
-    const L = label.toLowerCase();
-    const v = String(value).trim();
+  // ---------- spec fields with API urls ----------
+  const specFields: SpecItem[] = [
+    {
+      label: "Type",
+      value: categoryNames.join(", ") || getAttr("Type"),
+      url: findAttr("Type")?.url,
+    },
+    { label: "Make", value: getAttr("Make"), url: findAttr("Make")?.url },
+    { label: "Model", value: getAttr("Model"), url: findAttr("Model")?.url },
+    { label: "Year", value: getAttr("Years"), url: findAttr("Years")?.url },
+    {
+      label: "Condition",
+      value: getAttr("Conditions"),
+      url: findAttr("Conditions")?.url,
+    },
+    {
+      label: "Length",
+      value: getAttr("Length") || getAttr("length"),
+      url: findAttr("Length")?.url ?? findAttr("length")?.url, // ✅ API url (e.g. "under-16-length-in-feet")
+    },
+    { label: "Sleep", value: getAttr("sleeps"), url: findAttr("sleeps")?.url },
+    { label: "ATM", value: getAttr("ATM"), url: findAttr("ATM")?.url }, // ✅ API url (e.g. "under-2000-kg-atm")
+    { label: "Tare Mass", value: getAttr("Tare Mass") },
+    { label: "Ball Weight", value: getAttr("Ball Weight") },
+    {
+      label: "Location",
+      value: getAttr("Location"),
+      url: findAttr("Location")?.url, // e.g. "queensland-state"
+    },
+  ];
+
+  // prefer API url; fallback to old rules if missing
+  const linksForSpec = (
+    label: string,
+    value: string,
+    apiUrl?: string
+  ): LinkOut[] | null => {
+    const v = (value || "").trim();
     if (!v) return null;
 
-    if (L === "make") {
-      return [{ href: `/listings/${slugify(v)}/`, text: v }];
+    if (apiUrl && apiUrl.trim()) {
+      return [linkFromApiUrl(apiUrl, v)];
     }
 
-    if (L === "model") {
-      return [{ href: `/listings/${makeValue}/${slugify(v)}/`, text: v }];
-    }
+    // ---- fallback logic (only if url not supplied) ----
+    const L = label.toLowerCase();
 
     if (L === "category" || L === "type") {
-      return v.split(",").map((c) => {
-        const t = c.trim();
-        return { href: `/listings/${slugify(t)}-category/`, text: t };
-      });
+      return v.split(",").map((c) => ({
+        href: `/listings/${slugify(c)}-category/`,
+        text: c.trim(),
+      }));
     }
-    if (L === "atm" || L === "ATM") {
-      const s = toInt(v);
-      return s ? [{ href: `/listings/under-${s}-kg`, text: v }] : null;
-    }
+    if (L === "make") return [{ href: `/listings/${slugify(v)}/`, text: v }];
+    if (L === "model")
+      return [{ href: `/listings/${makeValue}/${slugify(v)}/`, text: v }];
 
-    if (L === "location" || L === "state") {
+    if (L === "location" || L === "state")
       return [{ href: `/listings/${slugify(v)}-state/`, text: v }];
-    }
 
     if (L === "year" || L === "years") {
       const y = toInt(v);
@@ -243,11 +263,16 @@ export default function ClientLogger({
         : null;
     }
 
-    if (L === "length" || L === "Length") {
+    if (L === "length") {
       const s = toInt(v);
       return s
-        ? [{ href: `/listings/under-${s}-length-in-feet`, text: v }]
+        ? [{ href: `/listings/under-${s}-length-in-feet/`, text: v }]
         : null;
+    }
+
+    if (L === "atm") {
+      const s = toInt(v);
+      return s ? [{ href: `/listings/under-${s}-kg-atm/`, text: v }] : null;
     }
 
     if (L === "condition" || L === "conditions") {
@@ -282,7 +307,6 @@ export default function ClientLogger({
     window.history.back();
   };
 
-  // Safe fallbacks without `any`
   const productId: string | number | undefined =
     product.id ?? pd.id ?? product.name;
   const productSlug: string | undefined = product.slug ?? pd.slug;
@@ -430,7 +454,8 @@ export default function ClientLogger({
                               .map((f) => {
                                 const links = linksForSpec(
                                   f.label,
-                                  String(f.value)
+                                  String(f.value),
+                                  f.url // ✅ prefer API-provided url
                                 );
                                 return (
                                   <li key={f.label}>
