@@ -2107,41 +2107,6 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
       </div>
       {/* Keyword (opens its own modal) */}
       {/* Keyword (opens its own modal) */}
-      <div className="cs-full_width_section">
-        <h5 className="cfs-filter-label">Keyword</h5>
-        <input
-          type="text"
-          className="cfs-select-input"
-          placeholder="Click to choose / type"
-          value={toHumanFromQuery(keywordInput)} // ⬅️ show nicely
-          onClick={() => {
-            pickedSourceRef.current = null;
-            setIsKeywordModalOpen(true);
-          }}
-          readOnly
-        />
-
-        {keywordText && (
-          <div className="filter-chip">
-            <span>{toHumanFromQuery(keywordInput)}</span>
-            <span
-              className="filter-chip-close"
-              onClick={() => {
-                const next = {
-                  ...currentFilters,
-                  keyword: undefined,
-                  search: undefined,
-                };
-                setKeywordInput("");
-                setFilters(next);
-                updateAllFiltersAndURL(next);
-              }}
-            >
-              ×
-            </span>
-          </div>
-        )}
-      </div>
 
       {/* Suburb / pincode */}
       <div className="cs-full_width_section">
@@ -2825,15 +2790,41 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
         )}
       </div>
       {/* Keyword Search (hidden or toggle if needed) */}
-      <div className="cs-full_width_section" style={{ display: "none" }}>
+      <div className="cs-full_width_section">
         <h5 className="cfs-filter-label">Keyword</h5>
         <input
           type="text"
           className="cfs-select-input"
-          placeholder="Search by keyword"
+          placeholder="Click to choose / type"
+          value={toHumanFromQuery(keywordInput)} // ⬅️ show nicely
+          onClick={() => {
+            pickedSourceRef.current = null;
+            setIsKeywordModalOpen(true);
+          }}
+          readOnly
         />
-      </div>
 
+        {keywordText && (
+          <div className="filter-chip">
+            <span>{toHumanFromQuery(keywordInput)}</span>
+            <span
+              className="filter-chip-close"
+              onClick={() => {
+                const next = {
+                  ...currentFilters,
+                  keyword: undefined,
+                  search: undefined,
+                };
+                setKeywordInput("");
+                setFilters(next);
+                updateAllFiltersAndURL(next);
+              }}
+            >
+              ×
+            </span>
+          </div>
+        )}
+      </div>
       {/* Reset Button */}
       <button onClick={resetFilters} className="btn cfs-btn fullwidth_btn">
         Reset Filters

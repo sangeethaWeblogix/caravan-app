@@ -7,7 +7,7 @@ import Navbar from "./navbar/Navbar";
 import Footer from "./footer/Footer";
 import React from "react";
 import { Metadata } from "next";
-
+import ScrollToTop from "./ScrollToTop";
 export const metadata: Metadata = {
   title: { default: "Caravan Listings", template: "%s | Caravan Listings" },
   description: "Browse all available caravans.",
@@ -42,6 +42,7 @@ export default function RootLayout({
         }}
       >
         <Navbar />
+        <ScrollToTop />
         <main className="product-page style-5">{children}</main>
         <Footer />
       </body>
