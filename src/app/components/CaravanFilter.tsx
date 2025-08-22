@@ -1482,6 +1482,7 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
     setFilters((prev) => (filtersEqual(prev, next) ? (prev as Filters) : next));
     filtersInitialized.current = true;
     if (typeof next.radius_kms !== "number") next.radius_kms = DEFAULT_RADIUS;
+
     // 2) notify parent only if changed
     if (!filtersEqual(lastSentFiltersRef.current, next)) {
       lastSentFiltersRef.current = next;
@@ -1496,6 +1497,7 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
       query.set("acustom_fromyears", String(next.acustom_fromyears));
     if (next.acustom_toyears)
       query.set("acustom_toyears", String(next.acustom_toyears));
+
     if (next.page && Number(next.page) > 1) {
       query.set("page", String(next.page));
     }

@@ -72,7 +72,10 @@ export const buildSlugFromFilters = (
   } else if (filters.maxKg) {
     parts.push(`under-${filters.maxKg}-kg-atm`);
   }
-
+  const kw = (filters.keyword ?? filters.search ?? "").toString().trim();
+  if (kw) {
+    parts.push(`search=${encKeepPlus(toQueryPlus(kw))}`);
+  }
   // query params (shared)
   const q = new URLSearchParams();
   // if (filters.acustom_fromyears)
@@ -87,34 +90,19 @@ export const buildSlugFromFilters = (
   }
   const pageNum = Number(page);
   if (pageNum > 1) q.set("page", String(pageNum));
-  // Special cases: keyword / search segment (encode RHS only)
-  // const encodeRhsKeepPlus = (raw: string) =>
-  //   encodeURIComponent(raw.trim().replace(/\s+/g, "+")).replace(/%2B/gi, "+"); // turn encoded '+' back to '+'
-  // if (filters.keyword?.trim()) {
-  //   const rhs = encodeRhsKeepPlus(filters.keyword);
-  //   const path = `/listings/search=${rhs}/`;
-  //   const qs = q.toString();
-  //   return qs ? `${path}?${qs}` : path;
-  // }
 
-  // if (filters.search?.trim()) {
-  //   const rhs = encodeRhsKeepPlus(filters.search);
+  // if (filters.keyword?.trim()) {
+  //   const rhs = encKeepPlus(toQueryPlus(String(filters.keyword)));
   //   const path = `/listings/search=${rhs}/`;
   //   const qs = q.toString();
   //   return qs ? `${path}?${qs}` : path;
   // }
-  if (filters.keyword?.trim()) {
-    const rhs = encKeepPlus(toQueryPlus(String(filters.keyword)));
-    const path = `/listings/search=${rhs}/`;
-    const qs = q.toString();
-    return qs ? `${path}?${qs}` : path;
-  }
-  if (filters.search?.trim()) {
-    const rhs = encKeepPlus(toQueryPlus(String(filters.search)));
-    const path = `/listings/search=${rhs}/`;
-    const qs = q.toString();
-    return qs ? `${path}?${qs}` : path;
-  }
+  // if (filters.search?.trim()) {
+  //   const rhs = encKeepPlus(toQueryPlus(String(filters.search)));
+  //   const path = `/listings/search=${rhs}/`;
+  //   const qs = q.toString();
+  //   return qs ? `${path}?${qs}` : path;
+  // }
   // Base path (avoid double slash if no parts)
   const segs = parts.filter(Boolean).join("/");
   const base = segs ? `/listings/${segs}/` : `/listings/`;

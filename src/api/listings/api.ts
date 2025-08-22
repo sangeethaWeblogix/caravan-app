@@ -75,12 +75,9 @@ export const fetchListings = async (filters: Filters = {}) => {
   if (filters.sleeps) params.append("sleep", filters.sleeps);
   if (orderby) params.append("orderby", orderby);
 
-  // ✨ normalize search/keyword so spaces -> %20 and '+' never becomes %2B
+  // normalize search/keyword so spaces -> %20 and '+' stays as plus in UI terms
   const normalizeQuery = (s?: string) =>
-    (s ?? "")
-      .replace(/\+/g, " ") // li click value like "couples+caravan" -> spaces
-      .trim()
-      .replace(/\s+/g, " "); // collapse multiple spaces
+    (s ?? "").replace(/\+/g, " ").trim().replace(/\s+/g, " ");
 
   const s = normalizeQuery(search);
   if (s) params.append("search", s);
@@ -90,5 +87,53 @@ export const fetchListings = async (filters: Filters = {}) => {
 
   const res = await fetch(`${API_BASE}/new-list?${params.toString()}`);
   if (!res.ok) throw new Error("API failed");
-  return res.json();
+
+  const json = await res.json();
+
+  // ---- interleave exclusives per your rule ----
+  type Item = any;
+  const products: Item[] = json?.data?.products ?? [];
+  const exclusives: Item[] = json?.data?.exclusive_products ?? [];
+
+  // pattern: 4N - E - 4N - E - 2N
+  const NORMAL_TARGET = 12;
+  const pattern: (number | "E")[] = [4, "E", 4, "E", 2];
+
+  const arranged: Item[] = [];
+  let p = 0; // normal idx
+  let e = 0; // exclusive idx
+  let normalsAdded = 0;
+
+  for (const slot of pattern) {
+    if (slot === "E") {
+      if (e < exclusives.length) arranged.push(exclusives[e++]);
+      // if no exclusive available, silently skip this slot
+    } else {
+      for (
+        let i = 0;
+        i < slot && normalsAdded < NORMAL_TARGET && p < products.length;
+        i++
+      ) {
+        arranged.push(products[p++]);
+        normalsAdded++;
+      }
+    }
+  }
+
+  // top up normals to reach 12 if the pattern loop didn't fill it (e.g., exclusives missing)
+  while (normalsAdded < NORMAL_TARGET && p < products.length) {
+    arranged.push(products[p++]);
+    normalsAdded++;
+  }
+
+  // overwrite data.products for UI; keep pagination as-is from API
+  return {
+    ...json,
+    data: {
+      ...json.data,
+      products: arranged,
+      // keep exclusive_products if you still need it elsewhere; otherwise you could omit it
+      exclusive_products: json.data?.exclusive_products ?? [],
+    },
+  };
 };

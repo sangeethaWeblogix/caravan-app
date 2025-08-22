@@ -24,6 +24,7 @@ interface Product {
   people?: string;
   make?: string;
   slug?: string;
+  is_exclusive: boolean;
 }
 interface Pagination {
   current_page: number;
@@ -80,7 +81,7 @@ export default function ListingContent({
     const slug = p.slug?.trim() || toSlug(p.name);
     return slug ? `/product/${slug}/` : ""; // trailing slash optional
   };
-  // console.log("data li pro", products);
+  console.log("data li pro", products);
   return (
     <>
       <Head>
@@ -161,6 +162,16 @@ export default function ListingContent({
                   <Link href={href}>
                     {" "}
                     <div>
+                      {["1", 1, true].includes(
+                        (product as any).is_exclusive
+                      ) && (
+                        <span
+                          className="corner-ribbon"
+                          aria-label="Exclusive deal"
+                        >
+                          EXCLUSIVE DEAL
+                        </span>
+                      )}
                       <Swiper
                         navigation
                         modules={[Navigation]}

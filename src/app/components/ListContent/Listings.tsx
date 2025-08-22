@@ -21,11 +21,13 @@ interface Product {
   price_difference?: string;
   image: string;
   link: string;
-  location?: string;
   condition: string;
-  sleep?: string;
+  location?: string;
   categories?: string[];
+  people?: string;
+  make?: string;
   slug?: string;
+  is_exclusive: boolean;
 }
 
 interface Pagination {

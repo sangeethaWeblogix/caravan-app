@@ -897,7 +897,7 @@ input[type="number"]::-webkit-outer-spin-button {
 }
 
 .offcanvas-header.mobile_filter_xs {
-background-color: #000;
+  background-color: #000;
 }
 
 @media (max-width: 767px) {
@@ -917,35 +917,57 @@ background-color: #000;
     max-width: 100%;
     margin: 0;
     display: flex;
-}
-.woocommerce-loop-product__title {
+  }
+  .woocommerce-loop-product__title {
     font-size: 1.2em;
-}
-.vehicleDetailsWithIcons.simple {
-      padding: 0;
-}
-.vehicleSearch__column-poster .vehicleThumbDetails__part {
-  display: inline-block;
-}
-.vehicleThumbDetails__part .price {
+  }
+  .vehicleDetailsWithIcons.simple {
+    padding: 0;
+  }
+  .vehicleSearch__column-poster .vehicleThumbDetails__part {
+    display: inline-block;
+  }
+  .vehicleThumbDetails__part .price {
     align-items: center;
     height: auto;
     display: flex;
     margin-bottom: 15px;
-}
-.vehicleSearch__column-poster .vehicleThumbDetails__features__address {
+  }
+  .vehicleSearch__column-poster .vehicleThumbDetails__features__address {
     color: #000;
     border-left: none;
     border-right: none;
-    border-top: .5px solid #ddd;
+    border-top: 0.5px solid #ddd;
     align-items: center;
     height: auto;
     margin-left: 0;
     padding: 10px 0px 0px;
     display: block;
     position: relative;
-}
-.mb-10 {
+  }
+  .mb-10 {
     margin-bottom: 20px;
+  }
 }
+/* nhhhfg */
+.img-wrap {
+  position: relative;
+}
+
+.corner-ribbon {
+  position: absolute;
+  top: 16px;
+  left: -40px;
+  width: 220px;
+  text-align: center;
+  padding: 6px 0;
+  font-weight: 700;
+  font-size: 12px;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  color: #fff;
+  background: #2e7d32; /* green */
+  transform: rotate(-45deg);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+  z-index: 3;
 }
