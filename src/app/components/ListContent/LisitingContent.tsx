@@ -8,6 +8,8 @@ import "swiper/css/navigation";
 import "../../listings/listings.css";
 import Head from "next/head";
 import { toSlug } from "../../../utils/seo/slug";
+import { useMemo } from "react";
+import Exculisive from "../../../../public/images/exclusive-deal.webp";
 interface Product {
   id: number;
   name: string;
@@ -24,7 +26,9 @@ interface Product {
   people?: string;
   make?: string;
   slug?: string;
+  is_exclusive: boolean;
 }
+
 interface Pagination {
   current_page: number;
   per_page: number;
@@ -80,7 +84,17 @@ export default function ListingContent({
     const slug = p.slug?.trim() || toSlug(p.name);
     return slug ? `/product/${slug}/` : ""; // trailing slash optional
   };
-  // console.log("data li pro", products);
+  console.log("data li pro", products);
+  const uniqueProducts = useMemo(() => {
+    const seen = new Set<string>();
+    return (products || []).filter((p) => {
+      const k = String(p?.id ?? p?.slug ?? p?.link);
+      if (seen.has(k)) return false;
+      seen.add(k);
+      return true;
+    });
+  }, [products]);
+
   return (
     <>
       <Head>
@@ -150,7 +164,7 @@ export default function ListingContent({
           </div>
         </div>
         <div className="dealers-section product-type">
-          {products?.map((product) => {
+          {uniqueProducts.map((product) => {
             const href = getHref(product);
             return (
               <article
@@ -161,6 +175,19 @@ export default function ListingContent({
                   <Link href={href}>
                     {" "}
                     <div>
+                      {product.is_exclusive && (
+                        <span className="lab">
+                          <Image
+                            src={Exculisive}
+                            alt="Exclusive Deal"
+                            unoptimized
+                            width={0}
+                            height={0}
+                            sizes="100vw"
+                            style={{ width: "auto", height: "auto" }}
+                          />
+                        </span>
+                      )}
                       <Swiper
                         navigation
                         modules={[Navigation]}

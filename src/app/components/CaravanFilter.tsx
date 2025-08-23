@@ -16,7 +16,6 @@ import { fetchModelsByMake } from "@/api/model/api";
 import "./filter.css";
 import { buildSlugFromFilters } from "./slugBuilter";
 import { buildUpdatedFilters } from "./buildUpdatedFilters";
-import { fetchListings } from "@/api/listings/api";
 import {
   fetchKeywordSuggestions,
   fetchHomeSearchList,
@@ -448,7 +447,7 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
     setFilters(next); // update local first (wins in effect)
     filtersInitialized.current = true;
     lastSentFiltersRef.current = next; // avoid re-send flicker
-    onFilterChange(next); // if your parent needs it
+    // onFilterChange(next); // if your parent needs it
     updateAllFiltersAndURL(next);
   };
   useEffect(() => {
@@ -462,16 +461,50 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
     };
     loadFilters();
   }, []);
+  type UnknownRec = Record<string, unknown>;
+
+  const isOptionArray = (v: unknown): v is Option[] =>
+    Array.isArray(v) &&
+    v.every(
+      (o) =>
+        typeof o === "object" &&
+        o !== null &&
+        typeof (o as UnknownRec).name === "string" &&
+        typeof (o as UnknownRec).slug === "string"
+    );
+
+  const isStateOptionArray = (v: unknown): v is StateOption[] =>
+    Array.isArray(v) &&
+    v.every(
+      (s) =>
+        typeof s === "object" &&
+        s !== null &&
+        typeof (s as UnknownRec).name === "string" &&
+        typeof (s as UnknownRec).value === "string"
+    );
 
   useEffect(() => {
     const loadFilters = async () => {
-      const res = await fetchListings();
-      if (res?.data) {
-        setMakes(res.data.make_options || []);
-      }
+      const res = await fetchProductList();
+      const d = (res?.data ?? undefined) as UnknownRec | undefined;
+
+      const cats = isOptionArray(d?.["all_categories"])
+        ? (d!["all_categories"] as Option[])
+        : [];
+      const mks = isOptionArray(d?.["make_options"])
+        ? (d!["make_options"] as Option[])
+        : [];
+      const sts = isStateOptionArray(d?.["states"])
+        ? (d!["states"] as StateOption[])
+        : [];
+
+      setCategories(cats); // ✅ always Option[]
+      setMakes(mks); // ✅ always Option[]
+      setStates(sts); // ✅ always StateOption[]
     };
     loadFilters();
   }, []);
+
   console.log("dataresmake", makes);
   useEffect(() => {
     if (typeof currentFilters.radius_kms === "number") {
@@ -735,7 +768,7 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
     setFilters(next);
     filtersInitialized.current = true;
     lastSentFiltersRef.current = next;
-    onFilterChange({ ...next, search: raw }); // parent sees spaces if needed
+    // onFilterChange({ ...next, search: raw }); // parent sees spaces if needed
   }, [pathname]);
 
   // 🔁 Keep the read-only Keyword input in sync with the applied filters
@@ -1482,6 +1515,7 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
     setFilters((prev) => (filtersEqual(prev, next) ? (prev as Filters) : next));
     filtersInitialized.current = true;
     if (typeof next.radius_kms !== "number") next.radius_kms = DEFAULT_RADIUS;
+
     // 2) notify parent only if changed
     if (!filtersEqual(lastSentFiltersRef.current, next)) {
       lastSentFiltersRef.current = next;
@@ -1496,6 +1530,7 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
       query.set("acustom_fromyears", String(next.acustom_fromyears));
     if (next.acustom_toyears)
       query.set("acustom_toyears", String(next.acustom_toyears));
+
     if (next.page && Number(next.page) > 1) {
       query.set("page", String(next.page));
     }
@@ -1534,7 +1569,7 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
 
     startTransition(() => {
       router.push(buildSlugFromFilters(updatedFilters));
-      onFilterChange(updatedFilters); // ✅ correct model slug is used
+      // onFilterChange(updatedFilters); // ✅ correct model slug is used
     });
   };
 
@@ -2060,7 +2095,7 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
                     filtersInitialized.current = true;
 
                     // fire API + URL sync
-                    onFilterChange(updatedFilters);
+                    // onFilterChange(updatedFilters);
                     lastSentFiltersRef.current = updatedFilters;
                     startTransition(() =>
                       updateAllFiltersAndURL(updatedFilters)
@@ -2198,26 +2233,33 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
                 onClick={() => {
                   setSelectedModel(null);
                   setSelectedModelName(null);
-
                   const updatedFilters: Filters = {
                     ...currentFilters,
                     model: undefined,
                   };
                   setFilters(updatedFilters);
-                  // onFilterChange(updatedFilters);
-
-                  // Remove model from slug
-                  const segments = pathname.split("/").filter(Boolean);
-                  const newSegments = segments.filter(
-                    (s) => s !== selectedModel
-                  );
-
-                  const newPath = `/${newSegments.join("/")}`;
-                  router.push(
-                    newPath +
-                      (searchParams.toString() ? `?${searchParams}` : "")
-                  );
+                  updateAllFiltersAndURL(updatedFilters);
                 }}
+
+                // const updatedFilters: Filters = {
+                //   ...currentFilters,
+                //   model: undefined,
+                // };
+                // setFilters(updatedFilters);
+                // onFilterChange(updatedFilters);
+
+                // Remove model from slug
+                //   const segments = pathname.split("/").filter(Boolean);
+                //   const newSegments = segments.filter(
+                //     (s) => s !== selectedModel
+                //   );
+
+                //   const newPath = `/${newSegments.join("/")}`;
+                //   router.push(
+                //     newPath +
+                //       (searchParams.toString() ? `?${searchParams}` : "")
+                //   );
+                // }}
               >
                 ×
               </span>
