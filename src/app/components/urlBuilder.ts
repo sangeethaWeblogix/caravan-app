@@ -18,7 +18,7 @@ export interface Filters {
   model?: string;
   orderby?: string;
   search?: string;
-  keyword?: string;
+  keyword?: string; // parsed -> canonicalized to `search`
 }
 
 const conditionMap: Record<string, string> = {
@@ -27,94 +27,31 @@ const conditionMap: Record<string, string> = {
   "near-new": "Near New",
 };
 
+const hasReservedSuffix = (s: string) =>
+  /-(category|condition|state|region|suburb)$/.test(s) ||
+  /-(kg-atm|length-in-feet|people-sleeping-capacity)$/.test(s) ||
+  /^over-\d+/.test(s) ||
+  /^under-\d+/.test(s) ||
+  /^between-/.test(s) ||
+  /^\d{4}$/.test(s) ||
+  s.includes("="); // e.g. search=, keyword=
+
 export function parseSlugToFilters(slugParts: string[]): Filters {
   const filters: Filters = {};
 
   slugParts.forEach((part) => {
-    if (part.endsWith("-category")) {
-      filters.category = part.replace("-category", "");
-    } else if (part.endsWith("-condition")) {
-      const slug = part.replace("-condition", "").toLowerCase();
-      filters.condition = conditionMap[slug] || slug;
-    } else if (part.endsWith("-state")) {
-      filters.state = part
-        .replace("-state", "")
-        .replace(/-/g, " ")
-        .toLowerCase();
-    } else if (part.endsWith("-region")) {
-      // region can be present in URL, but we'll drop it later if suburb exists
-      filters.region = part
-        .replace("-region", "")
-        .replace(/-/g, " ")
-        .toLowerCase();
-    } else if (part.endsWith("-suburb")) {
-      filters.suburb = part.replace("-suburb", "").replace(/-/g, " ");
-    } else if (/^\d{4}$/.test(part)) {
-      filters.pincode = part;
-    } else if (part.includes("-kg-atm")) {
-      if (part.startsWith("between-")) {
-        const match = part.match(/between-(\d+)-kg-(\d+)-kg-atm/);
-        if (match) {
-          filters.minKg = match[1];
-          filters.maxKg = match[2];
-        }
-      } else if (part.startsWith("over-")) {
-        filters.minKg = part.replace("over-", "").replace("-kg-atm", "");
-      } else if (part.startsWith("under-")) {
-        filters.maxKg = part.replace("under-", "").replace("-kg-atm", "");
-      }
-    } else if (part.includes("length-in-feet")) {
-      if (part.startsWith("between-")) {
-        const match = part.match(/between-(\d+)-(\d+)-length-in-feet/);
-        if (match) {
-          filters.from_length = match[1];
-          filters.to_length = match[2];
-        }
-      } else if (part.startsWith("over-")) {
-        filters.from_length = part
-          .replace("over-", "")
-          .replace("-length-in-feet", "");
-      } else if (part.startsWith("under-")) {
-        filters.to_length = part
-          .replace("under-", "")
-          .replace("-length-in-feet", "");
-      }
-    } else if (part.includes("-people-sleeping-capacity")) {
-      if (/^between-\d+-and-\d+-people-sleeping-capacity$/.test(part)) {
-        const match = part.match(
-          /between-(\d+)-and-(\d+)-people-sleeping-capacity/
-        );
-        if (match) filters.sleeps = `${match[1]}-people`;
-      } else {
-        const raw = part.replace("-people-sleeping-capacity", "");
-        const cleaned = raw.replace(/^over-/, "").replace(/^under-/, "");
-        if (!isNaN(Number(cleaned))) filters.sleeps = `${cleaned}-people`;
-      }
-    } else if (/^over-\d+$/.test(part)) {
-      filters.from_price = part.replace("over-", "");
-    } else if (/^under-\d+$/.test(part)) {
-      filters.to_price = part.replace("under-", "");
-    } else if (/^between-\d+-\d+$/.test(part)) {
-      const match = part.match(/between-(\d+)-(\d+)/);
-      if (match) {
-        filters.from_price = match[1];
-        filters.to_price = match[2];
-      }
-    } else if (!filters.make && isNaN(Number(part))) {
-      filters.make = part;
-    } else if (!filters.model && isNaN(Number(part))) {
-      filters.model = part;
-    }
+    if (!part) return;
+
+    // --- Handle search/keyword FIRST so it never becomes make/model ---
     if (part.startsWith("search=")) {
       const rhs = part.slice("search=".length);
-      // decode defensively, but keep '+' as '+'
       const val = decodeURIComponent(rhs)
         .replace(/%20/g, "+")
         .replace(/%2B/gi, "+")
         .replace(/\s+/g, "+");
       filters.search = val;
       filters.keyword = undefined;
-      return;
+      return; // continue
     }
     if (part.startsWith("keyword=")) {
       const rhs = part.slice("keyword=".length);
@@ -122,24 +59,156 @@ export function parseSlugToFilters(slugParts: string[]): Filters {
         .replace(/%20/g, "+")
         .replace(/%2B/gi, "+")
         .replace(/\s+/g, "+");
-      // canonicalize to `search` so the rest of the app has a single source
+      // canonicalize to `search`
       filters.search = val;
       filters.keyword = undefined;
+      return; // continue
+    }
+
+    // --- Typed segments ---
+    if (part.endsWith("-category")) {
+      filters.category = part.replace("-category", "");
       return;
+    }
+
+    if (part.endsWith("-condition")) {
+      const slug = part.replace("-condition", "").toLowerCase();
+      filters.condition = conditionMap[slug] || slug;
+      return;
+    }
+
+    if (part.endsWith("-state")) {
+      filters.state = part
+        .replace("-state", "")
+        .replace(/-/g, " ")
+        .toLowerCase();
+      return;
+    }
+
+    if (part.endsWith("-region")) {
+      // may be dropped later if suburb exists
+      filters.region = part
+        .replace("-region", "")
+        .replace(/-/g, " ")
+        .toLowerCase();
+      return;
+    }
+
+    if (part.endsWith("-suburb")) {
+      filters.suburb = part
+        .replace("-suburb", "")
+        .replace(/-/g, " ")
+        .toLowerCase();
+      return;
+    }
+
+    if (/^\d{4}$/.test(part)) {
+      // AU postcode
+      filters.pincode = part;
+      return;
+    }
+
+    // ATM: support both canonical and legacy patterns
+    if (part.includes("-kg-atm")) {
+      // between-<min>-<max>-kg-atm  (canonical)
+      const canon = part.match(/^between-(\d+)-(\d+)-kg-atm$/);
+      if (canon) {
+        filters.minKg = canon[1];
+        filters.maxKg = canon[2];
+        return;
+      }
+      // legacy: between-<min>-kg-<max>-kg-atm
+      const legacy = part.match(/^between-(\d+)-kg-(\d+)-kg-atm$/);
+      if (legacy) {
+        filters.minKg = legacy[1];
+        filters.maxKg = legacy[2];
+        return;
+      }
+      const over = part.match(/^over-(\d+)-kg-atm$/);
+      if (over) {
+        filters.minKg = over[1];
+        return;
+      }
+      const under = part.match(/^under-(\d+)-kg-atm$/);
+      if (under) {
+        filters.maxKg = under[1];
+        return;
+      }
+    }
+
+    // Length (feet)
+    if (part.includes("length-in-feet")) {
+      const between = part.match(/^between-(\d+)-(\d+)-length-in-feet$/);
+      if (between) {
+        filters.from_length = between[1];
+        filters.to_length = between[2];
+        return;
+      }
+      const over = part.match(/^over-(\d+)-length-in-feet$/);
+      if (over) {
+        filters.from_length = over[1];
+        return;
+      }
+      const under = part.match(/^under-(\d+)-length-in-feet$/);
+      if (under) {
+        filters.to_length = under[1];
+        return;
+      }
+    }
+
+    // Sleeps (we only keep a single value like "2-people")
+    if (part.includes("-people-sleeping-capacity")) {
+      // between-X-and-Y-people-sleeping-capacity -> we choose the lower bound
+      const between = part.match(
+        /^between-(\d+)-and-(\d+)-people-sleeping-capacity$/
+      );
+      if (between) {
+        filters.sleeps = `${between[1]}-people`;
+        return;
+      }
+      const raw = part.replace("-people-sleeping-capacity", "");
+      const cleaned = raw.replace(/^over-/, "").replace(/^under-/, "");
+      if (!isNaN(Number(cleaned))) {
+        filters.sleeps = `${cleaned}-people`;
+        return;
+      }
+    }
+
+    // Price
+    if (/^over-\d+$/.test(part)) {
+      filters.from_price = part.replace("over-", "");
+      return;
+    }
+    if (/^under-\d+$/.test(part)) {
+      filters.to_price = part.replace("under-", "");
+      return;
+    }
+    if (/^between-\d+-\d+$/.test(part)) {
+      const match = part.match(/between-(\d+)-(\d+)/);
+      if (match) {
+        filters.from_price = match[1];
+        filters.to_price = match[2];
+      }
+      return;
+    }
+
+    // make / model fallback — only if safe (no reserved suffix / '=' / numbers)
+    if (!hasReservedSuffix(part) && isNaN(Number(part))) {
+      if (!filters.make) {
+        filters.make = part;
+        return;
+      }
+      if (!filters.model) {
+        filters.model = part;
+        return;
+      }
     }
   });
 
-  // ✅ if suburb present, ignore region
+  // If suburb present, ignore region (path never includes both together)
+  if (filters.suburb) {
+    filters.region = undefined;
+  }
 
   return filters;
 }
-// export function buildListingsUrl(filters: Filters): string {
-//   // precedence: keyword > search
-//   if (filters.keyword?.trim()) {
-//     return `/listings/keyword=${encodeURIComponent(filters.keyword.trim())}`;
-//   }
-//   if (filters.search?.trim()) {
-//     return `/listings/search=${encodeURIComponent(filters.search.trim())}`;
-//   }
-//   return "/listings";
-// }
