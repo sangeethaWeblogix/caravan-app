@@ -950,24 +950,3 @@ input[type="number"]::-webkit-outer-spin-button {
   }
 }
 /* nhhhfg */
-.img-wrap {
-  position: relative;
-}
-
-.corner-ribbon {
-  position: absolute;
-  top: 16px;
-  left: -40px;
-  width: 220px;
-  text-align: center;
-  padding: 6px 0;
-  font-weight: 700;
-  font-size: 12px;
-  letter-spacing: 0.5px;
-  text-transform: uppercase;
-  color: #fff;
-  background: #2e7d32; /* green */
-  transform: rotate(-45deg);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
-  z-index: 3;
-}
