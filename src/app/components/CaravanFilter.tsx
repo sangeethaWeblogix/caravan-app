@@ -333,6 +333,14 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
   // ✅ One button for modal footer
   // ✅ Modal submit → base => search, typed/suggested => keyword
   // Base list -> search=<plus joined>
+  // put near other small helpers
+  const keepCategory = (): Partial<Filters> => ({
+    category:
+      filters.category ??
+      selectedCategory ??
+      currentFilters.category ??
+      undefined,
+  });
 
   // Modal primary button -> always search=<plus joined>
   const applyKeywordFromModal = () => {
@@ -340,6 +348,7 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
     if (!raw) return;
     const next: Filters = {
       ...currentFilters,
+      ...keepCategory(), // ⬅️ preserve selected category
       search: toQueryPlus(raw),
       keyword: undefined,
     };
@@ -753,22 +762,28 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
     if (!m) return;
 
     const kind = m[1].toLowerCase();
-    const raw = decodeURIComponent(m[2]); // e.g. "caravan with toilet"
+    const raw = decodeURIComponent(m[2]);
 
     const next: Filters =
       kind === "keyword"
         ? {
+            ...keepCategory(),
+            ...filters,
             ...currentFilters,
             search: toQueryPlus(raw.replace(/-/g, " ")),
             keyword: undefined,
           }
-        : { ...currentFilters, search: toQueryPlus(raw), keyword: undefined };
+        : {
+            ...keepCategory(),
+            ...filters,
+            ...currentFilters,
+            search: toQueryPlus(raw),
+            keyword: undefined,
+          };
 
-    setKeywordInput(raw); // UI shows spaces
+    setKeywordInput(raw);
     setFilters(next);
-    filtersInitialized.current = true;
     lastSentFiltersRef.current = next;
-    // onFilterChange({ ...next, search: raw }); // parent sees spaces if needed
   }, [pathname]);
 
   // 🔁 Keep the read-only Keyword input in sync with the applied filters
