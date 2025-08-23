@@ -28,6 +28,7 @@ interface Product {
   slug?: string;
   is_exclusive: boolean;
 }
+
 interface Pagination {
   current_page: number;
   per_page: number;
@@ -174,9 +175,7 @@ export default function ListingContent({
                   <Link href={href}>
                     {" "}
                     <div>
-                      {["1", 1, true].includes(
-                        (product as any).is_exclusive
-                      ) && (
+                      {product.is_exclusive && (
                         <span className="lab">
                           <Image
                             src={Exculisive}

@@ -26,7 +26,54 @@ interface Filters {
   keyword?: string;
 }
 
-export const fetchListings = async (filters: Filters = {}) => {
+/** Minimal item shape needed here (no `any`) */
+type Item = {
+  id?: number | string;
+  slug?: string;
+  link?: string;
+  is_exclusive?: boolean; // boolean & optional
+  // other fields may exist but aren't needed for list-building
+};
+export interface ApiSEO {
+  metadescription?: string;
+  metatitle?: string;
+  metaimage?: string;
+}
+
+export interface ApiPagination {
+  current_page: number;
+  total_pages: number;
+  total_items?: number;
+  per_page: number;
+  total_products: number;
+}
+
+// This mirrors what Listings.tsx actually reads:
+export interface ApiData {
+  products?: Item[]; // or your full Product shape if you prefer
+  exclusive_products?: Item[];
+  all_categories?: { name: string; slug: string }[];
+  make_options?: { name: string; slug: string }[];
+  model_options?: { name: string; slug: string }[];
+  states?: { value: string; name: string }[];
+}
+
+export type ApiResponse = {
+  success?: boolean;
+  title?: string;
+  seo?: ApiSEO;
+  pagination?: ApiPagination;
+  data?: ApiData;
+};
+const keyOf = (x: Item): string => String(x?.id ?? x?.slug ?? x?.link ?? "");
+
+/** Normalize "+", spaces for search/keyword */
+const normalizeQuery = (s?: string) =>
+  (s ?? "").replace(/\+/g, " ").trim().replace(/\s+/g, " ");
+
+export const fetchListings = async (
+  filters: Filters = {}
+): Promise<ApiResponse> => {
   const {
     page = 1,
     category,
@@ -75,9 +122,6 @@ export const fetchListings = async (filters: Filters = {}) => {
   if (filters.sleeps) params.append("sleep", filters.sleeps);
   if (orderby) params.append("orderby", orderby);
 
-  // normalize search/keyword: convert "+" -> space, collapse spaces
-  const normalizeQuery = (s?: string) =>
-    (s ?? "").replace(/\+/g, " ").trim().replace(/\s+/g, " ");
   const s = normalizeQuery(search);
   if (s) params.append("search", s);
   const k = normalizeQuery(keyword);
@@ -86,37 +130,28 @@ export const fetchListings = async (filters: Filters = {}) => {
   const res = await fetch(`${API_BASE}/new-list?${params.toString()}`);
   if (!res.ok) throw new Error("API failed");
 
-  const json = await res.json();
+  const json = (await res.json()) as ApiResponse;
 
   // ---------- interleave exclusives without duplicates ----------
-  type Item = any;
   const all: Item[] = json?.data?.products ?? [];
   const exFromApi: Item[] = json?.data?.exclusive_products ?? [];
 
-  const keyOf = (x: any) => String(x?.id ?? x?.slug ?? x?.link);
-
-  // IDs that are exclusive (from API list + flagged items inside products)
+  // Build exclusive id set (API list + items already flagged as exclusive)
   const exIdSet = new Set<string>(exFromApi.map(keyOf));
   all.forEach((p) => {
-    if (
-      p?.is_exclusive === 1 ||
-      p?.is_exclusive === "1" ||
-      p?.is_exclusive === true
-    ) {
-      exIdSet.add(keyOf(p));
-    }
+    if (p.is_exclusive === true) exIdSet.add(keyOf(p));
   });
 
-  // Build exclusive pool (unique, preserve API order; include flagged ones if missing)
+  // Exclusive pool (unique, keep API order; add flagged-only items if missing)
   const exMap = new Map<string, Item>();
   exFromApi.forEach((p) => exMap.set(keyOf(p), p));
   all.forEach((p) => {
-    const k = keyOf(p);
-    if (exIdSet.has(k) && !exMap.has(k)) exMap.set(k, p);
+    const k2 = keyOf(p);
+    if (exIdSet.has(k2) && !exMap.has(k2)) exMap.set(k2, p);
   });
   const exclusivePool: Item[] = Array.from(exMap.values());
 
-  // Normals = remove exclusives from the main pool
+  // Normals = products minus exclusives (exclusives won't count inside 12)
   const normals: Item[] = all.filter((p) => !exIdSet.has(keyOf(p)));
 
   // Pattern: 4N - E - 4N - E - 2N  (12 normals + up to 2 exclusives)
@@ -142,25 +177,29 @@ export const fetchListings = async (filters: Filters = {}) => {
       }
     }
   }
-  // Top-up normals to reach 12 if fewer exclusives
+  // top-up normals to reach 12 if fewer exclusives present
   while (nAdded < NORMAL_TARGET && ni < normals.length) {
     arranged.push(normals[ni++]);
     nAdded++;
   }
 
-  // Final de-dupe (safety) + tag is_exclusive properly
+  // Final de-dupe by key + tag is_exclusive (omit when false)
   const seen = new Set<string>();
-  const arrangedUnique = arranged
+  const arrangedUnique: Item[] = arranged
     .filter((p) => {
-      const k = keyOf(p);
-      if (seen.has(k)) return false;
-      seen.add(k);
+      const k3 = keyOf(p);
+      if (seen.has(k3)) return false;
+      seen.add(k3);
       return true;
     })
-    .map((p) => ({
-      ...p,
-      is_exclusive: exIdSet.has(keyOf(p)) ? 1 : 0,
-    }));
+    .map((p) => {
+      const exclusive = exIdSet.has(keyOf(p));
+      if (exclusive) return { ...p, is_exclusive: true };
+      // omit property when false, so UI won't see 0
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const { is_exclusive, ...rest } = p;
+      return rest;
+    });
 
   return {
     ...json,
