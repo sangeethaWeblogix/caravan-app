@@ -150,6 +150,9 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
   const [selectedModelName, setSelectedModelName] = useState<string | null>(
     null
   );
+  // top (other states kula)
+  const [modalKeyword, setModalKeyword] = useState("");
+
   const suburbClickedRef = useRef(false);
   const [selectedConditionName, setSelectedConditionName] = useState<
     string | null
@@ -269,7 +272,7 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
   useEffect(() => {
     if (!isKeywordModalOpen) return;
 
-    const q = keywordInput.trim();
+    const q = modalKeyword.trim();
     if (q.length < 2) {
       setKeywordSuggestions([]);
       setKeywordLoading(false);
@@ -281,7 +284,7 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
 
     const t = setTimeout(async () => {
       try {
-        const list = await fetchKeywordSuggestions(q, ctrl.signal); // HomeSearchItem[] | string[]
+        const list = await fetchKeywordSuggestions(q, ctrl.signal);
         const names = labelsFrom(list).slice(0, 20);
         setKeywordSuggestions(Array.from(new Set(names)));
       } catch (e: unknown) {
@@ -296,7 +299,7 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
       ctrl.abort();
       clearTimeout(t);
     };
-  }, [isKeywordModalOpen, keywordInput]);
+  }, [isKeywordModalOpen, modalKeyword]);
 
   // ✅ Base list apply → search=<raw>
 
@@ -344,7 +347,7 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
 
   // Modal primary button -> always search=<plus joined>
   const applyKeywordFromModal = () => {
-    const raw = keywordInput.trim();
+    const raw = modalKeyword.trim();
     if (!raw) return;
     const next: Filters = {
       ...currentFilters,
@@ -353,6 +356,7 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
       keyword: undefined,
     };
     setIsKeywordModalOpen(false);
+    setModalKeyword("");
     setFilters(next);
     filtersInitialized.current = true;
     startTransition(() => {
@@ -2762,6 +2766,9 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
           value={toHumanFromQuery(keywordInput)} // ⬅️ show nicely
           onClick={() => {
             pickedSourceRef.current = null;
+            setModalKeyword(""); // always empty on open
+            setKeywordSuggestions([]); // clear list
+            setBaseKeywords([]); // optional
             setIsKeywordModalOpen(true);
           }}
           readOnly
@@ -2917,7 +2924,11 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
           <div className="cfs-modal-content">
             <div className="cfs-modal-header">
               <span
-                onClick={() => setIsKeywordModalOpen(false)}
+                onClick={() => {
+                  setIsKeywordModalOpen(false);
+                  setModalKeyword("");
+                  setKeywordSuggestions([]);
+                }}
                 className="cfs-close"
               >
                 ×
@@ -2933,17 +2944,17 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
                   placeholder="eg: offroad, bunk, ensuite…"
                   className="filter-dropdown cfs-select-input"
                   autoComplete="off"
-                  value={toHumanFromQuery(keywordInput)}
+                  value={modalKeyword}
                   onChange={(e) => {
                     pickedSourceRef.current = "typed";
-                    setKeywordInput(e.target.value);
+                    setModalKeyword(e.target.value);
                   }}
                   onFocus={() => {
+                    // load base list if empty
                     if (!baseKeywords.length) {
                       setBaseLoading(true);
                       fetchHomeSearchList()
                         .then((list) => {
-                          // list: HomeSearchItem[] | string[]
                           const names = (list as Array<HomeSearchItem | string>)
                             .map((x) =>
                               typeof x === "string"
@@ -2961,7 +2972,6 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
                                 typeof s === "string" && s.trim().length > 0
                             );
 
-                          // unique + cap at 20
                           setBaseKeywords([...new Set(names)].slice(0, 20));
                         })
                         .catch(() => setBaseKeywords([]))
@@ -2973,9 +2983,8 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
                   }}
                 />
 
-                {/* Base list (when < 2 chars) */}
-                {/* Base list (when < 2 chars) */}
-                {keywordInput.trim().length < 2 &&
+                {/* Show base list when field is empty (<2 chars) */}
+                {modalKeyword.trim().length < 2 &&
                   (baseLoading ? (
                     <div style={{ marginTop: 8 }}>Loading…</div>
                   ) : (
@@ -2988,11 +2997,10 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
                           <li
                             key={`${k}-${i}`}
                             className="suggestion-item"
-                            // 👇 just call here
                             onMouseDown={(e) => {
-                              e.preventDefault(); // avoid focus/blur race
+                              e.preventDefault();
                               pickedSourceRef.current = "base";
-                              setKeywordInput(k); // just fill the field
+                              setModalKeyword(k);
                             }}
                           >
                             {k}
@@ -3004,8 +3012,8 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
                     </ul>
                   ))}
 
-                {/* Typed suggestions (>= 2 chars) */}
-                {keywordInput.trim().length >= 2 &&
+                {/* Show typed suggestions when >=2 chars */}
+                {modalKeyword.trim().length >= 2 &&
                   (keywordLoading ? (
                     <div style={{ marginTop: 8 }}>Loading…</div>
                   ) : (
@@ -3020,7 +3028,7 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
                             className="suggestion-item"
                             onMouseDown={() => {
                               pickedSourceRef.current = "typed";
-                              setKeywordInput(k); // field-ல set
+                              setModalKeyword(k);
                             }}
                           >
                             {k}
@@ -3039,7 +3047,7 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
                 type="button"
                 className="cfs-btn btn"
                 onClick={applyKeywordFromModal}
-                disabled={!keywordInput.trim()}
+                disabled={!modalKeyword.trim()}
               >
                 Search
               </button>
