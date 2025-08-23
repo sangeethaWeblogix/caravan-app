@@ -75,13 +75,11 @@ export const fetchListings = async (filters: Filters = {}) => {
   if (filters.sleeps) params.append("sleep", filters.sleeps);
   if (orderby) params.append("orderby", orderby);
 
-  // normalize search/keyword so spaces -> %20 and '+' stays as plus in UI terms
+  // normalize search/keyword: convert "+" -> space, collapse spaces
   const normalizeQuery = (s?: string) =>
     (s ?? "").replace(/\+/g, " ").trim().replace(/\s+/g, " ");
-
   const s = normalizeQuery(search);
   if (s) params.append("search", s);
-
   const k = normalizeQuery(keyword);
   if (k) params.append("keyword", k);
 
@@ -90,49 +88,85 @@ export const fetchListings = async (filters: Filters = {}) => {
 
   const json = await res.json();
 
-  // ---- interleave exclusives per your rule ----
+  // ---------- interleave exclusives without duplicates ----------
   type Item = any;
-  const products: Item[] = json?.data?.products ?? [];
-  const exclusives: Item[] = json?.data?.exclusive_products ?? [];
+  const all: Item[] = json?.data?.products ?? [];
+  const exFromApi: Item[] = json?.data?.exclusive_products ?? [];
 
-  // pattern: 4N - E - 4N - E - 2N
+  const keyOf = (x: any) => String(x?.id ?? x?.slug ?? x?.link);
+
+  // IDs that are exclusive (from API list + flagged items inside products)
+  const exIdSet = new Set<string>(exFromApi.map(keyOf));
+  all.forEach((p) => {
+    if (
+      p?.is_exclusive === 1 ||
+      p?.is_exclusive === "1" ||
+      p?.is_exclusive === true
+    ) {
+      exIdSet.add(keyOf(p));
+    }
+  });
+
+  // Build exclusive pool (unique, preserve API order; include flagged ones if missing)
+  const exMap = new Map<string, Item>();
+  exFromApi.forEach((p) => exMap.set(keyOf(p), p));
+  all.forEach((p) => {
+    const k = keyOf(p);
+    if (exIdSet.has(k) && !exMap.has(k)) exMap.set(k, p);
+  });
+  const exclusivePool: Item[] = Array.from(exMap.values());
+
+  // Normals = remove exclusives from the main pool
+  const normals: Item[] = all.filter((p) => !exIdSet.has(keyOf(p)));
+
+  // Pattern: 4N - E - 4N - E - 2N  (12 normals + up to 2 exclusives)
   const NORMAL_TARGET = 12;
   const pattern: (number | "E")[] = [4, "E", 4, "E", 2];
 
   const arranged: Item[] = [];
-  let p = 0; // normal idx
-  let e = 0; // exclusive idx
-  let normalsAdded = 0;
+  let ni = 0,
+    ei = 0,
+    nAdded = 0;
 
   for (const slot of pattern) {
     if (slot === "E") {
-      if (e < exclusives.length) arranged.push(exclusives[e++]);
-      // if no exclusive available, silently skip this slot
+      if (ei < exclusivePool.length) arranged.push(exclusivePool[ei++]);
     } else {
       for (
         let i = 0;
-        i < slot && normalsAdded < NORMAL_TARGET && p < products.length;
+        i < slot && nAdded < NORMAL_TARGET && ni < normals.length;
         i++
       ) {
-        arranged.push(products[p++]);
-        normalsAdded++;
+        arranged.push(normals[ni++]);
+        nAdded++;
       }
     }
   }
-
-  // top up normals to reach 12 if the pattern loop didn't fill it (e.g., exclusives missing)
-  while (normalsAdded < NORMAL_TARGET && p < products.length) {
-    arranged.push(products[p++]);
-    normalsAdded++;
+  // Top-up normals to reach 12 if fewer exclusives
+  while (nAdded < NORMAL_TARGET && ni < normals.length) {
+    arranged.push(normals[ni++]);
+    nAdded++;
   }
 
-  // overwrite data.products for UI; keep pagination as-is from API
+  // Final de-dupe (safety) + tag is_exclusive properly
+  const seen = new Set<string>();
+  const arrangedUnique = arranged
+    .filter((p) => {
+      const k = keyOf(p);
+      if (seen.has(k)) return false;
+      seen.add(k);
+      return true;
+    })
+    .map((p) => ({
+      ...p,
+      is_exclusive: exIdSet.has(keyOf(p)) ? 1 : 0,
+    }));
+
   return {
     ...json,
     data: {
       ...json.data,
-      products: arranged,
-      // keep exclusive_products if you still need it elsewhere; otherwise you could omit it
+      products: arrangedUnique,
       exclusive_products: json.data?.exclusive_products ?? [],
     },
   };

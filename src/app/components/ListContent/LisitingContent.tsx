@@ -8,6 +8,8 @@ import "swiper/css/navigation";
 import "../../listings/listings.css";
 import Head from "next/head";
 import { toSlug } from "../../../utils/seo/slug";
+import { useMemo } from "react";
+import Exculisive from "../../../../public/images/exclusive-deal.webp";
 interface Product {
   id: number;
   name: string;
@@ -82,6 +84,16 @@ export default function ListingContent({
     return slug ? `/product/${slug}/` : ""; // trailing slash optional
   };
   console.log("data li pro", products);
+  const uniqueProducts = useMemo(() => {
+    const seen = new Set<string>();
+    return (products || []).filter((p) => {
+      const k = String(p?.id ?? p?.slug ?? p?.link);
+      if (seen.has(k)) return false;
+      seen.add(k);
+      return true;
+    });
+  }, [products]);
+
   return (
     <>
       <Head>
@@ -151,7 +163,7 @@ export default function ListingContent({
           </div>
         </div>
         <div className="dealers-section product-type">
-          {products?.map((product) => {
+          {uniqueProducts.map((product) => {
             const href = getHref(product);
             return (
               <article
@@ -165,11 +177,16 @@ export default function ListingContent({
                       {["1", 1, true].includes(
                         (product as any).is_exclusive
                       ) && (
-                        <span
-                          className="corner-ribbon"
-                          aria-label="Exclusive deal"
-                        >
-                          EXCLUSIVE DEAL
+                        <span className="lab">
+                          <Image
+                            src={Exculisive}
+                            alt="Exclusive Deal"
+                            unoptimized
+                            width={0}
+                            height={0}
+                            sizes="100vw"
+                            style={{ width: "auto", height: "auto" }}
+                          />
                         </span>
                       )}
                       <Swiper
