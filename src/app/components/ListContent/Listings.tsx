@@ -88,7 +88,7 @@ type Props = Filters & { page?: string | number };
 
 /** ------------ Component ------------ */
 
-export default function ListingsPage({ page, ...incomingFilters }: Props) {
+export default function ListingsPage({ ...incomingFilters }: Props) {
   const DEFAULT_RADIUS = 50 as const;
 
   const [filters, setFilters] = useState<Filters>({});
@@ -107,14 +107,22 @@ export default function ListingsPage({ page, ...incomingFilters }: Props) {
 
   const router = useRouter();
   const searchParams = useSearchParams();
-  const initialPage = parseInt(page?.toString() || "1", 10);
 
-  const [pagination, setPagination] = useState<Pagination>({
-    current_page: initialPage,
-    total_pages: 1,
-    total_items: 0,
-    per_page: 12,
-    total_products: 0,
+  const [pagination, setPagination] = useState<Pagination>(() => {
+    const fromURL =
+      typeof window !== "undefined"
+        ? parseInt(
+            new URLSearchParams(window.location.search).get("page") || "1",
+            10
+          )
+        : 1;
+    return {
+      current_page: fromURL,
+      total_pages: 1,
+      total_items: 0,
+      per_page: 12,
+      total_products: 0,
+    };
   });
 
   const asNumber = (v: unknown): number | undefined => {
@@ -362,11 +370,8 @@ export default function ListingsPage({ page, ...incomingFilters }: Props) {
     (newFilters: Filters) => {
       const mergedFilters = { ...filtersRef.current, ...newFilters };
 
-      if (
-        "orderby" in newFilters &&
-        (newFilters.orderby === undefined || newFilters.orderby === "")
-      ) {
-        delete (mergedFilters as any).orderby;
+      if ("orderby" in newFilters && !newFilters.orderby) {
+        mergedFilters.orderby = undefined; // ✅ no `any`, no `delete`
       }
 
       setFilters(mergedFilters);

@@ -38,6 +38,7 @@ export interface ApiSEO {
   metadescription?: string;
   metatitle?: string;
   metaimage?: string;
+  index?: string; // "index" | "noindex" | etc.
 }
 
 export interface ApiPagination {
