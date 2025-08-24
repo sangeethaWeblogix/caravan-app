@@ -84,7 +84,6 @@ export default function ListingContent({
     const slug = p.slug?.trim() || toSlug(p.name);
     return slug ? `/product/${slug}/` : ""; // trailing slash optional
   };
-  console.log("data li pro", products);
   const uniqueProducts = useMemo(() => {
     const seen = new Set<string>();
     return (products || []).filter((p) => {

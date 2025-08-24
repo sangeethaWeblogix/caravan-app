@@ -73,7 +73,6 @@ export default function DealsOnlyCFS() {
   const items = data[active] ?? [];
   const hero = items[0];
   const rest = items.slice(1);
-  console.log("pr", items);
 
   return (
     <div className="container">

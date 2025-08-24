@@ -101,7 +101,6 @@ export async function generateMetadata({
     radius_kms,
     search,
   };
-  console.log("final", filters);
   const qs = new URLSearchParams();
   qs.append("page", String(filters.page ?? 1));
   if (filters.category) qs.append("category", filters.category);
@@ -144,10 +143,6 @@ export async function generateMetadata({
     const contentType = res.headers.get("content-type") || "";
     const raw = await res.text();
 
-    console.log("[SEO] URL:", url);
-    console.log("[SEO] Status:", statusInfo);
-    console.log("[SEO] Content-Type:", contentType);
-
     if (!res.ok) throw new Error(`HTTP error: ${statusInfo}`);
 
     const parsed = /^\s*[{[]/.test(raw) ? JSON.parse(raw) : null;
@@ -176,8 +171,8 @@ export async function generateMetadata({
     const rawIndex = (seo?.index ?? "").trim().toLowerCase(); // "", "index", "noindex"/"no-index"
     const normIndex = rawIndex === "no-index" ? "noindex" : rawIndex;
 
-    console.log("[SEO] api.index (raw):", seo?.index ?? "");
-    console.log("[SEO] index.normalized:", normIndex || "(empty)");
+    // console.log("[SEO] api.index (raw):", seo?.index ?? "");
+    // console.log("[SEO] index.normalized:", normIndex || "(empty)");
 
     // map to Next robots
     const robots =
@@ -185,13 +180,13 @@ export async function generateMetadata({
         ? { index: false, follow: false } // → <meta name="robots" content="noindex, nofollow">
         : { index: true, follow: true }; // → <meta name="robots" content="index, follow">
 
-    console.log(
-      "[SEO] robots tag:",
-      robots.index ? "index, follow" : "noindex, nofollow"
-    );
+    // console.log(
+    //   "[SEO] robots tag:",
+    //   robots.index ? "index, follow" : "noindex, nofollow"
+    // );
 
-    // log metatitle after index
-    if (seo?.metatitle) console.log("[SEO] metatitle:", seo.metatitle);
+    // // log metatitle after index
+    // if (seo?.metatitle) console.log("[SEO] metatitle:", seo.metatitle);
 
     const title = seo?.metatitle || "Caravans for Sale";
     const description =

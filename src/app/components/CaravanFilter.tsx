@@ -214,7 +214,6 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
   const length = [
     12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28,
   ];
-  console.log(selectedSuggestion);
   const sleep = [1, 2, 3, 4, 5, 6, 7];
   const [selectedRegion, setSelectedRegion] = useState<string>();
   const [showSuggestions, setShowSuggestions] = useState(false);
@@ -522,7 +521,6 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
     loadFilters();
   }, []);
 
-  console.log("dataresmake", makes);
   useEffect(() => {
     if (typeof currentFilters.radius_kms === "number") {
       setRadiusKms(currentFilters.radius_kms);
@@ -754,7 +752,6 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
 
     filtersInitialized.current = true;
     setFilters(updatedFilters);
-    console.log("✅ Cleaned filters after timeout", updatedFilters);
 
     startTransition(() => {
       updateAllFiltersAndURL(updatedFilters);
@@ -813,8 +810,6 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
   ]);
 
   const resetStateFilters = () => {
-    console.log("❌ State Reset Triggered");
-
     // ✅ Clear all location-related UI state
     setSelectedState(null);
     setSelectedStateName(null);
@@ -840,7 +835,6 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
 
       filtersInitialized.current = true;
       setFilters(updatedFilters);
-      console.log("✅ Cleaned filters after timeout", updatedFilters);
 
       startTransition(() => {
         updateAllFiltersAndURL(updatedFilters);
@@ -1156,7 +1150,6 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
         radius_kms:
           typeof radiusKms === "number" ? radiusKms : RADIUS_OPTIONS[0],
       });
-      console.log(" commit ->", radiusKms, "km"); // 👈 commit log
       setFilters(updated);
       filtersInitialized.current = true;
 
@@ -1177,7 +1170,6 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
     selectedpincode,
   ]); // ✅
 
-  console.log("🔁 suburb Render triggered — filteredSuburbs:", filteredSuburbs);
   // 1) Make a stable key for `states`
   const statesKey = useMemo(() => {
     if (!Array.isArray(states)) return "";
@@ -1467,7 +1459,6 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
       hasCategoryBeenSetRef.current = true;
     }
   }, [selectedCategory]);
-  console.log("category in filters", currentFilters.category);
   // router issue
   const lastPushedURLRef = useRef<string>("");
 
@@ -1542,13 +1533,11 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
     // 2) notify parent only if changed
     if (!filtersEqual(lastSentFiltersRef.current, next)) {
       lastSentFiltersRef.current = next;
-      console.log("range next ->", next);
       onFilterChange(next);
     }
 
     // 3) build URL once
     const slugPath = buildSlugFromFilters(next);
-    console.log("sluggg", next);
     const query = new URLSearchParams();
     if (next.acustom_fromyears)
       query.set("acustom_fromyears", String(next.acustom_fromyears));
@@ -1595,9 +1584,6 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
       // onFilterChange(updatedFilters); // ✅ correct model slug is used
     });
   };
-
-  console.log("states", states);
-  console.log("statesss", selectedState);
 
   useEffect(() => {
     // Run only once after a suburb is chosen (per mount)
@@ -1649,10 +1635,6 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
     regionSetAfterSuburbRef.current = true;
   }, [selectedSuburbName, selectedStateName, states, selectedpincode]);
 
-  console.log("yy states", states);
-  console.log("yy selectedState", selectedStateName);
-  console.log("yy selectedRegion", selectedRegion);
-  console.log("subbb", filteredSuburbs);
   // const [mounted, setMounted] = useState(false);
   // useEffect(() => setMounted(true), []);
 

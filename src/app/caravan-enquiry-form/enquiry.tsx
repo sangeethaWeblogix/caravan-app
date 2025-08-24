@@ -139,7 +139,6 @@ export default function ContactSection() {
       setLoading(false);
     }
   };
-  console.log("formData", formData);
   const hasAnyError = Object.values(errors).some(Boolean);
 
   return (
