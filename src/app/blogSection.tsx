@@ -42,7 +42,6 @@ export default function HomeLatestBlogs() {
     };
   }, []);
 
-  console.log("[home_page] latest_posts:", blogPosts);
   const getHref = (p: BlogPost) => {
     const slug = p.slug?.trim() || toSlug(p.title || "post");
     return `/blog/${slug}/`;

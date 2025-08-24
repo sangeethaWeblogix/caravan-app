@@ -50,6 +50,7 @@ export async function generateMetadata({
     orderby,
     atm,
     radius_kms,
+    search,
   ] = slug;
 
   const filters: {
@@ -74,6 +75,8 @@ export async function generateMetadata({
     orderby?: string;
     atm?: string;
     radius_kms?: number | string;
+    search?: string;
+    keyword?: string;
   } = {
     page: 1,
     category: categorySlug,
@@ -96,8 +99,8 @@ export async function generateMetadata({
     orderby,
     atm,
     radius_kms,
+    search,
   };
-  console.log("final", filters);
   const qs = new URLSearchParams();
   qs.append("page", String(filters.page ?? 1));
   if (filters.category) qs.append("category", filters.category);
@@ -120,6 +123,8 @@ export async function generateMetadata({
   if (filters.acustom_toyears)
     qs.append("acustom_toyears", filters.acustom_toyears);
   if (filters.model) qs.append("model", filters.model);
+  if (filters.search) qs.append("search", filters.search);
+
   if (filters.condition)
     qs.append(
       "condition",
@@ -135,12 +140,8 @@ export async function generateMetadata({
       headers: { Accept: "application/json" },
     });
     const statusInfo = `${res.status} ${res.statusText}`;
-    const contentType = res.headers.get("content-type") || "";
+    // const contentType = res.headers.get("content-type") || "";
     const raw = await res.text();
-
-    console.log("[SEO] URL:", url);
-    console.log("[SEO] Status:", statusInfo);
-    console.log("[SEO] Content-Type:", contentType);
 
     if (!res.ok) throw new Error(`HTTP error: ${statusInfo}`);
 
@@ -170,8 +171,8 @@ export async function generateMetadata({
     const rawIndex = (seo?.index ?? "").trim().toLowerCase(); // "", "index", "noindex"/"no-index"
     const normIndex = rawIndex === "no-index" ? "noindex" : rawIndex;
 
-    console.log("[SEO] api.index (raw):", seo?.index ?? "");
-    console.log("[SEO] index.normalized:", normIndex || "(empty)");
+    // console.log("[SEO] api.index (raw):", seo?.index ?? "");
+    // console.log("[SEO] index.normalized:", normIndex || "(empty)");
 
     // map to Next robots
     const robots =
@@ -179,13 +180,13 @@ export async function generateMetadata({
         ? { index: false, follow: false } // → <meta name="robots" content="noindex, nofollow">
         : { index: true, follow: true }; // → <meta name="robots" content="index, follow">
 
-    console.log(
-      "[SEO] robots tag:",
-      robots.index ? "index, follow" : "noindex, nofollow"
-    );
+    // console.log(
+    //   "[SEO] robots tag:",
+    //   robots.index ? "index, follow" : "noindex, nofollow"
+    // );
 
-    // log metatitle after index
-    if (seo?.metatitle) console.log("[SEO] metatitle:", seo.metatitle);
+    // // log metatitle after index
+    // if (seo?.metatitle) console.log("[SEO] metatitle:", seo.metatitle);
 
     const title = seo?.metatitle || "Caravans for Sale";
     const description =

@@ -21,49 +21,43 @@ export interface Filters {
   keyword?: string; // parsed -> canonicalized to `search`
 }
 
-const conditionMap: Record<string, string> = {
-  new: "New",
-  used: "Used",
-  "near-new": "Near New",
-};
+// const conditionMap: Record<string, string> = {
+//   new: "New",
+//   used: "Used",
+//   "near-new": "Near New",
+// };
 
-const hasReservedSuffix = (s: string) =>
-  /-(category|condition|state|region|suburb)$/.test(s) ||
-  /-(kg-atm|length-in-feet|people-sleeping-capacity)$/.test(s) ||
-  /^over-\d+/.test(s) ||
-  /^under-\d+/.test(s) ||
-  /^between-/.test(s) ||
-  /^\d{4}$/.test(s) ||
-  s.includes("="); // e.g. search=, keyword=
+// const hasReservedSuffix = (s: string) =>
+//   /-(category|condition|state|region|suburb|keyword)$/.test(s) ||
+//   /-(kg-atm|length-in-feet|people-sleeping-capacity)$/.test(s) ||
+//   /^over-\d+/.test(s) ||
+//   /^under-\d+/.test(s) ||
+//   /^between-/.test(s) ||
+//   /^\d{4}$/.test(s) ||
+//   s.includes("="); // e.g. search=, keyword=
 
 export function parseSlugToFilters(slugParts: string[]): Filters {
   const filters: Filters = {};
 
-  slugParts.forEach((part) => {
-    if (!part) return;
+  const conditionMap: Record<string, string> = {
+    new: "New",
+    used: "Used",
+    "near-new": "Near New",
+  };
 
-    // --- Handle search/keyword FIRST so it never becomes make/model ---
-    if (part.startsWith("search=")) {
-      const rhs = part.slice("search=".length);
-      const val = decodeURIComponent(rhs)
-        .replace(/%20/g, "+")
-        .replace(/%2B/gi, "+")
-        .replace(/\s+/g, "+");
-      filters.search = val;
-      filters.keyword = undefined;
-      return; // continue
-    }
-    if (part.startsWith("keyword=")) {
-      const rhs = part.slice("keyword=".length);
-      const val = decodeURIComponent(rhs)
-        .replace(/%20/g, "+")
-        .replace(/%2B/gi, "+")
-        .replace(/\s+/g, "+");
-      // canonicalize to `search`
-      filters.search = val;
-      filters.keyword = undefined;
-      return; // continue
-    }
+  const hasReservedSuffix = (s: string) =>
+    /-(category|condition|state|region|suburb|keyword)$/.test(s) ||
+    /-(kg-atm|length-in-feet|people-sleeping-capacity)$/.test(s) ||
+    /^over-\d+/.test(s) ||
+    /^under-\d+/.test(s) ||
+    /^between-/.test(s) ||
+    /^\d{4}$/.test(s) ||
+    s.includes("="); // e.g. search=, keyword=
+
+  slugParts.forEach((_part) => {
+    const decoded = decodeURIComponent(_part);
+    const part = decoded.split("?")[0]; // drop query markers after decoding
+    if (!part) return;
 
     // --- Typed segments ---
     if (part.endsWith("-category")) {
@@ -86,7 +80,6 @@ export function parseSlugToFilters(slugParts: string[]): Filters {
     }
 
     if (part.endsWith("-region")) {
-      // may be dropped later if suburb exists
       filters.region = part
         .replace("-region", "")
         .replace(/-/g, " ")
@@ -117,7 +110,6 @@ export function parseSlugToFilters(slugParts: string[]): Filters {
         filters.maxKg = canon[2];
         return;
       }
-      // legacy: between-<min>-kg-<max>-kg-atm
       const legacy = part.match(/^between-(\d+)-kg-(\d+)-kg-atm$/);
       if (legacy) {
         filters.minKg = legacy[1];
@@ -192,8 +184,19 @@ export function parseSlugToFilters(slugParts: string[]): Filters {
       return;
     }
 
+    if (part.startsWith("search=")) {
+      filters.search = decodeURIComponent(part.replace("search=", ""));
+      return;
+    }
+
     // make / model fallback — only if safe (no reserved suffix / '=' / numbers)
-    if (!hasReservedSuffix(part) && isNaN(Number(part))) {
+    // AND NO search field present!
+    if (
+      !hasReservedSuffix(part) &&
+      !part.includes("=") &&
+      isNaN(Number(part)) &&
+      !filters.search // prevent make/model if search is there
+    ) {
       if (!filters.make) {
         filters.make = part;
         return;

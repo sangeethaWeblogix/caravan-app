@@ -18,7 +18,7 @@ async function fetchProductDetail(slug: string) {
 export default async function ProductDetailPage({ params }: PageProps) {
   const { slug } = await params; // ✅ must await
   const data = await fetchProductDetail(slug);
-  console.log("pdata", data);
+  // console.log("pdata", data);
   return (
     <main className="container mx-auto">
       <ClientLogger data={data} />

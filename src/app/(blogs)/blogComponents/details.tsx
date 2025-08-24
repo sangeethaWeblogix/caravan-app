@@ -45,8 +45,7 @@ export default function blogDetailsPage({
 
   const cleanTitle = (s?: string) => decodeEntities(stripHtml(s));
   const plainTitle = cleanTitle(data?.data?.blog_detail?.title);
-  // console.log("dataaa", data);
-  // console.log("dataaapost", post);
+
   if (!post) {
     notFound();
   }

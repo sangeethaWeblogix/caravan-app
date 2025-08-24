@@ -103,7 +103,7 @@ export default function ListingsPage({ ...incomingFilters }: Props) {
   const [metaDescription, setMetaDescription] = useState("");
 
   const [stateOptions, setStateOptions] = useState<StateOption[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -143,7 +143,6 @@ export default function ListingsPage({ ...incomingFilters }: Props) {
     const path = typeof window !== "undefined" ? window.location.pathname : "";
     const slugParts = path.split("/listings/")[1]?.split("/") || [];
     const parsed = parseSlugToFilters(slugParts);
-
     const merged = { ...parsed, ...incomingFilters };
     filtersRef.current = merged;
     setFilters(merged);
@@ -315,7 +314,7 @@ export default function ListingsPage({ ...incomingFilters }: Props) {
   }, [incomingFilters]);
 
   useEffect(() => {
-    if (!initializedRef.current) return; // wait until slug parsed
+    if (!initializedRef.current) return;
 
     const path = pathKey;
     const slugParts = path.split("/listings/")[1]?.split("/") || [];
@@ -342,7 +341,6 @@ export default function ListingsPage({ ...incomingFilters }: Props) {
           : undefined,
     };
 
-    // sync local filters (no fetch here)
     const prevFiltersJson = JSON.stringify(filtersRef.current);
     const nextFiltersJson = JSON.stringify(merged);
     if (prevFiltersJson !== nextFiltersJson) {
@@ -356,15 +354,70 @@ export default function ListingsPage({ ...incomingFilters }: Props) {
         : { ...prev, current_page: pageFromURL }
     );
 
-    // de-dupe fetch across remounts / quick repeats
     const requestKey = JSON.stringify({ page: pageFromURL, filters: merged });
     if (LAST_GLOBAL_REQUEST_KEY === requestKey) {
       return;
     }
     LAST_GLOBAL_REQUEST_KEY = requestKey;
 
+    // ✅ Fix: Set isLoading to true immediately
+    setIsLoading(true);
+
+    // ✅ Then call loadListings
     loadListings(pageFromURL, merged);
   }, [searchKey, DEFAULT_RADIUS, pathKey]);
+
+  // useEffect(() => {
+  //   if (!initializedRef.current) return; // wait until slug parsed
+
+  //   const path = pathKey;
+  //   const slugParts = path.split("/listings/")[1]?.split("/") || [];
+  //   const parsedFromURL = parseSlugToFilters(slugParts);
+
+  //   const pageFromURL = parseInt(
+  //     new URLSearchParams(searchKey).get("page") || "1",
+  //     10
+  //   );
+  //   const orderbyQP =
+  //     new URLSearchParams(searchKey).get("orderby") || undefined;
+  //   const radiusQP = new URLSearchParams(searchKey).get("radius_kms");
+  //   const radiusFromURL = radiusQP
+  //     ? Math.max(5, parseInt(radiusQP, 10))
+  //     : undefined;
+
+  //   const merged: Filters = {
+  //     ...parsedFromURL,
+  //     ...incomingFiltersRef.current,
+  //     orderby: orderbyQP,
+  //     radius_kms:
+  //       typeof radiusFromURL === "number" && radiusFromURL !== DEFAULT_RADIUS
+  //         ? radiusFromURL
+  //         : undefined,
+  //   };
+
+  //   // sync local filters (no fetch here)
+  //   const prevFiltersJson = JSON.stringify(filtersRef.current);
+  //   const nextFiltersJson = JSON.stringify(merged);
+  //   if (prevFiltersJson !== nextFiltersJson) {
+  //     filtersRef.current = merged;
+  //     setFilters(merged);
+  //   }
+
+  //   setPagination((prev) =>
+  //     prev.current_page === pageFromURL
+  //       ? prev
+  //       : { ...prev, current_page: pageFromURL }
+  //   );
+
+  //   // de-dupe fetch across remounts / quick repeats
+  //   const requestKey = JSON.stringify({ page: pageFromURL, filters: merged });
+  //   if (LAST_GLOBAL_REQUEST_KEY === requestKey) {
+  //     return;
+  //   }
+  //   LAST_GLOBAL_REQUEST_KEY = requestKey;
+
+  //   loadListings(pageFromURL, merged);
+  // }, [searchKey, DEFAULT_RADIUS, pathKey]);
 
   const handleFilterChange = useCallback(
     (newFilters: Filters) => {
@@ -448,8 +501,6 @@ export default function ListingsPage({ ...incomingFilters }: Props) {
                   </Suspense>
                 </div>
               </div>
-
-              {/* Listings */}
               {isLoading ? (
                 <SkeletonListing />
               ) : (
@@ -464,6 +515,24 @@ export default function ListingsPage({ ...incomingFilters }: Props) {
                   currentFilters={filters}
                 />
               )}
+
+              {/* Listings */}
+              {/* {isLoading ? (
+                <SkeletonListing />
+              ) : products.length > 0 ? (
+                <Listing
+                  products={products}
+                  pagination={pagination}
+                  onNext={handleNextPage}
+                  onPrev={handlePrevPage}
+                  metaDescription={metaDescription}
+                  metaTitle={metaTitle}
+                  onFilterChange={handleFilterChange}
+                  currentFilters={filters}
+                />
+              ) : (
+                <div>No listings found.</div>
+              )} */}
             </div>
           </div>
         </div>
