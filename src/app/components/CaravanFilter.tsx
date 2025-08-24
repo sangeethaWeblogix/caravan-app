@@ -123,7 +123,7 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
   const [radiusKms, setRadiusKms] = useState<number>(RADIUS_OPTIONS[0]);
   const [categoryOpen, setCategoryOpen] = useState(false);
   const [categories, setCategories] = useState<Option[]>([]);
-  const [makes, setMakes] = useState<Option[]>([]);
+  const [makes] = useState<Option[]>([]);
   const [model, setModel] = useState<Model[]>([]);
 
   const [states, setStates] = useState<StateOption[]>([]);
@@ -662,7 +662,7 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
           make: selectedMake || currentFilters.make,
           category: selectedCategory || currentFilters.category,
           state: selectedStateName || currentFilters.state,
-          region: selectedRegionName || currentFilters.region,
+          region: selectedRegionName || selectedRegion || currentFilters.region,
           suburb: selectedSuburbName || currentFilters.suburb,
           pincode: selectedpincode || currentFilters.pincode,
         };

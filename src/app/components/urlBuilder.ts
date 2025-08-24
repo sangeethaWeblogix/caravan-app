@@ -21,20 +21,20 @@ export interface Filters {
   keyword?: string; // parsed -> canonicalized to `search`
 }
 
-const conditionMap: Record<string, string> = {
-  new: "New",
-  used: "Used",
-  "near-new": "Near New",
-};
+// const conditionMap: Record<string, string> = {
+//   new: "New",
+//   used: "Used",
+//   "near-new": "Near New",
+// };
 
-const hasReservedSuffix = (s: string) =>
-  /-(category|condition|state|region|suburb|keyword)$/.test(s) ||
-  /-(kg-atm|length-in-feet|people-sleeping-capacity)$/.test(s) ||
-  /^over-\d+/.test(s) ||
-  /^under-\d+/.test(s) ||
-  /^between-/.test(s) ||
-  /^\d{4}$/.test(s) ||
-  s.includes("="); // e.g. search=, keyword=
+// const hasReservedSuffix = (s: string) =>
+//   /-(category|condition|state|region|suburb|keyword)$/.test(s) ||
+//   /-(kg-atm|length-in-feet|people-sleeping-capacity)$/.test(s) ||
+//   /^over-\d+/.test(s) ||
+//   /^under-\d+/.test(s) ||
+//   /^between-/.test(s) ||
+//   /^\d{4}$/.test(s) ||
+//   s.includes("="); // e.g. search=, keyword=
 
 export function parseSlugToFilters(slugParts: string[]): Filters {
   const filters: Filters = {};

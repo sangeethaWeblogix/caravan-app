@@ -140,7 +140,7 @@ export async function generateMetadata({
       headers: { Accept: "application/json" },
     });
     const statusInfo = `${res.status} ${res.statusText}`;
-    const contentType = res.headers.get("content-type") || "";
+    // const contentType = res.headers.get("content-type") || "";
     const raw = await res.text();
 
     if (!res.ok) throw new Error(`HTTP error: ${statusInfo}`);
