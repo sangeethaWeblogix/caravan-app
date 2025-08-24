@@ -3,13 +3,11 @@ import { fetchListings } from "@/api/listings/api";
 import { parseSlugToFilters } from "@/app/components/urlBuilder";
 import type { Metadata } from "next";
 
-export async function metaFromSlug(
-  slugParts: string[] = []
-): Promise<Metadata> {
-  const filters = parseSlugToFilters(slugParts);
-  console.log("meta filt", filters);
-  const res = await fetchListings({ ...filters, page: 1 });
-  console.log("Meta from slug response:", res);
+export async function metaFromSlug(filters: string[] = []): Promise<Metadata> {
+  const slugfilters = parseSlugToFilters(filters);
+  console.log("meta filt", slugfilters);
+  const res = await fetchListings({ ...slugfilters, page: 1 });
+  console.log("Meta from slug response:", res.seo);
   const title = res?.seo?.metatitle || "Caravan Listings";
   const description =
     res?.seo?.metadescription || "Browse all available caravans.";

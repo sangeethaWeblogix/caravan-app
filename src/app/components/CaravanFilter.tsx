@@ -1544,6 +1544,7 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
 
     // 3) build URL once
     const slugPath = buildSlugFromFilters(next);
+    console.log("sluggg", next);
     const query = new URLSearchParams();
     if (next.acustom_fromyears)
       query.set("acustom_fromyears", String(next.acustom_fromyears));
@@ -1556,7 +1557,6 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
 
     const safeSlugPath = slugPath.endsWith("/") ? slugPath : `${slugPath}/`;
     const finalURL = query.toString() ? `${slugPath}?${query}` : safeSlugPath;
-
     if (lastPushedURLRef.current !== finalURL) {
       lastPushedURLRef.current = finalURL;
       router.push(finalURL);

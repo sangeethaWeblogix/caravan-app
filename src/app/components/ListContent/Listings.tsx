@@ -143,7 +143,7 @@ export default function ListingsPage({ ...incomingFilters }: Props) {
     const path = typeof window !== "undefined" ? window.location.pathname : "";
     const slugParts = path.split("/listings/")[1]?.split("/") || [];
     const parsed = parseSlugToFilters(slugParts);
-
+    console.log("parsed slugto filters:", slugParts);
     const merged = { ...parsed, ...incomingFilters };
     filtersRef.current = merged;
     setFilters(merged);

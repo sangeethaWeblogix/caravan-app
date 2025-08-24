@@ -50,6 +50,7 @@ export async function generateMetadata({
     orderby,
     atm,
     radius_kms,
+    search,
   ] = slug;
 
   const filters: {
@@ -74,6 +75,8 @@ export async function generateMetadata({
     orderby?: string;
     atm?: string;
     radius_kms?: number | string;
+    search?: string;
+    keyword?: string;
   } = {
     page: 1,
     category: categorySlug,
@@ -96,6 +99,7 @@ export async function generateMetadata({
     orderby,
     atm,
     radius_kms,
+    search,
   };
   console.log("final", filters);
   const qs = new URLSearchParams();
@@ -120,6 +124,8 @@ export async function generateMetadata({
   if (filters.acustom_toyears)
     qs.append("acustom_toyears", filters.acustom_toyears);
   if (filters.model) qs.append("model", filters.model);
+  if (filters.search) qs.append("search", filters.search);
+
   if (filters.condition)
     qs.append(
       "condition",

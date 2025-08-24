@@ -94,7 +94,6 @@ export const fetchListings = async (
     slug,
     radius_kms,
     search,
-    keyword,
   } = filters;
 
   const params = new URLSearchParams();
@@ -125,8 +124,6 @@ export const fetchListings = async (
 
   const s = normalizeQuery(search);
   if (s) params.append("search", s);
-  const k = normalizeQuery(keyword);
-  if (k) params.append("keyword", k);
 
   const res = await fetch(`${API_BASE}/new-list?${params.toString()}`);
   if (!res.ok) throw new Error("API failed");
