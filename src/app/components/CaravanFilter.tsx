@@ -463,17 +463,21 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
     // onFilterChange(next); // if your parent needs it
     updateAllFiltersAndURL(next);
   };
-  useEffect(() => {
-    const loadFilters = async () => {
-      const res = await fetchProductList();
-      if (res?.data) {
-        setCategories(res.data.all_categories || []);
-        setMakes(res.data.make_options || []);
-        setStates(res.data.states || []);
-      }
-    };
-    loadFilters();
-  }, []);
+  // const didFetchRef = useRef(false);
+  // useEffect(() => {
+  //   if (didFetchRef.current) return;
+  //   didFetchRef.current = true;
+  //   const loadFilters = async () => {
+  //     const res = await fetchProductList();
+  //     if (res?.data) {
+  //       setCategories(res.data.all_categories || []);
+  //       setMakes(res.data.make_options || []);
+  //       setStates(res.data.states || []);
+  //     }
+  //   };
+  //   loadFilters();
+  // }, []);
+
   type UnknownRec = Record<string, unknown>;
 
   const isOptionArray = (v: unknown): v is Option[] =>
@@ -504,15 +508,15 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
       const cats = isOptionArray(d?.["all_categories"])
         ? (d!["all_categories"] as Option[])
         : [];
-      const mks = isOptionArray(d?.["make_options"])
-        ? (d!["make_options"] as Option[])
-        : [];
+      // const mks = isOptionArray(d?.["make_options"])
+      //   ? (d!["make_options"] as Option[])
+      //   : [];
       const sts = isStateOptionArray(d?.["states"])
         ? (d!["states"] as StateOption[])
         : [];
 
       setCategories(cats); // ✅ always Option[]
-      setMakes(mks); // ✅ always Option[]
+      // setMakes(mks); // ✅ always Option[]
       setStates(sts); // ✅ always StateOption[]
     };
     loadFilters();
