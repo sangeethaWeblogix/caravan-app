@@ -6,7 +6,7 @@ import Listing from "./LisitingContent";
 import CaravanFilter from "../CaravanFilter";
 import SkeletonListing from "../skelton";
 import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { buildSlugFromFilters } from "../slugBuilter";
 import { parseSlugToFilters } from "../../components/urlBuilder";
 import Head from "next/head";
@@ -93,7 +93,8 @@ export default function ListingsPage({ ...incomingFilters }: Props) {
 
   const [filters, setFilters] = useState<Filters>({});
   const filtersRef = useRef<Filters>({});
-
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
   const [products, setProducts] = useState<Product[]>([]);
   const [pageTitle, setPageTitle] = useState("");
   const [categories, setCategories] = useState<Category[]>([]);
@@ -106,7 +107,6 @@ export default function ListingsPage({ ...incomingFilters }: Props) {
   const [isLoading, setIsLoading] = useState(false);
 
   const router = useRouter();
-  const searchParams = useSearchParams();
 
   const [pagination, setPagination] = useState<Pagination>(() => {
     const fromURL =
@@ -136,11 +136,12 @@ export default function ListingsPage({ ...incomingFilters }: Props) {
 
   // Parse slug ONCE on mount; do not fetch here
   const initializedRef = useRef(false);
+
   useEffect(() => {
     if (initializedRef.current) return;
     initializedRef.current = true;
 
-    const path = typeof window !== "undefined" ? window.location.pathname : "";
+    const path = pathKey;
     const slugParts = path.split("/listings/")[1]?.split("/") || [];
     const parsed = parseSlugToFilters(slugParts);
 
@@ -189,6 +190,12 @@ export default function ListingsPage({ ...incomingFilters }: Props) {
     },
     [router, DEFAULT_RADIUS]
   );
+  useEffect(() => {
+    if (!initializedRef.current) {
+      initializedRef.current = true;
+    }
+  }, []);
+
   // put these under other hooks
   const goToPage = useCallback(
     (p: number) => {
@@ -203,17 +210,20 @@ export default function ListingsPage({ ...incomingFilters }: Props) {
     [pagination.total_pages, updateURLWithFilters]
   );
 
-  const handleNextPage = useCallback(() => {
+  const handleNextPage = () => {
     if (pagination.current_page < pagination.total_pages) {
-      goToPage(pagination.current_page + 1);
+      const nextPage = pagination.current_page + 1;
+      console.log("🟢 Triggering updateURLWithFilters with page:", nextPage);
+      updateURLWithFilters(filtersRef.current, nextPage);
     }
-  }, [pagination.current_page, pagination.total_pages, goToPage]);
+  };
 
-  const handlePrevPage = useCallback(() => {
+  const handlePrevPage = () => {
     if (pagination.current_page > 1) {
-      goToPage(pagination.current_page - 1);
+      const prevPage = pagination.current_page - 1;
+      updateURLWithFilters(filtersRef.current, prevPage);
     }
-  }, [pagination.current_page, goToPage]);
+  };
 
   const loadListings = useCallback(
     async (pageNum = 1, appliedFilters: Filters = filtersRef.current) => {
@@ -305,8 +315,10 @@ export default function ListingsPage({ ...incomingFilters }: Props) {
   /* ---- SINGLE source of truth: URL -> fetch ----
      This is the only effect that calls loadListings.
      It also de-dupes across StrictMode remounts via LAST_GLOBAL_REQUEST_KEY. */
-  const searchKey = typeof window !== "undefined" ? window.location.search : "";
-  const pathKey = typeof window !== "undefined" ? window.location.pathname : "";
+
+  const searchKey = searchParams.toString();
+  const pathKey = pathname;
+
   const incomingFiltersRef = useRef<Filters>(incomingFilters);
   useEffect(() => {
     const prev = JSON.stringify(incomingFiltersRef.current);
@@ -315,19 +327,14 @@ export default function ListingsPage({ ...incomingFilters }: Props) {
   }, [incomingFilters]);
 
   useEffect(() => {
-    if (!initializedRef.current) return; // wait until slug parsed
+    if (!initializedRef.current) return;
 
-    const path = pathKey;
-    const slugParts = path.split("/listings/")[1]?.split("/") || [];
+    const slugParts = pathKey.split("/listings/")[1]?.split("/") || [];
     const parsedFromURL = parseSlugToFilters(slugParts);
 
-    const pageFromURL = parseInt(
-      new URLSearchParams(searchKey).get("page") || "1",
-      10
-    );
-    const orderbyQP =
-      new URLSearchParams(searchKey).get("orderby") || undefined;
-    const radiusQP = new URLSearchParams(searchKey).get("radius_kms");
+    const pageFromURL = parseInt(searchParams.get("page") || "1", 10);
+    const orderbyQP = searchParams.get("orderby") || undefined;
+    const radiusQP = searchParams.get("radius_kms");
     const radiusFromURL = radiusQP
       ? Math.max(5, parseInt(radiusQP, 10))
       : undefined;
@@ -336,35 +343,26 @@ export default function ListingsPage({ ...incomingFilters }: Props) {
       ...parsedFromURL,
       ...incomingFiltersRef.current,
       orderby: orderbyQP,
-      radius_kms:
-        typeof radiusFromURL === "number" && radiusFromURL !== DEFAULT_RADIUS
-          ? radiusFromURL
-          : undefined,
+      radius_kms: radiusFromURL !== DEFAULT_RADIUS ? radiusFromURL : undefined,
     };
 
-    // sync local filters (no fetch here)
+    // Compare current and previous filters to avoid unnecessary fetches
     const prevFiltersJson = JSON.stringify(filtersRef.current);
     const nextFiltersJson = JSON.stringify(merged);
+
     if (prevFiltersJson !== nextFiltersJson) {
       filtersRef.current = merged;
       setFilters(merged);
     }
 
-    setPagination((prev) =>
-      prev.current_page === pageFromURL
-        ? prev
-        : { ...prev, current_page: pageFromURL }
-    );
+    setPagination((prev) => ({ ...prev, current_page: pageFromURL }));
 
-    // de-dupe fetch across remounts / quick repeats
     const requestKey = JSON.stringify({ page: pageFromURL, filters: merged });
-    if (LAST_GLOBAL_REQUEST_KEY === requestKey) {
-      return;
-    }
+    if (LAST_GLOBAL_REQUEST_KEY === requestKey) return;
     LAST_GLOBAL_REQUEST_KEY = requestKey;
 
     loadListings(pageFromURL, merged);
-  }, [searchKey, DEFAULT_RADIUS, pathKey]);
+  }, [searchKey, pathKey, loadListings, DEFAULT_RADIUS]);
 
   const handleFilterChange = useCallback(
     (newFilters: Filters) => {
