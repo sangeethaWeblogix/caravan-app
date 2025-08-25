@@ -82,6 +82,7 @@ export interface Filters {
   search?: string;
   keyword?: string;
   radius_kms?: number | string;
+  is_exclusive?: boolean;
 }
 
 type Props = Filters & { page?: string | number };
@@ -238,6 +239,7 @@ export default function ListingsPage({ ...incomingFilters }: Props) {
 
         const response = await fetchListings({
           ...safeFilters,
+          is_exclusive: safeFilters.is_exclusive === true ? true : undefined,
           page: pageNum,
           condition: safeFilters.condition,
           minKg: safeFilters.minKg?.toString(),
@@ -283,12 +285,10 @@ export default function ListingsPage({ ...incomingFilters }: Props) {
           setPageTitle("No results found. Redirecting...");
           setMetaTitle("No listings found");
           setMetaDescription("We couldn’t find listings for your filters.");
-          setTimeout(() => {
-            const empty: Filters = {};
-            filtersRef.current = empty;
-            setFilters(empty);
-            router.push("/listings");
-          }, 2500);
+          const empty: Filters = {};
+          filtersRef.current = empty;
+          setFilters(empty);
+          router.push("/listings");
         } else {
           setProducts([]);
           setPagination((prev) => ({
@@ -509,7 +509,7 @@ export default function ListingsPage({ ...incomingFilters }: Props) {
                   </Suspense>
                 </div>
               </div>
-              {isLoading ? (
+              {/* {isLoading ? (
                 <SkeletonListing />
               ) : (
                 <Listing
@@ -522,10 +522,10 @@ export default function ListingsPage({ ...incomingFilters }: Props) {
                   onFilterChange={handleFilterChange}
                   currentFilters={filters}
                 />
-              )}
+              )} */}
 
               {/* Listings */}
-              {/* {isLoading ? (
+              {isLoading ? (
                 <SkeletonListing />
               ) : products.length > 0 ? (
                 <Listing
@@ -540,7 +540,7 @@ export default function ListingsPage({ ...incomingFilters }: Props) {
                 />
               ) : (
                 <div>No listings found.</div>
-              )} */}
+              )}
             </div>
           </div>
         </div>
