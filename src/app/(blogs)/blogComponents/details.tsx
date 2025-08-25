@@ -100,11 +100,13 @@ export default function blogDetailsPage({
               </div>
             </div>
 
+
             <div className="col-lg-3 rightbar-stick">
               <div className="theiaStickySidebar">
                 
               </div>
             </div>
+
           </div>
         </div>
       </section>

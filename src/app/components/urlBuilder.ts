@@ -33,7 +33,6 @@ export function parseSlugToFilters(
   query?: Record<string, string | string[] | undefined> // Works with most frameworks
 ): Filters {
   const filters: Filters = {};
-
   const conditionMap: Record<string, string> = {
     new: "New",
     used: "Used",
@@ -181,8 +180,8 @@ export function parseSlugToFilters(
       filters.search = decodeURIComponent(part.replace("search=", ""));
       return;
     }
-    if (part.startsWith("radius-")) {
-      const radiusVal = part.replace("radius-", "");
+    if (part.startsWith("radius_kms=")) {
+      const radiusVal = part.replace("radius_kms=", "");
       if (!isNaN(Number(radiusVal))) {
         filters.radius_kms = radiusVal;
         return;
@@ -218,7 +217,7 @@ export function parseSlugToFilters(
     const getScalar = (v: string | string[] | undefined): string | undefined =>
       Array.isArray(v) ? v[0] : v;
 
-    // if (query.radius_kms) filters.radius_kms = getScalar(query.radius_kms);
+    if (query.radius_kms) filters.radius_kms = getScalar(query.radius_kms);
     if (query.page) filters.page = getScalar(query.page);
     if (query.orderby) filters.orderby = getScalar(query.orderby);
     if (query.search) filters.search = getScalar(query.search);
@@ -226,6 +225,7 @@ export function parseSlugToFilters(
       filters.search = getScalar(query.keyword); // fallback
     // You can add any other fields you support in query here.
   }
+  console.log("parseSlugToFilters", filters);
 
   return filters;
 }
