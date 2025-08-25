@@ -5,7 +5,8 @@ import type { Metadata } from "next";
 
 export async function metaFromSlug(filters: string[] = []): Promise<Metadata> {
   const slugfilters = parseSlugToFilters(filters);
-  // console.log("meta filt", slugfilters);
+
+  console.log("meta filt", slugfilters);
   const res = await fetchListings({ ...slugfilters, page: 1 });
   // console.log("Meta from slug response:", res.seo);
   const title = res?.seo?.metatitle || "Caravan Listings";

@@ -25,12 +25,12 @@ export interface Filters {
 
 /**
  * Parse path segments & query params into a Filters object.
- * @param slugParts Array of path segments (already decoded if possible)
- * @param query Optional query params object (e.g. from req.query or searchParams)
+ * @param slugParts Array of path segments
+ * @param query Optional query params object
  */
 export function parseSlugToFilters(
   slugParts: string[],
-  query?: Record<string, string | string[] | undefined> // Works with most frameworks
+  query?: Record<string, string | string[] | undefined>
 ): Filters {
   const filters: Filters = {};
 
@@ -47,25 +47,22 @@ export function parseSlugToFilters(
     /^under-\d+/.test(s) ||
     /^between-/.test(s) ||
     /^\d{4}$/.test(s) ||
-    s.includes("="); // e.g. search=, keyword=
+    s.includes("=");
 
   slugParts.forEach((_part) => {
     const decoded = decodeURIComponent(_part);
     const part = decoded.split("?")[0];
     if (!part) return;
 
-    // --- Typed segments ---
     if (part.endsWith("-category")) {
       filters.category = part.replace("-category", "");
       return;
     }
-
     if (part.endsWith("-condition")) {
       const slug = part.replace("-condition", "").toLowerCase();
       filters.condition = conditionMap[slug] || slug;
       return;
     }
-
     if (part.endsWith("-state")) {
       filters.state = part
         .replace("-state", "")
@@ -73,7 +70,6 @@ export function parseSlugToFilters(
         .toLowerCase();
       return;
     }
-
     if (part.endsWith("-region")) {
       filters.region = part
         .replace("-region", "")
@@ -81,7 +77,6 @@ export function parseSlugToFilters(
         .toLowerCase();
       return;
     }
-
     if (part.endsWith("-suburb")) {
       filters.suburb = part
         .replace("-suburb", "")
@@ -89,13 +84,10 @@ export function parseSlugToFilters(
         .toLowerCase();
       return;
     }
-
     if (/^\d{4}$/.test(part)) {
       filters.pincode = part;
       return;
     }
-
-    // ATM: support canonical and legacy patterns
     if (part.includes("-kg-atm")) {
       const canon = part.match(/^between-(\d+)-(\d+)-kg-atm$/);
       if (canon) {
@@ -120,8 +112,6 @@ export function parseSlugToFilters(
         return;
       }
     }
-
-    // Length (feet)
     if (part.includes("length-in-feet")) {
       const between = part.match(/^between-(\d+)-(\d+)-length-in-feet$/);
       if (between) {
@@ -140,8 +130,6 @@ export function parseSlugToFilters(
         return;
       }
     }
-
-    // Sleeps (single-value)
     if (part.includes("-people-sleeping-capacity")) {
       const between = part.match(
         /^between-(\d+)-and-(\d+)-people-sleeping-capacity$/
@@ -157,8 +145,6 @@ export function parseSlugToFilters(
         return;
       }
     }
-
-    // Price
     if (/^over-\d+$/.test(part)) {
       filters.from_price = part.replace("over-", "");
       return;
@@ -175,8 +161,6 @@ export function parseSlugToFilters(
       }
       return;
     }
-
-    // Search + fallback
     if (part.startsWith("search=")) {
       filters.search = decodeURIComponent(part.replace("search=", ""));
       return;
@@ -188,13 +172,11 @@ export function parseSlugToFilters(
         return;
       }
     }
-
-    // make / model fallback — only if safe and no search is present
     if (
       !hasReservedSuffix(part) &&
       !part.includes("=") &&
       isNaN(Number(part)) &&
-      !filters.search // prevent make/model if search is there
+      !filters.search
     ) {
       if (!filters.make) {
         filters.make = part;
@@ -207,15 +189,13 @@ export function parseSlugToFilters(
     }
   });
 
-  // If suburb present, ignore region due to canonical URL structure
   if (filters.suburb) {
     filters.region = undefined;
   }
 
   // ---- QUERY STRING SUPPORT ----
   if (query) {
-    // Helper: handle arrays from query (e.g., Next.js gives string[])
-    const getScalar = (v: string | string[] | undefined): string | undefined =>
+    const getScalar = (v: string | string[] | undefined) =>
       Array.isArray(v) ? v[0] : v;
 
     if (query.radius_kms) filters.radius_kms = getScalar(query.radius_kms);
@@ -223,9 +203,10 @@ export function parseSlugToFilters(
     if (query.orderby) filters.orderby = getScalar(query.orderby);
     if (query.search) filters.search = getScalar(query.search);
     if (query.keyword && !filters.search)
-      filters.search = getScalar(query.keyword); // fallback
-    // You can add any other fields you support in query here.
+      filters.search = getScalar(query.keyword);
+    // add further query param parsing here if needed
   }
-  console.log("Parsed filters:", filters.radius_kms);
+
+  console.log("Parsed filters:", filters); // debug
   return filters;
 }
