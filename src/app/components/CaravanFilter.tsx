@@ -1088,8 +1088,8 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
     setSelectedSuburbName(suburb);
     setSelectedpincode(pincode || null);
 
-    // const radiusForFilters =
-    //   typeof radiusKms === "number" ? radiusKms : RADIUS_OPTIONS[0];
+    const radiusForFilters =
+      typeof radiusKms === "number" ? radiusKms : RADIUS_OPTIONS[0];
 
     const updatedFilters = buildUpdatedFilters(currentFilters, {
       make: sanitizeMake(selectedMake || filters.make || currentFilters.make),
@@ -1099,7 +1099,7 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
       pincode: pincode || undefined,
       state,
       region: validRegion,
-      radius_kms: radiusKms,
+      radius_kms: radiusForFilters,
     });
 
     setFilters(updatedFilters);
@@ -1198,15 +1198,13 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
   });
 
   useEffect(() => {
-    // Only push if we already have a selected location context
     if (!selectedSuggestion) return;
 
     if (radiusDebounceRef.current) clearTimeout(radiusDebounceRef.current);
+
     radiusDebounceRef.current = window.setTimeout(() => {
       const base: Filters = {
-        // start from LOCAL filters (freshest)
         ...filters,
-        // ensure location is present from the UI selections
         state: selectedStateName ?? filters.state,
         make: sanitizeMake(filters.make),
         region: getValidRegionName(
@@ -1216,11 +1214,12 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
         ),
         suburb: selectedSuburbName ?? filters.suburb,
         pincode: selectedpincode ?? filters.pincode,
+        radius_kms: radiusKms,
       };
+
       const updated = buildUpdatedFilters(base, { radius_kms: radiusKms });
       setFilters(updated);
       filtersInitialized.current = true;
-
       startTransition(() => {
         updateAllFiltersAndURL(updated);
       });
@@ -1236,7 +1235,7 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
     selectedRegionName,
     selectedSuburbName,
     selectedpincode,
-  ]); // ✅
+  ]);
 
   // 1) Make a stable key for `states`
   const statesKey = useMemo(() => {
@@ -1596,7 +1595,6 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
     next.make = sanitizeMake(next.make); // belt & suspenders
     setFilters((prev) => (filtersEqual(prev, next) ? (prev as Filters) : next));
     filtersInitialized.current = true;
-    if (typeof next.radius_kms !== "number") next.radius_kms = DEFAULT_RADIUS;
 
     // 2) notify parent only if changed
     if (!filtersEqual(lastSentFiltersRef.current, next)) {
@@ -1832,6 +1830,11 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
     // 👇 only locKey; this prevents re-running just because we set state above
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [locKey]);
+  useEffect(() => {
+    if (typeof currentFilters.radius_kms === "number") {
+      setRadiusKms(currentFilters.radius_kms);
+    }
+  }, [currentFilters.radius_kms]);
 
   return (
     <div className="filter-card mobile-search">
