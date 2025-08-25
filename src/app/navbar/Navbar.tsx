@@ -78,7 +78,7 @@ export default function Navbar() {
             >
               <ul className="navbar-nav mb-2 mb-lg-0">
                 <li className="nav-item">
-                  <Link className="nav-link" href="/about-our-deals/">
+                  <Link className="nav-link" href="#">
                     About Our Deals
                   </Link>
                 </li>
