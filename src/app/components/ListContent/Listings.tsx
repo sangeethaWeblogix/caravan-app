@@ -82,6 +82,7 @@ export interface Filters {
   search?: string;
   keyword?: string;
   radius_kms?: number | string;
+  is_exclusive?: boolean;
 }
 
 type Props = Filters & { page?: string | number };
@@ -238,6 +239,7 @@ export default function ListingsPage({ ...incomingFilters }: Props) {
 
         const response = await fetchListings({
           ...safeFilters,
+          is_exclusive: safeFilters.is_exclusive === true ? true : undefined,
           page: pageNum,
           condition: safeFilters.condition,
           minKg: safeFilters.minKg?.toString(),

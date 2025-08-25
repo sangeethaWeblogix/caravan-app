@@ -24,6 +24,7 @@ interface Filters {
   radius_kms?: string;
   search?: string;
   keyword?: string;
+  is_exclusive?: boolean;
 }
 
 /** Minimal item shape needed here (no `any`) */
@@ -130,9 +131,10 @@ export const fetchListings = async (
 
   const json = (await res.json()) as ApiResponse;
 
-  // ---------- interleave exclusives without duplicates ----------
   const all: Item[] = json?.data?.products ?? [];
   const exFromApi: Item[] = json?.data?.exclusive_products ?? [];
+
+  const keyOf = (x: Item): string => String(x?.id ?? x?.slug ?? x?.link ?? "");
 
   // Build exclusive id set (API list + items already flagged as exclusive)
   const exIdSet = new Set<string>(exFromApi.map(keyOf));
@@ -149,10 +151,34 @@ export const fetchListings = async (
   });
   const exclusivePool: Item[] = Array.from(exMap.values());
 
+  // ✅ FIX: If no normal products, and user didn't ask for exclusives, show nothing
+  if (!all.length && exclusivePool.length) {
+    if (filters.is_exclusive === true) {
+      return {
+        ...json,
+        data: {
+          ...json.data,
+          products: exclusivePool.map((p) => ({ ...p, is_exclusive: true })),
+          exclusive_products: exclusivePool,
+        },
+      };
+    } else {
+      // User didn't ask for exclusive, and there are no normals → return nothing
+      return {
+        ...json,
+        data: {
+          ...json.data,
+          products: [],
+          exclusive_products: [],
+        },
+      };
+    }
+  }
+
   // Normals = products minus exclusives (exclusives won't count inside 12)
   const normals: Item[] = all.filter((p) => !exIdSet.has(keyOf(p)));
 
-  // Pattern: 4N - E - 4N - E - 2N  (12 normals + up to 2 exclusives)
+  // Pattern: 2N - E - 2N - E - 8N  (12 normals + up to 2 exclusives)
   const NORMAL_TARGET = 12;
   const pattern: (number | "E")[] = [2, "E", 2, "E", 8];
 
@@ -175,13 +201,14 @@ export const fetchListings = async (
       }
     }
   }
-  // top-up normals to reach 12 if fewer exclusives present
+
+  // Top up with more normals to reach 12, if few exclusives
   while (nAdded < NORMAL_TARGET && ni < normals.length) {
     arranged.push(normals[ni++]);
     nAdded++;
   }
 
-  // Final de-dupe by key + tag is_exclusive (omit when false)
+  // Final de-dupe and exclusive flag tagging
   const seen = new Set<string>();
   const arrangedUnique: Item[] = arranged
     .filter((p) => {
@@ -193,8 +220,6 @@ export const fetchListings = async (
     .map((p) => {
       const exclusive = exIdSet.has(keyOf(p));
       if (exclusive) return { ...p, is_exclusive: true };
-      // omit property when false, so UI won't see 0
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const { is_exclusive, ...rest } = p;
       return rest;
     });
