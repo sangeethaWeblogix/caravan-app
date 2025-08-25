@@ -82,7 +82,6 @@ export interface Filters {
   search?: string;
   keyword?: string;
   radius_kms?: number | string;
-  is_exclusive?: boolean;
 }
 
 type Props = Filters & { page?: string | number };
@@ -104,7 +103,7 @@ export default function ListingsPage({ ...incomingFilters }: Props) {
   const [metaDescription, setMetaDescription] = useState("");
 
   const [stateOptions, setStateOptions] = useState<StateOption[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
 
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -137,6 +136,18 @@ export default function ListingsPage({ ...incomingFilters }: Props) {
 
   // Parse slug ONCE on mount; do not fetch here
   const initializedRef = useRef(false);
+  useEffect(() => {
+    if (initializedRef.current) return;
+    initializedRef.current = true;
+
+    const path = typeof window !== "undefined" ? window.location.pathname : "";
+    const slugParts = path.split("/listings/")[1]?.split("/") || [];
+    const parsed = parseSlugToFilters(slugParts);
+
+    const merged = { ...parsed, ...incomingFilters };
+    filtersRef.current = merged;
+    setFilters(merged);
+  }, [incomingFilters]);
 
   const normalizeSearchFromMake = (f: Filters): Filters => {
     if (!f?.make) return f;
@@ -179,27 +190,36 @@ export default function ListingsPage({ ...incomingFilters }: Props) {
     [router, DEFAULT_RADIUS]
   );
   // put these under other hooks
+  const goToPage = useCallback(
+    (p: number) => {
+      const target = Math.max(1, Math.min(p, pagination.total_pages || p));
 
-  const handleNextPage = () => {
+      // reflect immediately (no flash of "1")
+      setPagination((prev) => ({ ...prev, current_page: target }));
+
+      // push URL → effect will fetch exactly once
+      updateURLWithFilters(filtersRef.current, target);
+    },
+    [pagination.total_pages, updateURLWithFilters]
+  );
+
+  const handleNextPage = useCallback(() => {
     if (pagination.current_page < pagination.total_pages) {
-      const nextPage = pagination.current_page + 1;
-      console.log("🟢 Triggering updateURLWithFilters with page:", nextPage);
-      updateURLWithFilters(filtersRef.current, nextPage);
+      goToPage(pagination.current_page + 1);
     }
-  };
+  }, [pagination.current_page, pagination.total_pages, goToPage]);
 
-  const handlePrevPage = () => {
+  const handlePrevPage = useCallback(() => {
     if (pagination.current_page > 1) {
-      const prevPage = pagination.current_page - 1;
-      updateURLWithFilters(filtersRef.current, prevPage);
+      goToPage(pagination.current_page - 1);
     }
-  };
+  }, [pagination.current_page, goToPage]);
 
   const loadListings = useCallback(
     async (pageNum = 1, appliedFilters: Filters = filtersRef.current) => {
       setIsLoading(true);
       window.scrollTo({ top: 0, behavior: "smooth" });
-      console.log("Loading listings with filters:", appliedFilters);
+
       try {
         const safeFilters = normalizeSearchFromMake(appliedFilters);
 
@@ -208,11 +228,9 @@ export default function ListingsPage({ ...incomingFilters }: Props) {
           typeof radiusNum === "number" && radiusNum !== DEFAULT_RADIUS
             ? String(radiusNum)
             : undefined;
-        console.time("🕒 API Fetch satrt Duration");
 
         const response = await fetchListings({
           ...safeFilters,
-          is_exclusive: safeFilters.is_exclusive === true ? true : undefined,
           page: pageNum,
           condition: safeFilters.condition,
           minKg: safeFilters.minKg?.toString(),
@@ -233,9 +251,8 @@ export default function ListingsPage({ ...incomingFilters }: Props) {
           orderby: safeFilters.orderby,
           search: safeFilters.search,
           keyword: safeFilters.keyword,
-          radius_kms: safeFilters.radius_kms ? radiusParam : undefined,
+          radius_kms: radiusParam,
         });
-        console.log("safeFilters", safeFilters);
 
         const hasFilters = Object.values(safeFilters).some(
           (val) => val !== undefined && val !== null && val !== ""
@@ -259,10 +276,12 @@ export default function ListingsPage({ ...incomingFilters }: Props) {
           setPageTitle("No results found. Redirecting...");
           setMetaTitle("No listings found");
           setMetaDescription("We couldn’t find listings for your filters.");
-          const empty: Filters = {};
-          filtersRef.current = empty;
-          setFilters(empty);
-          router.push("/listings");
+          setTimeout(() => {
+            const empty: Filters = {};
+            filtersRef.current = empty;
+            setFilters(empty);
+            router.push("/listings");
+          }, 2500);
         } else {
           setProducts([]);
           setPagination((prev) => ({
@@ -286,115 +305,66 @@ export default function ListingsPage({ ...incomingFilters }: Props) {
   /* ---- SINGLE source of truth: URL -> fetch ----
      This is the only effect that calls loadListings.
      It also de-dupes across StrictMode remounts via LAST_GLOBAL_REQUEST_KEY. */
+  const searchKey = typeof window !== "undefined" ? window.location.search : "";
   const pathKey = typeof window !== "undefined" ? window.location.pathname : "";
   const incomingFiltersRef = useRef<Filters>(incomingFilters);
-
   useEffect(() => {
     const prev = JSON.stringify(incomingFiltersRef.current);
     const next = JSON.stringify(incomingFilters);
     if (prev !== next) incomingFiltersRef.current = incomingFilters;
   }, [incomingFilters]);
 
-  //   useEffect(() => {
-  //     if (!initializedRef.current) return;
+  useEffect(() => {
+    if (!initializedRef.current) return; // wait until slug parsed
 
-  //     const path = pathKey;
-  //     const slugParts = path.split("/listings/")[1]?.split("/") || [];
-  //     const parsedFromURL = parseSlugToFilters(slugParts);
+    const path = pathKey;
+    const slugParts = path.split("/listings/")[1]?.split("/") || [];
+    const parsedFromURL = parseSlugToFilters(slugParts);
 
-  //   const pageFromURL = parseInt(searchParams.get("page") || "1", 10);
+    const pageFromURL = parseInt(
+      new URLSearchParams(searchKey).get("page") || "1",
+      10
+    );
+    const orderbyQP =
+      new URLSearchParams(searchKey).get("orderby") || undefined;
+    const radiusQP = new URLSearchParams(searchKey).get("radius_kms");
+    const radiusFromURL = radiusQP
+      ? Math.max(5, parseInt(radiusQP, 10))
+      : undefined;
 
-  //     const orderbyQP = searchParams.get("orderby") || undefined;
-  // const radiusQP = searchParams.get("radius_kms");
+    const merged: Filters = {
+      ...parsedFromURL,
+      ...incomingFiltersRef.current,
+      orderby: orderbyQP,
+      radius_kms:
+        typeof radiusFromURL === "number" && radiusFromURL !== DEFAULT_RADIUS
+          ? radiusFromURL
+          : undefined,
+    };
 
-  //     const radiusFromURL = radiusQP
-  //       ? Math.max(5, parseInt(radiusQP, 10))
-  //       : undefined;
+    // sync local filters (no fetch here)
+    const prevFiltersJson = JSON.stringify(filtersRef.current);
+    const nextFiltersJson = JSON.stringify(merged);
+    if (prevFiltersJson !== nextFiltersJson) {
+      filtersRef.current = merged;
+      setFilters(merged);
+    }
 
-  //     const merged: Filters = {
-  //       ...parsedFromURL,
-  //       ...incomingFiltersRef.current,
-  //       orderby: orderbyQP,
-  //       radius_kms: typeof radiusFromURL === "number" ? radiusFromURL : undefined,
-  //     };
+    setPagination((prev) =>
+      prev.current_page === pageFromURL
+        ? prev
+        : { ...prev, current_page: pageFromURL }
+    );
 
-  //     const prevFiltersJson = JSON.stringify(filtersRef.current);
-  //     const nextFiltersJson = JSON.stringify(merged);
-  //     if (prevFiltersJson !== nextFiltersJson) {
-  //       filtersRef.current = merged;
-  //       setFilters(merged);
-  //     }
+    // de-dupe fetch across remounts / quick repeats
+    const requestKey = JSON.stringify({ page: pageFromURL, filters: merged });
+    if (LAST_GLOBAL_REQUEST_KEY === requestKey) {
+      return;
+    }
+    LAST_GLOBAL_REQUEST_KEY = requestKey;
 
-  //     setPagination((prev) =>
-  //       prev.current_page === pageFromURL
-  //         ? prev
-  //         : { ...prev, current_page: pageFromURL }
-  //     );
-
-  //     const requestKey = JSON.stringify({ page: pageFromURL, filters: merged });
-  //     if (LAST_GLOBAL_REQUEST_KEY === requestKey) {
-  //       return;
-  //     }
-  //     LAST_GLOBAL_REQUEST_KEY = requestKey;
-
-  //     // ✅ Fix: Set isLoading to true immediately
-  //     setIsLoading(true);
-
-  //     // ✅ Then call loadListings
-  //     loadListings(pageFromURL, merged);
-  //   }, []);
-
-  // useEffect(() => {
-  //   if (!initializedRef.current) return; // wait until slug parsed
-
-  //   const path = pathKey;
-  //   const slugParts = path.split("/listings/")[1]?.split("/") || [];
-  //   const parsedFromURL = parseSlugToFilters(slugParts);
-
-  //   const pageFromURL = parseInt(
-  //     new URLSearchParams(searchKey).get("page") || "1",
-  //     10
-  //   );
-  //   const orderbyQP =
-  //     new URLSearchParams(searchKey).get("orderby") || undefined;
-  //   const radiusQP = new URLSearchParams(searchKey).get("radius_kms");
-  //   const radiusFromURL = radiusQP
-  //     ? Math.max(5, parseInt(radiusQP, 10))
-  //     : undefined;
-
-  //   const merged: Filters = {
-  //     ...parsedFromURL,
-  //     ...incomingFiltersRef.current,
-  //     orderby: orderbyQP,
-  //     radius_kms:
-  //       typeof radiusFromURL === "number" && radiusFromURL !== DEFAULT_RADIUS
-  //         ? radiusFromURL
-  //         : undefined,
-  //   };
-
-  //   // sync local filters (no fetch here)
-  //   const prevFiltersJson = JSON.stringify(filtersRef.current);
-  //   const nextFiltersJson = JSON.stringify(merged);
-  //   if (prevFiltersJson !== nextFiltersJson) {
-  //     filtersRef.current = merged;
-  //     setFilters(merged);
-  //   }
-
-  //   setPagination((prev) =>
-  //     prev.current_page === pageFromURL
-  //       ? prev
-  //       : { ...prev, current_page: pageFromURL }
-  //   );
-
-  //   // de-dupe fetch across remounts / quick repeats
-  //   const requestKey = JSON.stringify({ page: pageFromURL, filters: merged });
-  //   if (LAST_GLOBAL_REQUEST_KEY === requestKey) {
-  //     return;
-  //   }
-  //   LAST_GLOBAL_REQUEST_KEY = requestKey;
-
-  //   loadListings(pageFromURL, merged);
-  // }, [searchKey, DEFAULT_RADIUS, pathKey]);
+    loadListings(pageFromURL, merged);
+  }, [searchKey, DEFAULT_RADIUS, pathKey]);
 
   const handleFilterChange = useCallback(
     (newFilters: Filters) => {
@@ -420,54 +390,6 @@ export default function ListingsPage({ ...incomingFilters }: Props) {
     },
     [searchParams, updateURLWithFilters]
   );
-  useEffect(() => {
-    if (!initializedRef.current) return; // ensure slug parsed
-    const path = pathKey;
-
-    const slugParts = path.split("/listings/")[1]?.split("/") || [];
-    const parsedFromURL = parseSlugToFilters(slugParts);
-
-    const pageFromURL = parseInt(searchParams.get("page") || "1", 10);
-    const orderbyQP = searchParams.get("orderby") || undefined;
-    const radiusQP = searchParams.get("radius_kms");
-
-    const radiusFromURL = radiusQP
-      ? Math.max(5, parseInt(radiusQP, 10))
-      : undefined;
-
-    const merged: Filters = {
-      ...parsedFromURL,
-      ...incomingFiltersRef.current,
-      orderby: orderbyQP,
-      radius_kms: typeof radiusFromURL === "number" ? radiusFromURL : undefined,
-    };
-
-    // sync local filters (no fetch here)
-    const prevFiltersJson = JSON.stringify(filtersRef.current);
-    const nextFiltersJson = JSON.stringify(merged);
-    if (prevFiltersJson !== nextFiltersJson) {
-      filtersRef.current = merged;
-      setFilters(merged);
-    }
-
-    setPagination((prev) =>
-      prev.current_page === pageFromURL
-        ? prev
-        : { ...prev, current_page: pageFromURL }
-    );
-
-    // de-dupe fetch across remounts / quick repeats
-    const requestKey = JSON.stringify({ page: pageFromURL, filters: merged });
-    if (LAST_GLOBAL_REQUEST_KEY === requestKey) {
-      return;
-    }
-    LAST_GLOBAL_REQUEST_KEY = requestKey;
-
-    loadListings(pageFromURL, merged);
-  }, [searchParams, pathKey, DEFAULT_RADIUS]);
-  useEffect(() => {
-    initializedRef.current = true;
-  }, []);
 
   // Mobile offcanvas filter state
   const mobileFiltersRef = useRef<HTMLDivElement>(null);
@@ -526,25 +448,11 @@ export default function ListingsPage({ ...incomingFilters }: Props) {
                   </Suspense>
                 </div>
               </div>
-              {/* {isLoading ? (
-                <SkeletonListing />
-              ) : (
-                <Listing
-                  products={products}
-                  pagination={pagination}
-                  onNext={handleNextPage}
-                  onPrev={handlePrevPage}
-                  metaDescription={metaDescription}
-                  metaTitle={metaTitle}
-                  onFilterChange={handleFilterChange}
-                  currentFilters={filters}
-                />
-              )} */}
 
               {/* Listings */}
               {isLoading ? (
                 <SkeletonListing />
-              ) : products.length > 0 ? (
+              ) : (
                 <Listing
                   products={products}
                   pagination={pagination}
@@ -555,8 +463,6 @@ export default function ListingsPage({ ...incomingFilters }: Props) {
                   onFilterChange={handleFilterChange}
                   currentFilters={filters}
                 />
-              ) : (
-                <div>No listings found.</div>
               )}
             </div>
           </div>
