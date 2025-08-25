@@ -196,20 +196,6 @@ export default function ListingsPage({ ...incomingFilters }: Props) {
     }
   }, []);
 
-  // put these under other hooks
-  const goToPage = useCallback(
-    (p: number) => {
-      const target = Math.max(1, Math.min(p, pagination.total_pages || p));
-
-      // reflect immediately (no flash of "1")
-      setPagination((prev) => ({ ...prev, current_page: target }));
-
-      // push URL → effect will fetch exactly once
-      updateURLWithFilters(filtersRef.current, target);
-    },
-    [pagination.total_pages, updateURLWithFilters]
-  );
-
   const handleNextPage = () => {
     if (pagination.current_page < pagination.total_pages) {
       const nextPage = pagination.current_page + 1;
