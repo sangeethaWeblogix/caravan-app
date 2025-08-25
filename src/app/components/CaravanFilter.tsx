@@ -1124,6 +1124,7 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
   const resetFilters = () => {
     const reset: Filters = {
       make: undefined,
+      search: undefined,
       model: undefined,
       category: undefined,
       condition: undefined,
@@ -1141,10 +1142,10 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
       acustom_fromyears: undefined,
       acustom_toyears: undefined,
       location: null,
-      radius_kms: RADIUS_OPTIONS[0], // ✅ 50 in payload
+      radius_kms: RADIUS_OPTIONS[0], // default radius, treat carefully in URL
     };
 
-    // Clear UI states
+    // Clear UI states:
     setSelectedCategory(null);
     setSelectedCategoryName(null);
     setSelectedMake(null);
@@ -1154,7 +1155,6 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
     setSelectedConditionName(null);
     setSelectedSleepName(null);
     setModel([]);
-    // setFilteredRegions([]);
     setFilteredSuburbs([]);
     setLocationInput("");
     setSelectedState(null);
@@ -1171,20 +1171,26 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
     setLengthFrom(null);
     setLengthTo(null);
     setRadiusKms(RADIUS_OPTIONS[0]);
+
+    clearKeyword(); // Make sure this only affects keyword-related UI/state without conflicting URL updates
+    setKeywordInput("");
+    setModalKeyword("");
+    setKeywordSuggestions([]);
+    setBaseKeywords([]);
+
     filtersInitialized.current = true;
     makeInitializedRef.current = false;
     regionSetAfterSuburbRef.current = false;
     suburbClickedRef.current = false;
-    clearKeyword();
-    // ✅ Fix: Call parent state update
-    onFilterChange(reset);
 
     setFilters(reset);
+    onFilterChange(reset);
 
     startTransition(() => {
-      updateAllFiltersAndURL(reset);
+      updateAllFiltersAndURL(reset); // This triggers URL update with clean reset slug
     });
   };
+
   const radiusDebounceRef = useRef<number | null>(null);
   const isKnownMake = (slug?: string | null) =>
     !!slug && makes.some((m) => m.slug === slug);
@@ -1586,25 +1592,23 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
   // 🔁 replace this whole function
   const updateAllFiltersAndURL = (override?: Filters) => {
     const DEFAULT_RADIUS = 50;
-    // const nextRaw: Filters = override ?? filters;
-    // const next: Filters = hydrateLocation(normalizeFilters(nextRaw));
-    // 1) set local filters only if changed
 
     const nextRaw: Filters = override ?? filters;
     const next: Filters = clean(hydrateLocation(normalizeFilters(nextRaw)));
     next.make = sanitizeMake(next.make); // belt & suspenders
+
     setFilters((prev) => (filtersEqual(prev, next) ? (prev as Filters) : next));
     filtersInitialized.current = true;
 
-    // 2) notify parent only if changed
     if (!filtersEqual(lastSentFiltersRef.current, next)) {
       lastSentFiltersRef.current = next;
       onFilterChange(next);
     }
 
-    // 3) build URL once
+    // Build URL slug and query
     const slugPath = buildSlugFromFilters(next);
     const query = new URLSearchParams();
+
     if (next.acustom_fromyears)
       query.set("acustom_fromyears", String(next.acustom_fromyears));
     if (next.acustom_toyears)
@@ -1615,8 +1619,49 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
       query.set("page", String(next.page));
     }
 
-    const safeSlugPath = slugPath.endsWith("/") ? slugPath : `${slugPath}/`;
-    const finalURL = query.toString() ? `${slugPath}?${query}` : safeSlugPath;
+    // NEW: Detect if all filters are cleared (no query & no slug)
+    const isEmptyFilters = (() => {
+      const relevantKeys: (keyof Filters)[] = [
+        "category",
+        "make",
+        "model",
+        "condition",
+        "sleeps",
+        "state",
+        "region",
+        "suburb",
+        "pincode",
+        "location",
+        "from_price",
+        "to_price",
+        "minKg",
+        "maxKg",
+        "acustom_fromyears",
+        "acustom_toyears",
+        "from_length",
+        "to_length",
+        "radius_kms",
+        "search",
+        "keyword",
+      ];
+      return relevantKeys.every((key) => {
+        const val = next[key];
+        if (val === undefined || val === null) return true;
+        if (typeof val === "string" && val.trim() === "") return true;
+        return false;
+      });
+    })();
+
+    let finalURL: string;
+
+    if (isEmptyFilters) {
+      // If all filters empty, push base /listings path without slug or query
+      finalURL = "/listings";
+    } else {
+      const safeSlugPath = slugPath.endsWith("/") ? slugPath : `${slugPath}/`;
+      finalURL = query.toString() ? `${slugPath}?${query}` : safeSlugPath;
+    }
+
     if (lastPushedURLRef.current !== finalURL) {
       lastPushedURLRef.current = finalURL;
       router.push(finalURL);

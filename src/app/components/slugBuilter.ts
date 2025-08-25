@@ -90,10 +90,15 @@ export function buildSlugFromFilters(f: Filters): string {
     segments.push(`search=${plus}`);
   }
 
-  const path = `/listings/${segments.join("/")}`;
+  //  const path = `/listings/${segments.join("/")}`;
+  //  const urlWithQuery = query.toString() ? `${path}?${query.toString()}` : path;
+  //  if (!urlWithQuery.endsWith("/") && !urlWithQuery.includes("?")) {
+  //    return `${urlWithQuery}/`;
+  //  }
+  //  return urlWithQuery;
+  const path =
+    segments.length > 0 ? `/listings/${segments.join("/")}` : "/listings";
   const urlWithQuery = query.toString() ? `${path}?${query.toString()}` : path;
-  if (!urlWithQuery.endsWith("/") && !urlWithQuery.includes("?")) {
-    return `${urlWithQuery}/`;
-  }
+
   return urlWithQuery;
 }

@@ -99,12 +99,6 @@ export default function blogDetailsPage({
                 />
               </div>
             </div>
-
-            <div className="col-lg-3 rightbar-stick">
-              <div className="theiaStickySidebar">
-                <p>side bar</p>
-              </div>
-            </div>
           </div>
         </div>
       </section>
