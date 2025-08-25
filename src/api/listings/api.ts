@@ -154,7 +154,7 @@ export const fetchListings = async (
 
   // Pattern: 4N - E - 4N - E - 2N  (12 normals + up to 2 exclusives)
   const NORMAL_TARGET = 12;
-  const pattern: (number | "E")[] = [4, "E", 4, "E", 2];
+  const pattern: (number | "E")[] = [2, "E", 2, "E", 8];
 
   const arranged: Item[] = [];
   let ni = 0,

@@ -499,27 +499,27 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
         typeof (s as UnknownRec).value === "string"
     );
 
-  useEffect(() => {
-    const loadFilters = async () => {
-      const res = await fetchProductList();
-      const d = (res?.data ?? undefined) as UnknownRec | undefined;
+  // useEffect(() => {
+  //   const loadFilters = async () => {
+  //     const res = await fetchProductList();
+  //     const d = (res?.data ?? undefined) as UnknownRec | undefined;
 
-      const cats = isOptionArray(d?.["all_categories"])
-        ? (d!["all_categories"] as Option[])
-        : [];
-      // const mks = isOptionArray(d?.["make_options"])
-      //   ? (d!["make_options"] as Option[])
-      //   : [];
-      const sts = isStateOptionArray(d?.["states"])
-        ? (d!["states"] as StateOption[])
-        : [];
+  //     const cats = isOptionArray(d?.["all_categories"])
+  //       ? (d!["all_categories"] as Option[])
+  //       : [];
+  //     const mks = isOptionArray(d?.["make_options"])
+  //       ? (d!["make_options"] as Option[])
+  //       : [];
+  //     const sts = isStateOptionArray(d?.["states"])
+  //       ? (d!["states"] as StateOption[])
+  //       : [];
 
-      setCategories(cats); // ✅ always Option[]
-      // setMakes(mks); // ✅ always Option[]
-      setStates(sts); // ✅ always StateOption[]
-    };
-    loadFilters();
-  }, []);
+  //     setCategories(cats); // ✅ always Option[]
+  //     // setMakes(mks); // ✅ always Option[]
+  //     setStates(sts); // ✅ always StateOption[]
+  //   };
+  //   loadFilters();
+  // }, []);
 
   useEffect(() => {
     if (typeof currentFilters.radius_kms === "number") {
