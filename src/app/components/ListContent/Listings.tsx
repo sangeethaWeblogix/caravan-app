@@ -142,7 +142,15 @@ export default function ListingsPage({ ...incomingFilters }: Props) {
 
     const path = typeof window !== "undefined" ? window.location.pathname : "";
     const slugParts = path.split("/listings/")[1]?.split("/") || [];
-    const parsed = parseSlugToFilters(slugParts);
+    // Extract query object from the URL
+    const queryObj =
+      typeof window !== "undefined"
+        ? Object.fromEntries(new URLSearchParams(window.location.search))
+        : {};
+
+    const parsed = parseSlugToFilters(slugParts, queryObj);
+    console.log("Initial parsed from slug:", parsed);
+
     const merged = { ...parsed, ...incomingFilters };
     filtersRef.current = merged;
     setFilters(merged);

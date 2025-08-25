@@ -14,7 +14,7 @@ const asNum = (v?: string | number) =>
 
 export function buildSlugFromFilters(f: Filters): string {
   const segments: string[] = [];
-
+  // const DEFAULT_RADIUS = 50;
   // 1) Make / Model
   if (f.make) segments.push(toSlug(f.make));
   if (f.model) segments.push(toSlug(f.model));
@@ -72,7 +72,12 @@ export function buildSlugFromFilters(f: Filters): string {
     const n = String(f.sleeps).replace("-people", "");
     if (!isNaN(Number(n))) segments.push(`${n}-people-sleeping-capacity`);
   }
+  const query = new URLSearchParams();
 
+  // Add radius_kms to query only if it's number greater than default
+  // if (typeof f.radius_kms === "number" && f.radius_kms > DEFAULT_RADIUS) {
+  //   query.set("radius_kms", String(f.radius_kms));
+  // }
   // 9) Search (APPEND at the end — never replace other segments)
   const search = (f.search ?? f.keyword)?.trim();
   if (search) {
@@ -85,6 +90,9 @@ export function buildSlugFromFilters(f: Filters): string {
   }
 
   const path = `/listings/${segments.join("/")}`;
-  // important: trailing slash
-  return path.endsWith("/") ? path : `${path}/`;
+  const urlWithQuery = query.toString() ? `${path}?${query.toString()}` : path;
+  if (!urlWithQuery.endsWith("/") && !urlWithQuery.includes("?")) {
+    return `${urlWithQuery}/`;
+  }
+  return urlWithQuery;
 }

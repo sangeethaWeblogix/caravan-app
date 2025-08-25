@@ -31,7 +31,8 @@ export function buildUpdatedFilters(
     to_price: updates.to_price ?? currentFilters.to_price,
     minKg: updates.minKg ?? currentFilters.minKg,
     maxKg: updates.maxKg ?? currentFilters.maxKg,
-    acustom_fromyears: updates.acustom_fromyears ?? currentFilters.acustom_fromyears,
+    acustom_fromyears:
+      updates.acustom_fromyears ?? currentFilters.acustom_fromyears,
     acustom_toyears: updates.acustom_toyears ?? currentFilters.acustom_toyears,
     from_length: updates.from_length ?? currentFilters.from_length,
     to_length: updates.to_length ?? currentFilters.to_length,

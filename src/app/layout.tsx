@@ -9,8 +9,12 @@ import React from "react";
 import { Metadata } from "next";
 import ScrollToTop from "./ScrollToTop";
 export const metadata: Metadata = {
-  title: { default: "Caravan Listings", template: "%s " },
-  description: "Browse all available caravans.",
+  title: {
+    default: "Caravans For Sale | New & Used Caravan Sales in Australia",
+    template: "%s ",
+  },
+  description:
+    "Browse new & used caravans for sale across Australia. Compare prices on off-road, hybrid, pop top, touring, luxury models with size, weight & sleeping capacity",
   icons: { icon: "/favicon.ico" },
 };
 
