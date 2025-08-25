@@ -236,6 +236,7 @@ export default function ListingsPage({ ...incomingFilters }: Props) {
           typeof radiusNum === "number" && radiusNum !== DEFAULT_RADIUS
             ? String(radiusNum)
             : undefined;
+        console.time("🕒 API Fetch satrt Duration");
 
         const response = await fetchListings({
           ...safeFilters,
@@ -262,6 +263,7 @@ export default function ListingsPage({ ...incomingFilters }: Props) {
           keyword: safeFilters.keyword,
           radius_kms: radiusParam,
         });
+        console.timeEnd("🕒 API Fetch end Duration");
 
         const hasFilters = Object.values(safeFilters).some(
           (val) => val !== undefined && val !== null && val !== ""
@@ -315,6 +317,7 @@ export default function ListingsPage({ ...incomingFilters }: Props) {
   const searchKey = typeof window !== "undefined" ? window.location.search : "";
   const pathKey = typeof window !== "undefined" ? window.location.pathname : "";
   const incomingFiltersRef = useRef<Filters>(incomingFilters);
+
   useEffect(() => {
     const prev = JSON.stringify(incomingFiltersRef.current);
     const next = JSON.stringify(incomingFilters);
@@ -373,7 +376,7 @@ export default function ListingsPage({ ...incomingFilters }: Props) {
 
     // ✅ Then call loadListings
     loadListings(pageFromURL, merged);
-  }, [searchKey, DEFAULT_RADIUS, pathKey]);
+  }, []);
 
   // useEffect(() => {
   //   if (!initializedRef.current) return; // wait until slug parsed
