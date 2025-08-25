@@ -477,27 +477,27 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
     loadFilters();
   }, []);
 
-  type UnknownRec = Record<string, unknown>;
+  // type UnknownRec = Record<string, unknown>;
 
-  const isOptionArray = (v: unknown): v is Option[] =>
-    Array.isArray(v) &&
-    v.every(
-      (o) =>
-        typeof o === "object" &&
-        o !== null &&
-        typeof (o as UnknownRec).name === "string" &&
-        typeof (o as UnknownRec).slug === "string"
-    );
+  // const isOptionArray = (v: unknown): v is Option[] =>
+  //   Array.isArray(v) &&
+  //   v.every(
+  //     (o) =>
+  //       typeof o === "object" &&
+  //       o !== null &&
+  //       typeof (o as UnknownRec).name === "string" &&
+  //       typeof (o as UnknownRec).slug === "string"
+  //   );
 
-  const isStateOptionArray = (v: unknown): v is StateOption[] =>
-    Array.isArray(v) &&
-    v.every(
-      (s) =>
-        typeof s === "object" &&
-        s !== null &&
-        typeof (s as UnknownRec).name === "string" &&
-        typeof (s as UnknownRec).value === "string"
-    );
+  // const isStateOptionArray = (v: unknown): v is StateOption[] =>
+  //   Array.isArray(v) &&
+  //   v.every(
+  //     (s) =>
+  //       typeof s === "object" &&
+  //       s !== null &&
+  //       typeof (s as UnknownRec).name === "string" &&
+  //       typeof (s as UnknownRec).value === "string"
+  //   );
 
   // useEffect(() => {
   //   const loadFilters = async () => {

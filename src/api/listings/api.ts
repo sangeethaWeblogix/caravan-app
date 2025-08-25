@@ -67,7 +67,6 @@ export type ApiResponse = {
   pagination?: ApiPagination;
   data?: ApiData;
 };
-const keyOf = (x: Item): string => String(x?.id ?? x?.slug ?? x?.link ?? "");
 
 /** Normalize "+", spaces for search/keyword */
 const normalizeQuery = (s?: string) =>
@@ -220,7 +219,7 @@ export const fetchListings = async (
     .map((p) => {
       const exclusive = exIdSet.has(keyOf(p));
       if (exclusive) return { ...p, is_exclusive: true };
-      const { is_exclusive, ...rest } = p;
+      const { ...rest } = p;
       return rest;
     });
 
