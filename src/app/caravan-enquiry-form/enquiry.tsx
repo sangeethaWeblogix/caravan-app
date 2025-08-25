@@ -332,19 +332,6 @@ export default function ContactSection() {
                       </div>
                     </div>
 
-                    {/* Message (optional) */}
-                    <div className="col-lg-12">
-                      <div className="form-group mb-20">
-                        <textarea
-                          name="your-message"
-                          className="form-control"
-                          placeholder="Additional message (optional)"
-                          value={formData["your-message"]}
-                          onChange={handleChange}
-                        />
-                      </div>
-                    </div>
-
                     {/* Submit Button */}
                     <div className="col-lg-12 text-center">
                       <input
