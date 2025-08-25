@@ -104,8 +104,7 @@ export async function generateMetadata({
   const qs = new URLSearchParams();
   qs.append("page", String(filters.page ?? 1));
   if (filters.category) qs.append("category", filters.category);
-  if (filters.radius_kms !== undefined && filters.radius_kms !== "")
-    qs.append("radius_kms", String(filters.radius_kms));
+  if (filters.radius_kms) qs.append("radius_kms", String(filters.radius_kms));
   if (filters.make) qs.append("make", filters.make);
   if (filters.orderby) qs.append("orderby", filters.orderby);
   if (filters.postcode) qs.append("pincode", filters.postcode);
