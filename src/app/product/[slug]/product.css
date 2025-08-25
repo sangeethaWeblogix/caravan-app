@@ -174,7 +174,7 @@
   border: 0;
 }
 .contactSeller__container .price_section .price-shape span {
-  color: #f58333 !important;
+  color: #ec7200 !important;
   font-size: 30px;
   font-weight: 700;
 }
@@ -189,8 +189,8 @@
 .contact_dealer button {
   border-radius: 30px;
   display: inline-block;
-  background-color: #f58333;
-  border: 1px solid #f58333;
+  background-color: #ec7200;
+  border: 1px solid #ec7200;
   color: #fff;
   text-align: center;
   padding: 15px 50px;
@@ -253,8 +253,8 @@
 }
 
 .product-page .product-details .nav-pills .nav-link.active {
-  color: #f58333;
-  border-color: #f58333;
+  color: #ec7200;
+  border-color: #ec7200;
 }
 .product-page .product-details .additional-info ul {
   border: 1px solid #0002;
@@ -480,8 +480,8 @@
 .fixed-bottom-bar button.enbttn_qqr {
     display: inline-block;
     margin-top: 0;
-    background: #f58333;
-    border: 1px solid #f58333;
+    background: #ec7200;
+    border: 1px solid #ec7200;
     color: #fff;
     padding: 10px 20px;
     text-transform: uppercase;
@@ -498,7 +498,7 @@
 }
 
 .terms_text a {
-    color: #f58333;
+    color: #ec7200;
 }
 
 @media (max-width: 767px) {

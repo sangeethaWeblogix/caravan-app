@@ -103,8 +103,8 @@ img {
   justify-content: center;
 }
 
-.btn:hover {
-  background: #f58333;
+.btn:hover, .btn:focus {
+  background: #ec7200;
   border-color: transparent !important;
 }
 
@@ -400,7 +400,7 @@ small {
   margin-top: 0px;
   font-size: 20px;
   font-weight: bold;
-  color: #f58333;
+  color: #ec7200;
 }
 
 .product-page .product-card .price ins {
