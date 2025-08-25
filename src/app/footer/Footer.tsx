@@ -82,52 +82,40 @@ const Footer = () => {
                 <h6 className="foot-title foot_xs">Popular Pages</h6>
                 <ul className="menu footer_xs">
                   <li>
-                    <Link
-                      href={`${siteUrl}/best-caravans-full-off-road-capabilities-australia/`}
-                    >
+                    <Link href="/blog/best-caravans-full-off-road-capabilities-australia/">                    
                       Best Off Road Caravans
                     </Link>
                   </li>
                   <li>
-                    <Link href={`${siteUrl}/off-road-caravan-manufacturers/`}>
-                      Best Off Road Caravan Manufacturers
-                    </Link>
-                  </li>
-                  <li>
-                    <Link href={`${siteUrl}/caravan-manufacturers/`}>
-                      Best Caravan Manufacturers
-                    </Link>
-                  </li>
-                  <li>
                     <Link
-                      href={`${siteUrl}/best-semi-off-road-caravans-australia-guide/`}
+                      href="/blog/best-semi-off-road-caravans-australia-guide/"
                     >
                       Best Semi Off Road Caravans
                     </Link>
                   </li>
                   <li>
                     <Link
-                      href={`${siteUrl}/best-caravans-for-extreme-off-road-travel/`}
+                      href="/blog/best-caravans-for-extreme-off-road-travel/"
                     >
                       Best Extreme Off Road Caravans
                     </Link>
                   </li>
                   <li>
                     <Link
-                      href={`${siteUrl}/best-luxury-caravans-australia-highlights-features-reviews/`}
+                      href="/blog/best-luxury-caravans-australia-highlights-features-reviews/"
                     >
                       Best Luxury Caravans
                     </Link>
                   </li>
                   <li>
                     <Link
-                      href={`${siteUrl}/top-family-off-road-caravans-australia/`}
+                      href="/blog/top-family-off-road-caravans-australia/"
                     >
                       Best Family Caravans
                     </Link>
                   </li>
                   <li>
-                    <Link href={`${siteUrl}/touring-caravans/`}>
+                    <Link href="/blog/touring-caravans/">
                       Best Touring Caravans
                     </Link>
                   </li>

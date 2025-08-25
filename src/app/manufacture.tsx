@@ -151,7 +151,7 @@ const Manufacture = () => {
                         <ul className="mb-3">
                           <li>
                             <i className="bi bi-info-circle" />
-                            <span className="ms-2">{types.join(", ")}</span>
+                            <span>{types.join(", ")}</span>
                           </li>
                         </ul>
                       )}

@@ -125,7 +125,7 @@ export default function ContactSection() {
               <div className="col-lg-8">
                 <form
                   onSubmit={handleSubmit}
-                  className="flex flex-col gap-3 max-w-md mx-auto p-4 border rounded-lg shadow"
+                  className="flex flex-col gap-3 max-w-md mx-auto p-4"
                   noValidate
                 >
                   {/* Top alert only when errors exist */}

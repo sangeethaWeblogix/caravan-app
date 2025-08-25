@@ -9,7 +9,7 @@ import "swiper/css";
 import "swiper/css/navigation";
 import { fetchFeaturedHomeCat, type FeaturedItem } from "@/api/featured/api";
 import { toSlug } from "@/utils/seo/slug";
-import "../app/listings/listings.css";
+//import "../app/listings/listings.css";
 import HeroSkeleton from "./components/heroSkelton";
 import CardSkeleton from "./components/cardsSkeleton";
 

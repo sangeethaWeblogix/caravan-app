@@ -195,22 +195,22 @@ h1.page-title {
 }
 .vehicleDetailsWithIcons.simple {
   width: 100% !important;
-  float: left !important;
-  padding: 10px;
+  padding: 0px;
+  padding-bottom: 10px;
   display: block !important;
 }
 .vehicleDetailsWithIcons.simple li {
-  color: #fff;
-  text-align: center;
-  vertical-align: top;
-  float: left;
-  align-items: center;
-  width: 35%;
-  margin-right: 25px;
-  padding: 5px;
-  font-size: 14px;
-  line-height: 19px;
-  display: flex;
+    color: #fff;
+    text-align: center;
+    vertical-align: top;
+    float: left;
+    align-items: center;
+    width: 35%;
+    margin-right: 25px;
+    padding: 3px;
+    font-size: 14px;
+    line-height: 19px;
+    display: flex;
 }
 .vehicleDetailsWithIcons.simple li span {
   display: inline-block;
