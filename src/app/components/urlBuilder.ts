@@ -19,6 +19,8 @@ export interface Filters {
   orderby?: string;
   radius_kms?: string;
   page?: string;
+  acustom_fromyears?: number | string;
+  acustom_toyears?: number | string;
   search?: string;
   keyword?: string; // parsed -> canonicalized to `search`
 }
@@ -218,6 +220,10 @@ export function parseSlugToFilters(
       Array.isArray(v) ? v[0] : v;
 
     if (query.radius_kms) filters.radius_kms = getScalar(query.radius_kms);
+    if (query.acustom_fromyears)
+      filters.acustom_fromyears = getScalar(query.acustom_fromyears);
+    if (query.acustom_toyears)
+      filters.acustom_toyears = getScalar(query.acustom_toyears);
     if (query.page) filters.page = getScalar(query.page);
     if (query.orderby) filters.orderby = getScalar(query.orderby);
     if (query.search) filters.search = getScalar(query.search);

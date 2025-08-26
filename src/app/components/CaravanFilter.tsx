@@ -526,7 +526,15 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
       setRadiusKms(currentFilters.radius_kms);
     }
   }, [currentFilters.radius_kms]);
+  // useEffect(() => {
+  //   if (!filtersInitialized.current) return;
 
+  //   commit({
+  //     ...currentFilters,
+  //     acustom_fromyears: yearFrom ?? undefined,
+  //     acustom_toyears: yearTo ?? undefined,
+  //   });
+  // }, [yearFrom, yearTo]);
   const handleATMChange = (newFrom: number | null, newTo: number | null) => {
     setAtmFrom(newFrom);
     setAtmTo(newTo);
@@ -2665,11 +2673,14 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
               value={yearFrom?.toString() || ""}
               onChange={(e) => {
                 const val = e.target.value ? parseInt(e.target.value) : null;
+
                 setYearFrom(val);
+
+                // ✅ API trigger with latest `From` + existing `To`
                 commit({
                   ...currentFilters,
                   acustom_fromyears: val ?? undefined,
-                  acustom_toyears: yearTo ?? filters.acustom_toyears,
+                  acustom_toyears: yearTo ?? undefined,
                 });
               }}
             >
@@ -2681,33 +2692,21 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
               ))}
             </select>
           </div>
+
           <div className="col-6">
             <h6 className="cfs-filter-label-sub">To</h6>
             <select
               className="cfs-select-input"
               value={yearTo?.toString() || ""}
-              // onChange={(e) => {
-              //   const val = e.target.value ? parseInt(e.target.value) : null;
-              //   setYearTo(val);
-
-              //   const updatedFilters: Filters = {
-              //     ...currentFilters,
-              //     acustom_fromyears: yearFrom ?? filters.acustom_fromyears,
-              //     acustom_toyears: val ?? undefined, // ✅ Use val directly!
-              //   };
-
-              //   setFilters(updatedFilters);
-              //   filtersInitialized.current = true;
-              //   startTransition(() => {
-              //     updateAllFiltersAndURL(updatedFilters);
-              //   });
-              // }}
               onChange={(e) => {
                 const val = e.target.value ? parseInt(e.target.value) : null;
+
                 setYearTo(val);
+
+                // ✅ API trigger with latest `To` + existing `From`
                 commit({
                   ...currentFilters,
-                  acustom_fromyears: yearFrom ?? filters.acustom_fromyears,
+                  acustom_fromyears: yearFrom ?? undefined,
                   acustom_toyears: val ?? undefined,
                 });
               }}
@@ -2759,6 +2758,7 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
           </div>
         )}
       </div>
+
       {/* Length Range */}
       <div className="cs-full_width_section">
         <h5 className="cfs-filter-label">Length</h5>

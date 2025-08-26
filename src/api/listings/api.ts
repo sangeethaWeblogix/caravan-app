@@ -94,6 +94,8 @@ export const fetchListings = async (
     slug,
     radius_kms,
     search,
+    acustom_fromyears,
+    acustom_toyears,
   } = filters;
 
   const params = new URLSearchParams();
