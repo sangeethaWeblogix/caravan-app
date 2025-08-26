@@ -41,7 +41,7 @@
     },
     {
       "src": "/(.*)",
-      "dest": "/" // Fallback for Next.js frontend
+      "dest": "/" 
     }
   ]
 }
