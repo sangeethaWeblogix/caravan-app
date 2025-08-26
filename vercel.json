@@ -6,12 +6,22 @@
       "use": "@vercel/next"
     }
   ],
- {
   "rewrites": [
     {
       "source": "/wp-admin/(.*)",
       "destination": "https://www.dev.caravansforsale.com.au/wp-admin/$1"
+    },
+    {
+      "source": "/wp-json/(.*)",
+      "destination": "https://www.dev.caravansforsale.com.au/wp-json/$1"
+    },
+    {
+      "source": "/wp-includes/(.*)",
+      "destination": "https://www.dev.caravansforsale.com.au/wp-includes/$1"
+    },
+    {
+      "source": "/wp-content/(.*)",
+      "destination": "https://www.dev.caravansforsale.com.au/wp-content/$1"
     }
   ]
-}
 }
