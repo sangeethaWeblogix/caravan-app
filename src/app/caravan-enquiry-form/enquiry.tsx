@@ -1,5 +1,8 @@
 "use client";
 
+import Link from "next/link";
+import Image from "next/image";
+
 import React, { useState } from "react";
 
 type FormState = {
@@ -143,23 +146,27 @@ export default function ContactSection() {
 
   return (
     <>
-      <section className="community contact_top section-padding style-5">
-        <div className="container">
-          <div className="section-head text-center style-4">
-            <h2 className="text-center mb-20">
-              Exclusive Offers From Select<br></br>Quality Caravan Manufacturers
-            </h2>
-          </div>
-        </div>
-      </section>
-
-      <section className="contact section-padding pt-0 style-6">
+      <section className="contact section-padding style-6">
         <div className="container">
           <div className="content">
             <div className="row justify-content-center">
-              <div className="col-lg-8">
+              <div className="col-lg-12">
+                <div className="commun-card">
                 <form onSubmit={handleSubmit} className="form" method="post">
-                  <p className="text-center text-danger fs-12px mb-30">
+                  <div className="text-center header_form">
+                      <h4>Exclusive Offers From Select Quality Caravan Manufacturers</h4>
+                      <Image
+                        className="hidden-xs"
+                              src="/images/Blog_bottom_banner.webp"
+                              alt=""
+                              unoptimized
+                              width={0}
+                              height={0}
+                              sizes="100vw"
+                              style={{ width: "auto", height: "auto" }}
+                      />
+                  </div>
+                  <p className="required_txt">
                     Fill out the form below, and we&apos;ll send you exclusive
                     deals for the best caravans in the market.
                   </p>
@@ -319,7 +326,7 @@ export default function ContactSection() {
                         <textarea
                           name="requirements"
                           className="form-control"
-                          placeholder="Requirements (Description)*"
+                          placeholder="To ensure we find the right manufacturer, please include your weights, must have inclusions such as bunk beds, and any other specific requirements. This way, we can find the best possible solution for your inquiry.*"
                           value={formData.requirements}
                           onChange={handleChange}
                           required
@@ -330,6 +337,32 @@ export default function ContactSection() {
                           </small>
                         )}
                       </div>
+                    </div>
+                    <div className="col-lg-12">
+                      <p className="terms_text">
+                        By clicking 'Submit', you agree to Caravan Marketplace{" "}
+                        <Link
+                          href="/privacy-collection-statement/"
+                          target="_blank"
+                        >
+                          Personal Information Collection Statement
+                        </Link>
+                        ,{" "}
+                        <Link
+                          href="/privacy-policy/"
+                          target="_blank"
+                        >
+                          Privacy Policy
+                        </Link>{" "}
+                        and{" "}
+                        <Link
+                          href="/terms-conditions/"
+                          target="_blank"
+                        >
+                          Terms and Conditions
+                        </Link>
+                        .
+                      </p>
                     </div>
 
                     {/* Submit Button */}
@@ -356,6 +389,7 @@ export default function ContactSection() {
                     )}
                   </div>
                 </form>
+                </div>
               </div>
             </div>
           </div>
