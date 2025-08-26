@@ -9,19 +9,43 @@
   "rewrites": [
     {
       "source": "/wp-admin/(.*)",
-      "destination": "https://www.dev.caravansforsale.com.au/wp-admin/$1"
+      "destination": "https://www.dev.caravansforsale.com.au/wp-admin/$1",
+      "has": [
+        {
+          "type": "host",
+          "value": "(?!www\\.dev\\.caravansforsale\\.com\\.au).*"
+        }
+      ]
     },
     {
       "source": "/wp-json/(.*)",
-      "destination": "https://www.dev.caravansforsale.com.au/wp-json/$1"
+      "destination": "https://www.dev.caravansforsale.com.au/wp-json/$1",
+      "has": [
+        {
+          "type": "host",
+          "value": "(?!www\\.dev\\.caravansforsale\\.com\\.au).*"
+        }
+      ]
     },
     {
       "source": "/wp-includes/(.*)",
-      "destination": "https://www.dev.caravansforsale.com.au/wp-includes/$1"
+      "destination": "https://www.dev.caravansforsale.com.au/wp-includes/$1",
+      "has": [
+        {
+          "type": "host",
+          "value": "(?!www\\.dev\\.caravansforsale\\.com\\.au).*"
+        }
+      ]
     },
     {
       "source": "/wp-content/(.*)",
-      "destination": "https://www.dev.caravansforsale.com.au/wp-content/$1"
+      "destination": "https://www.dev.caravansforsale.com.au/wp-content/$1",
+      "has": [
+        {
+          "type": "host",
+          "value": "(?!www\\.dev\\.caravansforsale\\.com\\.au).*"
+        }
+      ]
     }
   ]
 }
