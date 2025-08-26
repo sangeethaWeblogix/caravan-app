@@ -23,14 +23,14 @@
     },
     {
       "src": "/wp-includes(/?)(.*)",
-      "dest": "https://www.dev.caravansforsale.com.au/wp-includes/$2",
+      "dest": "https://www.api.dev.caravansforsale.com.au/wp-includes/$2",
        "headers": {
         "Host": "api.dev.caravansforsale.com.au"
       }
     },
     {
       "src": "/wp-content(/?)(.*)",
-      "dest": "https://www.dev.caravansforsale.com.au/wp-content/$2",
+      "dest": "https://www.api.dev.caravansforsale.com.au/wp-content/$2",
        "headers": {
         "Host": "api.dev.caravansforsale.com.au"
       }
