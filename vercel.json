@@ -11,28 +11,28 @@
       "src": "/wp-admin(/?)(.*)",
       "dest": "https://api.dev.caravansforsale.com.au/wp-admin/$2",
       "headers": {
-        "Host": "api.dev.caravansforsale.com.au" // Now pointing to the new API domain
+        "Host": "api.dev.caravansforsale.com.au" 
       }
     },
     {
       "src": "/wp-json(/?)(.*)",
       "dest": "https://api.dev.caravansforsale.com.au/wp-json/$2",
       "headers": {
-        "Host": "api.dev.caravansforsale.com.au" // Now pointing to the new API domain
+        "Host": "api.dev.caravansforsale.com.au"
       }
     },
     {
       "src": "/wp-includes(/?)(.*)",
       "dest": "https://www.dev.caravansforsale.com.au/wp-includes/$2",
        "headers": {
-        "Host": "api.dev.caravansforsale.com.au" // Now pointing to the new API domain
+        "Host": "api.dev.caravansforsale.com.au"
       }
     },
     {
       "src": "/wp-content(/?)(.*)",
       "dest": "https://www.dev.caravansforsale.com.au/wp-content/$2",
        "headers": {
-        "Host": "api.dev.caravansforsale.com.au" // Now pointing to the new API domain
+        "Host": "api.dev.caravansforsale.com.au"
       }
     }
   ]
