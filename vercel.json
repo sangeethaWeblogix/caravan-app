@@ -9,35 +9,39 @@
   "routes": [
     {
       "src": "/wp-admin(/?)(.*)",
-      "dest": "https://www.dev.caravansforsale.com.au/wp-admin/$2",
+      "dest": "https://caravansforsale.com.au/wp-admin/$2",
       "headers": {
-        "Host": "www.dev.caravansforsale.com.au",
+        "Host": "caravansforsale.com.au",
         "X-Forwarded-Host": "dev.caravansforsale.com.au"
       }
     },
     {
       "src": "/wp-json(/?)(.*)",
-      "dest": "https://www.dev.caravansforsale.com.au/wp-json/$2",
+      "dest": "https://caravansforsale.com.au/wp-json/$2",
       "headers": {
-        "Host": "www.dev.caravansforsale.com.au",
+        "Host": "caravansforsale.com.au",
         "X-Forwarded-Host": "dev.caravansforsale.com.au"
       }
     },
     {
       "src": "/wp-includes(/?)(.*)",
-      "dest": "https://www.dev.caravansforsale.com.au/wp-includes/$2",
+      "dest": "https://caravansforsale.com.au/wp-includes/$2",
       "headers": {
-        "Host": "www.dev.caravansforsale.com.au",
+        "Host": "caravansforsale.com.au",
         "X-Forwarded-Host": "dev.caravansforsale.com.au"
       }
     },
     {
       "src": "/wp-content(/?)(.*)",
-      "dest": "https://www.dev.caravansforsale.com.au/wp-content/$2",
+      "dest": "https://caravansforsale.com.au/wp-content/$2",
       "headers": {
-        "Host": "www.dev.caravansforsale.com.au",
+        "Host": "caravansforsale.com.au",
         "X-Forwarded-Host": "dev.caravansforsale.com.au"
       }
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/" // Fallback for Next.js frontend
     }
   ]
 }
