@@ -196,6 +196,15 @@ export default function ListingsPage({ ...incomingFilters }: Props) {
     }
   }, []);
 
+  const calledOnceRef = useRef(false);
+
+  useEffect(() => {
+    if (!calledOnceRef.current) {
+      loadListings();
+      calledOnceRef.current = true;
+    }
+  }, [pathname, searchParams]);
+
   const handleNextPage = () => {
     if (pagination.current_page < pagination.total_pages) {
       const nextPage = pagination.current_page + 1;
@@ -346,9 +355,10 @@ export default function ListingsPage({ ...incomingFilters }: Props) {
     const requestKey = JSON.stringify({ page: pageFromURL, filters: merged });
     if (LAST_GLOBAL_REQUEST_KEY === requestKey) return;
     LAST_GLOBAL_REQUEST_KEY = requestKey;
+    initializedRef.current = true; // ✅ only here
 
     loadListings(pageFromURL, merged);
-  }, [searchKey, pathKey, loadListings, DEFAULT_RADIUS]);
+  }, [searchKey, pathKey, loadListings]);
 
   const handleFilterChange = useCallback(
     (newFilters: Filters) => {

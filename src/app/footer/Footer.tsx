@@ -12,7 +12,7 @@ import { BsChevronUp } from "react-icons/bs";
 
 const Footer = () => {
   const currentYear = new Date().getFullYear();
-  const siteUrl = "https://www.caravansforsale.com.au";
+  // const siteUrl = "https://www.caravansforsale.com.au";
 
   return (
     <>
@@ -82,35 +82,27 @@ const Footer = () => {
                 <h6 className="foot-title foot_xs">Popular Pages</h6>
                 <ul className="menu footer_xs">
                   <li>
-                    <Link href="/blog/best-caravans-full-off-road-capabilities-australia/">                    
+                    <Link href="/blog/best-caravans-full-off-road-capabilities-australia/">
                       Best Off Road Caravans
                     </Link>
                   </li>
                   <li>
-                    <Link
-                      href="/blog/best-semi-off-road-caravans-australia-guide/"
-                    >
+                    <Link href="/blog/best-semi-off-road-caravans-australia-guide/">
                       Best Semi Off Road Caravans
                     </Link>
                   </li>
                   <li>
-                    <Link
-                      href="/blog/best-caravans-for-extreme-off-road-travel/"
-                    >
+                    <Link href="/blog/best-caravans-for-extreme-off-road-travel/">
                       Best Extreme Off Road Caravans
                     </Link>
                   </li>
                   <li>
-                    <Link
-                      href="/blog/best-luxury-caravans-australia-highlights-features-reviews/"
-                    >
+                    <Link href="/blog/best-luxury-caravans-australia-highlights-features-reviews/">
                       Best Luxury Caravans
                     </Link>
                   </li>
                   <li>
-                    <Link
-                      href="/blog/top-family-off-road-caravans-australia/"
-                    >
+                    <Link href="/blog/top-family-off-road-caravans-australia/">
                       Best Family Caravans
                     </Link>
                   </li>
