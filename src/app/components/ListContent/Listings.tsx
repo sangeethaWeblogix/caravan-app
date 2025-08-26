@@ -136,19 +136,26 @@ export default function ListingsPage({ ...incomingFilters }: Props) {
 
   // Parse slug ONCE on mount; do not fetch here
   const initializedRef = useRef(false);
-
   useEffect(() => {
     if (initializedRef.current) return;
     initializedRef.current = true;
 
     const path = pathKey;
     const slugParts = path.split("/listings/")[1]?.split("/") || [];
-    const parsed = parseSlugToFilters(slugParts);
+
+    // Convert Next.js searchParams into a plain object
+    const query: Record<string, string | string[] | undefined> = {};
+    searchParams.forEach((value, key) => {
+      query[key] = value;
+    });
+
+    const parsed = parseSlugToFilters(slugParts, query);
+    console.log("metsparsed", parsed);
 
     const merged = { ...parsed, ...incomingFilters };
     filtersRef.current = merged;
     setFilters(merged);
-  }, [incomingFilters]);
+  }, [incomingFilters, searchParams]);
 
   const normalizeSearchFromMake = (f: Filters): Filters => {
     if (!f?.make) return f;
@@ -328,8 +335,17 @@ export default function ListingsPage({ ...incomingFilters }: Props) {
   useEffect(() => {
     if (!initializedRef.current) return;
 
-    const slugParts = pathKey.split("/listings/")[1]?.split("/") || [];
-    const parsedFromURL = parseSlugToFilters(slugParts);
+    const path = pathKey;
+    const slugParts = path.split("/listings/")[1]?.split("/") || [];
+
+    // ✅ Here you DO pass query
+    const query: Record<string, string | string[] | undefined> = {};
+    searchParams.forEach((value, key) => {
+      query[key] = value;
+    });
+
+    const parsedFromURL = parseSlugToFilters(slugParts, query);
+    console.log("metsparsed2", parsedFromURL);
 
     const pageFromURL = parseInt(searchParams.get("page") || "1", 10);
     const orderbyQP = searchParams.get("orderby") || undefined;

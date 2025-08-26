@@ -13,8 +13,8 @@ interface Filters {
   state?: string;
   region?: string;
   suburb?: string;
-  acustom_fromyears?: string;
-  acustom_toyears?: string;
+  acustom_fromyears?: string | number;
+  acustom_toyears?: string | number;
   from_length?: string;
   to_length?: string;
   model?: string;
@@ -114,10 +114,11 @@ export const fetchListings = async (
   if (maxKg) params.append("to_atm", `${maxKg}kg`);
   if (from_length) params.append("from_length", `${from_length}`);
   if (to_length) params.append("to_length", `${to_length}`);
-  if (filters.acustom_fromyears)
-    params.append("acustom_fromyears", filters.acustom_fromyears);
-  if (filters.acustom_toyears)
-    params.append("acustom_toyears", filters.acustom_toyears);
+  if (acustom_fromyears)
+    params.append("acustom_fromyears", `${filters.acustom_fromyears}`);
+  if (acustom_toyears)
+    params.append("acustom_toyears", `${filters.acustom_toyears}`);
+
   if (filters.model) params.append("model", filters.model);
   if (condition)
     params.append("condition", condition.toLowerCase().replace(/\s+/g, "-"));
