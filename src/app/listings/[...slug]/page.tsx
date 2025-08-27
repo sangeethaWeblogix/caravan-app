@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+
 import ListingsPage from "@/app/components/ListContent/Listings";
 import { parseSlugToFilters } from "../../components/urlBuilder";
 import { metaFromSlug } from "../../../utils/seo/metaFromSlug";
@@ -12,30 +14,24 @@ export async function generateMetadata({
   searchParams,
 }: {
   params: Params;
-  searchParams: SearchParams;
+  searchParams: SearchParams; // ✅ no Promise
 }): Promise<Metadata> {
-  // slug comes from dynamic catch-all route [...slug]
-  const { slug = [] } = params;
-
-  // merge slug + query params inside metaFromSlug
-  return metaFromSlug(slug, searchParams);
+  return metaFromSlug(params.slug || [], searchParams);
 }
-
 // Main Listings page
 export default async function Listings({
   params,
   searchParams,
 }: {
   params: Params;
-  searchParams: SearchParams;
+  searchParams: Promise<SearchParams>; // ✅ same here
 }) {
+  const sp = await searchParams; // ✅ await once
   const { slug = [] } = params;
-  const filters = parseSlugToFilters(slug, searchParams);
 
-  // Pagination param
-  const paged = Array.isArray(searchParams?.paged)
-    ? searchParams.paged[0]
-    : searchParams?.paged ?? "1";
+  const filters = parseSlugToFilters(slug, sp);
+
+  const paged = Array.isArray(sp?.paged) ? sp.paged[0] : sp?.paged ?? "1";
 
   return <ListingsPage {...filters} page={paged} />;
 }
