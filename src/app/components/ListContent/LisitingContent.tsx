@@ -174,7 +174,7 @@ export default function ListingContent({
                   <Link href={href}>
                     {" "}
                     <div>
-                      {product.is_exclusive && (
+                      {/* {product.is_exclusive && (
                         <span className="lab">
                           <Image
                             src={Exculisive}
@@ -186,7 +186,7 @@ export default function ListingContent({
                             style={{ width: "auto", height: "auto" }}
                           />
                         </span>
-                      )}
+                      )} */}
                       <Swiper
                         navigation
                         modules={[Navigation]}

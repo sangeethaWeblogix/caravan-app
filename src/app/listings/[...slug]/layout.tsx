@@ -29,7 +29,7 @@ export async function metaFromSlug(
 
   // ✅ build querystring
   const qs = buildQuery(finalFilters);
-  const url = `https://www.caravansforsale.com.au/wp-json/cfs/v1/new-list?${qs.toString()}`;
+  const url = `https://www.api.caravansforsale.com.au/wp-json/cfs/v1/new-list?${qs.toString()}`;
 
   // ✅ option 1: if fetchListings accepts full URL
   // const res = await fetchListings(url);
