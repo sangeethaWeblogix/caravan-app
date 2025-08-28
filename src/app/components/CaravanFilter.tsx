@@ -898,11 +898,12 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
   };
   const formatLocationInput = (s: string) =>
     s
-      .replace(/_/g, " ") // underscores -> space
-      .replace(/\s*-\s*/g, "  ") // hyphen (with any spaces) -> double space
-      .replace(/\s{3,}/g, "  ") // collapse 3+ spaces -> 2
+      .replace(/_/g, " ")
+      .replace(/\s*-\s*/g, "  ") // normalize any old dash → space
+      .replace(/\s{3,}/g, "  ") // collapse extra spaces
       .trim()
-      .replace(/\b\w/g, (char) => char.toUpperCase()); // capitalize each word
+      .replace(/\b\w/g, (char) => char.toUpperCase()); // capitalize words
+  // capitalize each word
 
   useEffect(() => {
     const noLocationInFilters =
@@ -1057,6 +1058,14 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
   //     setLocationInput(`${filters.suburb} ${filters.pincode}`);
   //   }
   // }, [selectedSuggestion, filters.suburb, filters.pincode]);
+  function getStateAbbr(state?: string) {
+    if (!state) return "";
+    const normalized = state.trim().toLowerCase(); // normalize
+    const found = Object.keys(AUS_ABBR).find(
+      (key) => key.toLowerCase() === normalized
+    );
+    return found ? AUS_ABBR[found] : state; // return abbr or original
+  }
 
   const handleSearchClick = () => {
     if (!suburbClickedRef.current || !selectedSuggestion) return;
@@ -1579,6 +1588,17 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
   //     });
   //   }
   // }, [filters]);
+  function formatsuburbLocationInput(
+    suburb?: string | null,
+    state?: string | null,
+    pincode?: string | null
+  ) {
+    return [suburb, getStateAbbr(state ?? undefined), pincode]
+      .filter(Boolean)
+      .join(" ")
+      .replace(/\s+/g, " ")
+      .trim();
+  }
 
   const lastSentFiltersRef = useRef<Filters | null>(null);
 
@@ -2238,10 +2258,10 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
           value={
             isUserTypingRef.current
               ? locationInput
-              : formatLocationInput(
-                  [selectedSuburbName, selectedStateName, selectedpincode]
-                    .filter(Boolean) // remove undefined
-                    .join(" ")
+              : formatsuburbLocationInput(
+                  selectedSuburbName,
+                  selectedStateName,
+                  selectedpincode
                 )
           }
           onChange={(e) => {
@@ -2251,15 +2271,20 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
           onClick={() => setIsModalOpen(true)}
         />
 
-        {/* ✅ Show selected suburb below input, like a pill with X */}
         {selectedSuburbName && selectedStateName && selectedpincode && (
           <div className="filter-chip">
-            {formatLocationInput(
-              [selectedSuburbName, selectedStateName, selectedpincode]
-                .filter(Boolean)
-                .join(" ")
-            )}
-            <span className="filter-chip-close" onClick={resetSuburbFilters}>
+            {[
+              selectedSuburbName,
+              getStateAbbr(selectedStateName), // ✅ safe abbreviation
+              selectedpincode,
+            ]
+              .filter(Boolean)
+              .join(" - ")}
+            <span
+              className="filter-chip-close"
+              onClick={resetSuburbFilters}
+              style={{ cursor: "pointer", marginLeft: "8px" }}
+            >
               ×
             </span>
           </div>
