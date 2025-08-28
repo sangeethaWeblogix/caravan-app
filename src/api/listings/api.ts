@@ -130,9 +130,15 @@ export const fetchListings = async (
 
   const res = await fetch(`${API_BASE}/new-list?${params.toString()}`);
   if (!res.ok) throw new Error("API failed");
+  const raw = await res.text(); // read body only once
 
-  const json = (await res.json()) as ApiResponse;
-
+  let json: ApiResponse;
+  try {
+    json = JSON.parse(raw) as ApiResponse;
+  } catch (e) {
+    console.error("API did not return valid JSON. Response:", raw);
+    throw new Error("Invalid API response: " + raw);
+  }
   const all: Item[] = json?.data?.products ?? [];
   const exFromApi: Item[] = json?.data?.exclusive_products ?? [];
 

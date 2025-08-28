@@ -1888,6 +1888,15 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
       setRadiusKms(currentFilters.radius_kms);
     }
   }, [currentFilters.radius_kms]);
+  const addLocationFields = (baseFilters: Filters): Filters => {
+    return {
+      ...baseFilters,
+      suburb: selectedSuburbName || baseFilters.suburb,
+      pincode: selectedpincode || baseFilters.pincode,
+      state: selectedStateName || baseFilters.state,
+      region: selectedRegionName || baseFilters.region,
+    };
+  };
 
   return (
     <div className="filter-card mobile-search">
@@ -1928,10 +1937,10 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
                     setSelectedCategory(cat.slug);
                     setSelectedCategoryName(cat.name);
                     setCategoryOpen(false);
-                    const updatedFilters: Filters = {
+                    const updatedFilters: Filters = addLocationFields({
                       ...currentFilters,
                       category: cat.slug,
-                    };
+                    });
                     setFilters(updatedFilters);
                     filtersInitialized.current = true;
                     startTransition(() => {

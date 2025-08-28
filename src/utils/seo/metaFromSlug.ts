@@ -1,31 +1,49 @@
-// utils/seo/metaFromSlug.ts
 import { fetchListings } from "@/api/listings/api";
 import { parseSlugToFilters } from "@/app/components/urlBuilder";
 import type { Metadata } from "next";
+
+// simple querystring builder
+function buildQuery(params: Record<string, any>) {
+  const qs = new URLSearchParams();
+
+  Object.entries(params).forEach(([k, v]) => {
+    if (v == null || v === "") return;
+
+    if (Array.isArray(v)) {
+      v.forEach((val) => qs.append(k, String(val))); // repeat keys: ?year=2020&year=2021
+    } else {
+      qs.set(k, String(v));
+    }
+  });
+
+  return qs;
+}
 
 export async function metaFromSlug(
   filters: string[] = [],
   searchParams: Record<string, string | string[] | undefined> = {}
 ): Promise<Metadata> {
-  // slug → object
-  const slugFilters = parseSlugToFilters(filters);
+  const parsed = parseSlugToFilters(filters, searchParams);
 
-  // query → object
-  const queryFilters: Record<string, string | string[]> = {};
-  Object.entries(searchParams).forEach(([key, value]) => {
-    if (Array.isArray(value)) {
-      queryFilters[key] = value;
-    } else if (value !== undefined) {
-      queryFilters[key] = value;
-    }
-  });
+  // ✅ page as number
+  const finalFilters = {
+    ...parsed,
+    page: parsed.page ? Number(parsed.page) : 1,
+  };
 
-  // ✅ merge: query overrides slug
-  const finalFilters = { ...slugFilters, ...queryFilters, page: 1 };
+  console.log("Final filters:", finalFilters);
 
-  console.log("Final filters:", queryFilters);
+  // ✅ build querystring
+  const qs = buildQuery(finalFilters);
+  const url = `https://www.caravansforsale.com.au/wp-json/cfs/v1/new-list?${qs.toString()}`;
 
+  // ✅ option 1: if fetchListings accepts full URL
+  // const res = await fetchListings(url);
+
+  // ✅ option 2: if fetchListings expects filters object (more likely)
   const res = await fetchListings(finalFilters);
+
+  console.log("API response SEO:", res?.seo);
 
   const title = res?.seo?.metatitle || "Caravan Listings";
   const description =

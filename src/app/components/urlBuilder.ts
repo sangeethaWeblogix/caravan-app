@@ -40,7 +40,12 @@ export function parseSlugToFilters(
     used: "Used",
     "near-new": "Near New",
   };
-
+  function toNumber(val: string | string[] | undefined): number | undefined {
+    if (!val) return undefined;
+    const str = Array.isArray(val) ? val[0] : val;
+    const num = Number(str);
+    return isNaN(num) ? undefined : num;
+  }
   const hasReservedSuffix = (s: string) =>
     /-(category|condition|state|region|suburb|keyword)$/.test(s) ||
     /-(kg-atm|length-in-feet|people-sleeping-capacity)$/.test(s) ||
@@ -218,10 +223,10 @@ export function parseSlugToFilters(
     // Helper: handle arrays from query (e.g., Next.js gives string[])
     const getScalar = (v: string | string[] | undefined): string | undefined =>
       Array.isArray(v) ? v[0] : v;
+    filters.acustom_fromyears = toNumber(query.acustom_fromyears);
 
     if (query.radius_kms) filters.radius_kms = getScalar(query.radius_kms);
-    if (query.acustom_fromyears)
-      filters.acustom_fromyears = getScalar(query.acustom_fromyears);
+
     if (query.acustom_toyears)
       filters.acustom_toyears = getScalar(query.acustom_toyears);
     if (query.page) filters.page = getScalar(query.page);
