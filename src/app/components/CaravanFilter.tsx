@@ -1836,16 +1836,16 @@ const CaravanFilter: React.FC<CaravanFilterProps> = ({
     return byText || null;
   };
   const isUserTypingRef = useRef(false);
-  const locKey = useMemo(
-    () =>
-      [
-        selectedSuburbName ?? "",
-        selectedRegionName ?? "",
-        selectedStateName ?? "",
-        selectedpincode ?? "",
-      ].join("|"),
-    [selectedSuburbName, selectedRegionName, selectedStateName, selectedpincode]
-  );
+  // const locKey = useMemo(
+  //   () =>
+  //     [
+  //       selectedSuburbName ?? "",
+  //       selectedRegionName ?? "",
+  //       selectedStateName ?? "",
+  //       selectedpincode ?? "",
+  //     ].join("|"),
+  //   [selectedSuburbName, selectedRegionName, selectedStateName, selectedpincode]
+  // );
 
   // const hydratedKeyRef = useRef("");
 

@@ -38,9 +38,12 @@ export async function generateMetadata({
     data?.short_description ||
     "View caravan details.";
 
+  const robots = "index, follow";
+
   return {
     title,
     description,
+    robots,
     openGraph: {
       title,
       description,

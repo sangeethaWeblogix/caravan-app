@@ -2,23 +2,6 @@ import { fetchListings } from "@/api/listings/api";
 import { parseSlugToFilters } from "@/app/components/urlBuilder";
 import type { Metadata } from "next";
 
-// simple querystring builder
-function buildQuery(params: Record<string, any>) {
-  const qs = new URLSearchParams();
-
-  Object.entries(params).forEach(([k, v]) => {
-    if (v == null || v === "") return;
-
-    if (Array.isArray(v)) {
-      v.forEach((val) => qs.append(k, String(val))); // repeat keys: ?year=2020&year=2021
-    } else {
-      qs.set(k, String(v));
-    }
-  });
-
-  return qs;
-}
-
 export async function metaFromSlug(
   filters: string[] = [],
   searchParams: Record<string, string | string[] | undefined> = {}
@@ -34,8 +17,8 @@ export async function metaFromSlug(
   console.log("Final filters:", finalFilters);
 
   // ✅ build querystring
-  const qs = buildQuery(finalFilters);
-  const url = `https://www.caravansforsale.com.au/wp-json/cfs/v1/new-list?${qs.toString()}`;
+  // const qs = buildQuery(finalFilters);
+  // const url = `https://www.caravansforsale.com.au/wp-json/cfs/v1/new-list?${qs.toString()}`;
 
   // ✅ option 1: if fetchListings accepts full URL
   // const res = await fetchListings(url);

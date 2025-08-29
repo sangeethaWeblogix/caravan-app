@@ -135,7 +135,7 @@ export const fetchListings = async (
   let json: ApiResponse;
   try {
     json = JSON.parse(raw) as ApiResponse;
-  } catch (e) {
+  } catch {
     console.error("API did not return valid JSON. Response:", raw);
     throw new Error("Invalid API response: " + raw);
   }

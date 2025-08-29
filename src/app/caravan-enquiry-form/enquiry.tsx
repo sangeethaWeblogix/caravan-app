@@ -14,7 +14,6 @@ type FormState = {
   "caravan-type": "";
   condition: "";
   budget: "";
-  requirements: "";
 };
 
 export default function ContactSection() {
@@ -29,7 +28,6 @@ export default function ContactSection() {
     "caravan-type": "",
     condition: "",
     budget: "",
-    requirements: "",
   });
   const [errors, setErrors] = useState<
     Partial<Record<keyof FormState, string>>
@@ -50,28 +48,50 @@ export default function ContactSection() {
 
   const validate = () => {
     const next: Partial<Record<keyof FormState, string>> = {};
-    if (!formData["your-name"].trim()) next["your-name"] = "Name is required.";
+
+    // Name validation (only letters, spaces allowed)
+    if (!formData["your-name"].trim()) {
+      next["your-name"] = "Name is required.";
+    } else if (!/^[A-Za-z\s]+$/.test(formData["your-name"])) {
+      next["your-name"] = "Name must contain only letters.";
+    }
+
+    // Email validation
     if (!formData["your-email"].trim()) {
       next["your-email"] = "Email is required.";
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData["your-email"])) {
       next["your-email"] = "Enter a valid email.";
     }
+
+    // Phone validation
     if (!formData["your-phone"].trim()) {
       next["your-phone"] = "Phone is required.";
     } else if (!/^[0-9\s+\-()]{7,20}$/.test(formData["your-phone"])) {
       next["your-phone"] = "Enter a valid phone number.";
     }
+
+    // Postcode validation (exactly 4 digits)
     if (!formData["you-postcode"].trim()) {
       next["you-postcode"] = "Postcode is required.";
+    } else if (!/^\d{4}$/.test(formData["you-postcode"])) {
+      next["you-postcode"] = "Postcode must be 4 digits.";
     }
+
+    // Caravan type
     if (!formData["caravan-type"].trim()) {
-      next["caravan-type"] = "type is required.";
+      next["caravan-type"] = "Type is required.";
     }
+
+    // Condition
     if (!formData["condition"].trim()) {
-      next["condition"] = "condition is required.";
+      next["condition"] = "Condition is required.";
     }
+
+    // Budget validation (only numbers)
     if (!formData["budget"].trim()) {
-      next["budget"] = "budget is required.";
+      next["budget"] = "Budget is required.";
+    } else if (!/^\d+$/.test(formData["budget"])) {
+      next["budget"] = "Budget must be a number.";
     }
 
     setErrors(next);
@@ -104,14 +124,13 @@ export default function ContactSection() {
       form.append("caravan-type", formData["caravan-type"]);
       form.append("condition", formData.condition);
       form.append("budget", formData.budget);
-      form.append("requirements", formData.requirements);
       form.append("your-message", formData["your-message"]);
       Object.entries(formData).forEach(([key, value]) =>
         form.append(key, value)
       );
 
       const res = await fetch(
-        "https://www.caravansforsale.com.au/wp-json/contact-form-7/v1/contact-forms/155838/feedback",
+        "https://www.admin.caravansforsale.com.au/wp-json/contact-form-7/v1/contact-forms/155838/feedback",
         { method: "POST", body: form }
       );
 
@@ -129,7 +148,6 @@ export default function ContactSection() {
           "caravan-type": "",
           condition: "",
           budget: "",
-          requirements: "",
         });
         setErrors({});
       } else {
@@ -329,18 +347,12 @@ export default function ContactSection() {
                       <div className="col-lg-12">
                         <div className="form-group mb-20">
                           <textarea
-                            name="requirements"
+                            name="your-message"
                             className="form-control"
                             placeholder="To ensure we find the right manufacturer, please include your weights, must have inclusions such as bunk beds, and any other specific requirements. This way, we can find the best possible solution for your inquiry.*"
-                            value={formData.requirements}
+                            value={formData["your-message"]}
                             onChange={handleChange}
-                            required
                           />
-                          {errors.requirements && (
-                            <small className="text-danger">
-                              {errors.requirements}
-                            </small>
-                          )}
                         </div>
                       </div>
                       <div className="col-lg-12">
